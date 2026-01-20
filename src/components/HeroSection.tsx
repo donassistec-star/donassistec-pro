@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Smartphone, Monitor, Shield, ArrowRight } from "lucide-react";
@@ -34,9 +35,11 @@ const HeroSection = () => {
           </p>
 
           <div className="flex flex-wrap gap-4 mb-12">
-            <Button variant="hero" size="xl">
-              Consultar Catálogo
-              <ArrowRight className="w-5 h-5" />
+            <Button variant="hero" size="xl" asChild>
+              <Link to="/catalogo">
+                Consultar Catálogo
+                <ArrowRight className="w-5 h-5" />
+              </Link>
             </Button>
             <Button variant="outline" size="xl" className="border-card/40 text-card hover:bg-card hover:text-foreground">
               Falar no WhatsApp
