@@ -1,11 +1,20 @@
 import { MessageCircle } from "lucide-react";
+import { useSettings } from "@/hooks/useSettings";
+import { validation } from "@/utils/validation";
 
 const WhatsAppFloat = () => {
-  const whatsappNumber = "5511999999999";
-  const whatsappMessage = encodeURIComponent(
-    "Olá! Sou lojista e gostaria de saber mais sobre peças e serviços da DonAssistec."
-  );
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+  const { settings } = useSettings();
+
+  const rawNumber = settings?.contactWhatsApp || settings?.whatsappNumber || "5511999999999";
+  const whatsappNumber = validation.cleanWhatsAppNumber(rawNumber);
+  
+  const message = settings?.whatsappContactMessage || "Olá! Sou lojista e gostaria de saber mais sobre peças e serviços da DonAssistec.";
+  const whatsappUrl = validation.generateWhatsAppUrl(rawNumber, message);
+
+  // Não renderiza se não houver número WhatsApp configurado
+  if (!whatsappNumber || whatsappNumber.length < 10) {
+    return null;
+  }
 
   return (
     <a

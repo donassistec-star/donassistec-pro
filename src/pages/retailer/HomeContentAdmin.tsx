@@ -1,0 +1,405 @@
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { useHomeContent } from "@/contexts/HomeContentContext";
+import RetailerLayout from "@/components/retailer/RetailerLayout";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+
+const HomeContentAdmin = () => {
+  const { content, updateContent, resetContent } = useHomeContent();
+
+  const handleHeroChange = async (
+    field: "heroTitle" | "heroSubtitle" | "heroCtaLabel" | "heroSecondaryCtaLabel",
+    value: string
+  ) => {
+    await updateContent({ [field]: value });
+  };
+
+  const handleFeatureChange = async (index: number, field: "title" | "description", value: string) => {
+    const features = [...content.features];
+    features[index] = { ...features[index], [field]: value };
+    await updateContent({ features });
+  };
+
+  const handleStatChange = async (
+    index: number,
+    field: "value" | "label" | "description",
+    value: string
+  ) => {
+    const stats = [...content.stats];
+    stats[index] = { ...stats[index], [field]: value };
+    await updateContent({ stats });
+  };
+
+  const handleStepChange = async (
+    index: number,
+    field: "title" | "description" | "action" | "href",
+    value: string
+  ) => {
+    const steps = [...content.steps];
+    steps[index] = { ...steps[index], [field]: value };
+    await updateContent({ steps });
+  };
+
+  const handleSave = async () => {
+    await updateContent({}); // Força uma atualização completa
+    toast.success("Conteúdo da home salvo com sucesso!");
+  };
+
+  const handleReset = async () => {
+    await resetContent();
+    toast.success("Conteúdo da home restaurado para o padrão.");
+  };
+
+  return (
+    <RetailerLayout>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Conteúdo da Página Inicial
+          </h1>
+          <p className="text-muted-foreground">
+            Administre os textos principais da home sem precisar alterar o código.
+          </p>
+        </div>
+
+        {/* Hero + Ações */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Hero */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Hero (Seção Principal)</CardTitle>
+              <CardDescription>
+                Título, subtítulo e CTAs exibidos no topo da página inicial.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Título principal
+                </label>
+                <Input
+                  value={content.heroTitle}
+                  onChange={(e) => handleHeroChange("heroTitle", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Subtítulo
+                </label>
+                <Textarea
+                  value={content.heroSubtitle}
+                  onChange={(e) => handleHeroChange("heroSubtitle", e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    Texto do botão principal
+                  </label>
+                  <Input
+                    value={content.heroCtaLabel}
+                    onChange={(e) =>
+                      handleHeroChange("heroCtaLabel", e.target.value)
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    Texto do botão secundário
+                  </label>
+                  <Input
+                    value={content.heroSecondaryCtaLabel}
+                    onChange={(e) =>
+                      handleHeroChange("heroSecondaryCtaLabel", e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Ações */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ações</CardTitle>
+              <CardDescription>
+                Salve ou restaure o conteúdo padrão da home.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button className="w-full" onClick={handleSave}>
+                Salvar alterações
+              </Button>
+              <Button variant="outline" className="w-full" onClick={handleReset}>
+                Restaurar conteúdo padrão
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                As alterações são salvas localmente neste navegador. Em produção, este módulo pode
+                ser conectado a uma API para salvar em banco de dados.
+              </p>
+              <Badge variant="outline" className="text-xs">
+                Módulo CMS leve
+              </Badge>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Diferenciais (Features) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Diferenciais (Features)</CardTitle>
+            <CardDescription>
+              Texto da seção e cards de diferenciais exibidos na home.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Título da seção
+                </label>
+                <Input
+                  value={content.featuresTitle}
+                  onChange={(e) =>
+                    updateContent({ featuresTitle: e.target.value }).catch(console.error)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Subtítulo da seção
+                </label>
+                <Textarea
+                  value={content.featuresSubtitle}
+                  onChange={(e) =>
+                    updateContent({ featuresSubtitle: e.target.value }).catch(console.error)
+                  }
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {content.features.map((feature, index) => (
+                <div
+                  key={feature.id}
+                  className="rounded-lg border border-border p-4 space-y-3"
+                >
+                  <Badge variant="outline" className="text-xs mb-1">
+                    ID: {feature.id}
+                  </Badge>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Título
+                    </label>
+                    <Input
+                      value={feature.title}
+                      onChange={(e) =>
+                        handleFeatureChange(index, "title", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Descrição
+                    </label>
+                    <Textarea
+                      value={feature.description}
+                      onChange={(e) =>
+                        handleFeatureChange(index, "description", e.target.value)
+                      }
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Números (Stats) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Números (Stats)</CardTitle>
+            <CardDescription>
+              Valores e descrições mostrados na seção de resultados.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Título da seção
+              </label>
+              <Input
+                value={content.statsTitle}
+                onChange={(e) =>
+                  updateContent({ statsTitle: e.target.value }).catch(console.error)
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Subtítulo da seção
+              </label>
+              <Textarea
+                value={content.statsSubtitle}
+                onChange={(e) =>
+                  updateContent({ statsSubtitle: e.target.value }).catch(console.error)
+                }
+                rows={2}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {content.stats.map((stat, index) => (
+                <div
+                  key={stat.id}
+                  className="rounded-lg border border-border p-4 space-y-3"
+                >
+                  <Badge variant="outline" className="text-xs mb-1">
+                    ID: {stat.id}
+                  </Badge>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Valor
+                    </label>
+                    <Input
+                      value={stat.value}
+                      onChange={(e) =>
+                        handleStatChange(index, "value", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Rótulo
+                    </label>
+                    <Input
+                      value={stat.label}
+                      onChange={(e) =>
+                        handleStatChange(index, "label", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Descrição
+                    </label>
+                    <Textarea
+                      value={stat.description}
+                      onChange={(e) =>
+                        handleStatChange(index, "description", e.target.value)
+                      }
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Processo (Steps) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Processo (Passos)</CardTitle>
+            <CardDescription>
+              Passos exibidos na seção &quot;Como funciona o processo?&quot;.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Título da seção
+              </label>
+              <Input
+                value={content.processTitle}
+                onChange={(e) =>
+                  updateContent({ processTitle: e.target.value }).catch(console.error)
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Subtítulo da seção
+              </label>
+              <Textarea
+                value={content.processSubtitle}
+                onChange={(e) =>
+                  updateContent({ processSubtitle: e.target.value }).catch(console.error)
+                }
+                rows={2}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {content.steps.map((step, index) => (
+                <div
+                  key={step.id}
+                  className="rounded-lg border border-border p-4 space-y-3"
+                >
+                  <Badge variant="outline" className="text-xs mb-1">
+                    Passo {step.number} • ID: {step.id}
+                  </Badge>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Título
+                    </label>
+                    <Input
+                      value={step.title}
+                      onChange={(e) =>
+                        handleStepChange(index, "title", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Descrição
+                    </label>
+                    <Textarea
+                      value={step.description}
+                      onChange={(e) =>
+                        handleStepChange(index, "description", e.target.value)
+                      }
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Texto do botão (opcional)
+                    </label>
+                    <Input
+                      value={step.action || ""}
+                      onChange={(e) =>
+                        handleStepChange(index, "action", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Link do botão (opcional)
+                    </label>
+                    <Input
+                      value={step.href || ""}
+                      onChange={(e) =>
+                        handleStepChange(index, "href", e.target.value)
+                      }
+                      placeholder="/catalogo, /lojista/login, #contato..."
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </RetailerLayout>
+  );
+};
+
+export default HomeContentAdmin;
+

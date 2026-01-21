@@ -1,12 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Phone } from "lucide-react";
+import { useSettings } from "@/hooks/useSettings";
+import { validation } from "@/utils/validation";
 
 const CTASection = () => {
-  const whatsappNumber = "5511999999999";
-  const whatsappMessage = encodeURIComponent(
-    "Olá! Sou lojista e gostaria de saber mais sobre peças e serviços de reconstrução de telas da DonAssistec."
-  );
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+  const { settings } = useSettings();
+
+  const rawNumber = settings?.contactWhatsApp || settings?.whatsappNumber || "5511999999999";
+  const message = settings?.whatsappContactMessage || "Olá! Sou lojista e gostaria de saber mais sobre peças e serviços de reconstrução de telas da DonAssistec.";
+  const whatsappUrl = validation.generateWhatsAppUrl(rawNumber, message);
+
+  const contactPhone = settings?.contactPhone || "(11) 99999-9999";
+  const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
+  const contactAddress = settings?.contactAddress || "São Paulo - SP";
 
   return (
     <section id="contato" className="py-20 bg-gradient-to-br from-primary to-primary/80">
@@ -29,14 +35,16 @@ const CTASection = () => {
             <MessageCircle className="w-6 h-6" />
             Chamar no WhatsApp
           </Button>
-          <Button
-            variant="outline"
-            size="xl"
-            className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-          >
-            <Phone className="w-5 h-5" />
-            (11) 99999-9999
-          </Button>
+          <a href={`tel:${contactPhoneRaw}`}>
+            <Button
+              variant="outline"
+              size="xl"
+              className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground hover:text-primary"
+            >
+              <Phone className="w-5 h-5" />
+              {contactPhone}
+            </Button>
+          </a>
         </div>
 
         {/* Info Strip */}
@@ -44,10 +52,12 @@ const CTASection = () => {
           <div className="flex flex-wrap justify-center gap-8 text-primary-foreground/80">
             <div className="flex items-center gap-2">
               <Phone className="w-5 h-5" />
-              <span>(11) 99999-9999</span>
+              <a href={`tel:${contactPhoneRaw}`} className="hover:underline">
+                {contactPhone}
+              </a>
             </div>
             <div className="flex items-center gap-2">
-              <span>📍 São Paulo - SP</span>
+              <span>📍 {contactAddress}</span>
             </div>
             <div className="flex items-center gap-2">
               <span>✅ Garantia de 90 dias</span>

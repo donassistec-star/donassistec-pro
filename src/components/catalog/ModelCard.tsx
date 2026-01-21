@@ -1,8 +1,13 @@
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Monitor, Wrench, Package, MessageCircle, Star, ArrowRight } from "lucide-react";
+import { Monitor, Wrench, Package, MessageCircle, Star, ArrowRight, ShoppingCart, Play, Heart } from "lucide-react";
 import { PhoneModel, brands } from "@/data/models";
+import { useCart } from "@/contexts/CartContext";
+import { useFavorites } from "@/contexts/FavoritesContext";
+import { toast } from "sonner";
+import VideoPlayer from "@/components/video/VideoPlayer";
 
 interface ModelCardProps {
   model: PhoneModel;
@@ -10,7 +15,18 @@ interface ModelCardProps {
 }
 
 const ModelCard = ({ model, onContact }: ModelCardProps) => {
+  const navigate = useNavigate();
+  const { addItem, getItemCount } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const brand = brands.find((b) => b.id === model.brand);
+  const itemCount = getItemCount(model.id);
+  const favorite = isFavorite(model.id);
+
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleFavorite(model.id);
+    toast.success(favorite ? "Removido dos favoritos" : "Adicionado aos favoritos");
+  };
 
   const availabilityConfig = {
     in_stock: { label: "Em Estoque", className: "bg-[hsl(142_70%_45%)] text-primary-foreground" },
@@ -20,10 +36,19 @@ const ModelCard = ({ model, onContact }: ModelCardProps) => {
 
   const availability = availabilityConfig[model.availability];
 
+  const handleAddToCart = () => {
+    addItem(model, model.services);
+    toast.success(`${model.name} adicionado ao carrinho!`);
+  };
+
+  const handleViewDetails = () => {
+    navigate(`/modelo/${model.id}`);
+  };
+
   return (
     <Card className="group overflow-hidden border-border hover:border-primary/50 hover:shadow-lg transition-all duration-300">
       {/* Image */}
-      <div className="relative aspect-square bg-muted/30 overflow-hidden">
+      <div className="relative aspect-square bg-muted/30 overflow-hidden group/image">
         <img
           src={model.image}
           alt={model.name}
@@ -31,7 +56,7 @@ const ModelCard = ({ model, onContact }: ModelCardProps) => {
         />
         
         {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
           {model.premium && (
             <Badge className="bg-secondary text-secondary-foreground">
               <Star className="w-3 h-3 mr-1 fill-current" />
@@ -46,46 +71,119 @@ const ModelCard = ({ model, onContact }: ModelCardProps) => {
         </div>
 
         {/* Availability Badge */}
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 items-end">
           <Badge className={availability.className}>
             {availability.label}
           </Badge>
+          <button
+            onClick={handleToggleFavorite}
+            className="p-2 rounded-full bg-card/90 backdrop-blur-sm hover:bg-card transition-colors shadow-md"
+            aria-label={favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          >
+            <Heart
+              className={`w-5 h-5 transition-colors ${
+                favorite
+                  ? "fill-red-500 text-red-500"
+                  : "text-foreground hover:text-red-500"
+              }`}
+            />
+          </button>
         </div>
+
+        {/* Video Button Overlay */}
+        {(model.videoUrl || (model.videos && model.videos.length > 0)) && (
+          <div className="absolute bottom-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <VideoPlayer
+              videoUrl={model.videoUrl || model.videos![0].url}
+              title={`Tutorial ${model.name}`}
+              trigger={
+                <Button
+                  size="sm"
+                  className="bg-primary/90 hover:bg-primary text-primary-foreground shadow-lg backdrop-blur-sm"
+                >
+                  <Play className="w-4 h-4 mr-1 fill-current" />
+                  Vídeo
+                </Button>
+              }
+            />
+          </div>
+        )}
       </div>
 
       <CardContent className="p-4">
-        {/* Brand & Model Name */}
-        <div className="mb-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <span>{brand?.icon}</span>
-            <span>{brand?.name}</span>
+          {/* Brand & Model Name */}
+          <div className="mb-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+              {brand?.logo ? (
+                <img
+                  src={brand.logo}
+                  alt={brand.name}
+                  className="h-4 w-auto object-contain opacity-70"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                  }}
+                />
+              ) : (
+                brand?.icon && <span>{brand.icon}</span>
+              )}
+              <span className="font-medium">{brand?.name}</span>
+            </div>
+            <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">
+              {model.name}
+            </h3>
           </div>
-          <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">
-            {model.name}
-          </h3>
-        </div>
 
         {/* Services Available */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {model.services.reconstruction && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
-              <Monitor className="w-3 h-3 text-primary" />
-              Reconstrução
-            </div>
-          )}
-          {model.services.glassReplacement && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
-              <Wrench className="w-3 h-3 text-primary" />
-              Vidro
-            </div>
-          )}
-          {model.services.partsAvailable && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
-              <Package className="w-3 h-3 text-primary" />
-              Peças
-            </div>
+          {/* Usar serviços dinâmicos se disponíveis, senão usar sistema antigo */}
+          {(model as any).modelServices && (model as any).modelServices.length > 0 ? (
+            (model as any).modelServices
+              .filter((ms: any) => ms.available)
+              .slice(0, 3) // Mostrar no máximo 3 serviços no card
+              .map((ms: any) => (
+                <div
+                  key={ms.service_id}
+                  className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md"
+                  title={ms.service?.description || ms.service?.name}
+                >
+                  <Wrench className="w-3 h-3 text-primary" />
+                  {ms.service?.name || "Serviço"}
+                </div>
+              ))
+          ) : (
+            <>
+              {model.services?.reconstruction && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                  <Monitor className="w-3 h-3 text-primary" />
+                  Reconstrução
+                </div>
+              )}
+              {model.services?.glassReplacement && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                  <Wrench className="w-3 h-3 text-primary" />
+                  Vidro
+                </div>
+              )}
+              {model.services?.partsAvailable && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                  <Package className="w-3 h-3 text-primary" />
+                  Peças
+                </div>
+              )}
+            </>
           )}
         </div>
+
+        {/* Cart Badge */}
+        {itemCount > 0 && (
+          <div className="mb-2">
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+              <ShoppingCart className="w-3 h-3 mr-1" />
+              {itemCount} no carrinho
+            </Badge>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-2">
@@ -98,9 +196,22 @@ const ModelCard = ({ model, onContact }: ModelCardProps) => {
             <MessageCircle className="w-4 h-4 mr-1" />
             Orçamento
           </Button>
-          <Button size="sm" className="flex-1">
-            Detalhes
-            <ArrowRight className="w-4 h-4 ml-1" />
+          <Button 
+            size="sm" 
+            variant="secondary"
+            onClick={handleAddToCart}
+            disabled={model.availability === "out_of_stock"}
+          >
+            <ShoppingCart className="w-4 h-4 mr-1" />
+            Adicionar
+          </Button>
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={handleViewDetails}
+            className="px-3"
+          >
+            <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
       </CardContent>

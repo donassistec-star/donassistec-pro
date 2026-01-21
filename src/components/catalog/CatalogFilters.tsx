@@ -9,7 +9,8 @@ import {
   AccordionTrigger 
 } from "@/components/ui/accordion";
 import { X, Filter, RotateCcw } from "lucide-react";
-import { brands, serviceTypes, availabilityOptions } from "@/data/models";
+import { brands as staticBrands, serviceTypes, availabilityOptions } from "@/data/models";
+import { useBrands } from "@/hooks/useBrands";
 
 interface CatalogFiltersProps {
   selectedBrands: string[];
@@ -32,6 +33,9 @@ const CatalogFilters = ({
   onClearFilters,
   totalFilters,
 }: CatalogFiltersProps) => {
+  const { brands: apiBrands } = useBrands();
+  const brands = apiBrands.length > 0 ? apiBrands : staticBrands;
+
   return (
     <div className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-6">
@@ -74,10 +78,22 @@ const CatalogFilters = ({
                   />
                   <Label
                     htmlFor={`brand-${brand.id}`}
-                    className="flex items-center gap-2 text-sm cursor-pointer"
+                    className="flex items-center gap-2 text-sm cursor-pointer flex-1"
                   >
-                    <span>{brand.icon}</span>
-                    {brand.name}
+                    {brand.logo ? (
+                      <img
+                        src={brand.logo}
+                        alt={brand.name}
+                        className="h-4 w-auto object-contain opacity-70"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      brand.icon && <span className="text-base">{brand.icon}</span>
+                    )}
+                    <span className="font-medium">{brand.name}</span>
                   </Label>
                 </div>
               ))}

@@ -3,6 +3,15 @@ export interface PhoneModel {
   brand: string;
   name: string;
   image: string;
+  videoUrl?: string;
+  videoThumbnail?: string;
+  videos?: {
+    id: string;
+    title: string;
+    url: string;
+    thumbnail?: string;
+    duration?: string;
+  }[];
   services: {
     reconstruction: boolean;
     glassReplacement: boolean;
@@ -13,13 +22,51 @@ export interface PhoneModel {
   popular: boolean;
 }
 
-export const brands = [
-  { id: "apple", name: "Apple", icon: "🍎" },
-  { id: "samsung", name: "Samsung", icon: "📱" },
-  { id: "xiaomi", name: "Xiaomi", icon: "📲" },
-  { id: "motorola", name: "Motorola", icon: "📞" },
-  { id: "lg", name: "LG", icon: "📺" },
-  { id: "huawei", name: "Huawei", icon: "🌐" },
+export interface Brand {
+  id: string;
+  name: string;
+  icon?: string;
+  logo?: string;
+  color?: string;
+}
+
+export const brands: Brand[] = [
+  { 
+    id: "apple", 
+    name: "Apple", 
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@v10/icons/apple.svg",
+    color: "#000000"
+  },
+  { 
+    id: "samsung", 
+    name: "Samsung", 
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@v10/icons/samsung.svg",
+    color: "#1428A0"
+  },
+  { 
+    id: "xiaomi", 
+    name: "Xiaomi", 
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@v10/icons/xiaomi.svg",
+    color: "#FF6900"
+  },
+  { 
+    id: "motorola", 
+    name: "Motorola", 
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@v10/icons/motorola.svg",
+    color: "#5C92FA"
+  },
+  { 
+    id: "lg", 
+    name: "LG", 
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@v10/icons/lg.svg",
+    color: "#A50034"
+  },
+  { 
+    id: "huawei", 
+    name: "Huawei", 
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@v10/icons/huawei.svg",
+    color: "#FF0000"
+  },
 ];
 
 export const serviceTypes = [
@@ -41,6 +88,23 @@ export const phoneModels: PhoneModel[] = [
     brand: "apple",
     name: "iPhone 15 Pro Max",
     image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução de Tela iPhone 15 Pro Max",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80",
+        duration: "5:30",
+      },
+      {
+        id: "2",
+        title: "Troca de Vidro - Tutorial Completo",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80",
+        duration: "8:15",
+      },
+    ],
     services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
     availability: "in_stock",
     premium: true,
@@ -71,6 +135,16 @@ export const phoneModels: PhoneModel[] = [
     brand: "apple",
     name: "iPhone 14 Pro",
     image: "https://images.unsplash.com/photo-1678685888221-cda773a3dcdb?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução iPhone 14 Pro",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1678685888221-cda773a3dcdb?w=400&q=80",
+        duration: "4:45",
+      },
+    ],
     services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
     availability: "in_stock",
     premium: false,
@@ -81,6 +155,16 @@ export const phoneModels: PhoneModel[] = [
     brand: "apple",
     name: "iPhone 13 Pro Max",
     image: "https://images.unsplash.com/photo-1632633173522-47456de71b76?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução iPhone 13 Pro Max",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1632633173522-47456de71b76?w=400&q=80",
+        duration: "7:15",
+      },
+    ],
     services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
     availability: "in_stock",
     premium: false,
@@ -102,6 +186,16 @@ export const phoneModels: PhoneModel[] = [
     brand: "samsung",
     name: "Galaxy S24 Ultra",
     image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução de Tela Galaxy S24 Ultra",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80",
+        duration: "6:20",
+      },
+    ],
     services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
     availability: "in_stock",
     premium: true,
@@ -122,6 +216,16 @@ export const phoneModels: PhoneModel[] = [
     brand: "samsung",
     name: "Galaxy S23 Ultra",
     image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução Galaxy S23 Ultra",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80",
+        duration: "6:45",
+      },
+    ],
     services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
     availability: "in_stock",
     premium: false,
@@ -132,6 +236,16 @@ export const phoneModels: PhoneModel[] = [
     brand: "samsung",
     name: "Galaxy A54 5G",
     image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução Galaxy A54",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80",
+        duration: "5:20",
+      },
+    ],
     services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
     availability: "in_stock",
     premium: false,
@@ -163,6 +277,23 @@ export const phoneModels: PhoneModel[] = [
     brand: "xiaomi",
     name: "Redmi Note 13 Pro",
     image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução Redmi Note 13 Pro",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&q=80",
+        duration: "6:10",
+      },
+      {
+        id: "2",
+        title: "Troca de Vidro - Tutorial Completo",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&q=80",
+        duration: "8:30",
+      },
+    ],
     services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
     availability: "in_stock",
     premium: false,
@@ -184,6 +315,16 @@ export const phoneModels: PhoneModel[] = [
     brand: "motorola",
     name: "Edge 40 Pro",
     image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução Motorola Edge 40 Pro",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80",
+        duration: "5:45",
+      },
+    ],
     services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
     availability: "in_stock",
     premium: true,
@@ -194,6 +335,16 @@ export const phoneModels: PhoneModel[] = [
     brand: "motorola",
     name: "Moto G84 5G",
     image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução Moto G84 5G",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80",
+        duration: "5:00",
+      },
+    ],
     services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
     availability: "in_stock",
     premium: false,
@@ -249,6 +400,150 @@ export const phoneModels: PhoneModel[] = [
     services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
     availability: "in_stock",
     premium: false,
+    popular: false,
+  },
+  // Mais modelos Apple
+  {
+    id: "iphone-15",
+    brand: "apple",
+    name: "iPhone 15",
+    image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80",
+    services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
+    availability: "in_stock",
+    premium: false,
+    popular: true,
+  },
+  {
+    id: "iphone-14",
+    brand: "apple",
+    name: "iPhone 14",
+    image: "https://images.unsplash.com/photo-1678685888221-cda773a3dcdb?w=400&q=80",
+    services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
+    availability: "in_stock",
+    premium: false,
+    popular: true,
+  },
+  {
+    id: "iphone-13",
+    brand: "apple",
+    name: "iPhone 13",
+    image: "https://images.unsplash.com/photo-1632633173522-47456de71b76?w=400&q=80",
+    services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
+    availability: "in_stock",
+    premium: false,
+    popular: true,
+  },
+  // Mais modelos Samsung
+  {
+    id: "galaxy-s24",
+    brand: "samsung",
+    name: "Galaxy S24",
+    image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80",
+    services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
+    availability: "in_stock",
+    premium: true,
+    popular: true,
+  },
+  {
+    id: "galaxy-s23",
+    brand: "samsung",
+    name: "Galaxy S23",
+    image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80",
+    services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
+    availability: "in_stock",
+    premium: false,
+    popular: true,
+  },
+  {
+    id: "galaxy-a34",
+    brand: "samsung",
+    name: "Galaxy A34 5G",
+    image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80",
+    services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
+    availability: "in_stock",
+    premium: false,
+    popular: false,
+  },
+  {
+    id: "galaxy-z-flip-5",
+    brand: "samsung",
+    name: "Galaxy Z Flip 5",
+    image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80",
+    services: { reconstruction: false, glassReplacement: true, partsAvailable: true },
+    availability: "order",
+    premium: true,
+    popular: false,
+  },
+  // Mais modelos Xiaomi
+  {
+    id: "xiaomi-14",
+    brand: "xiaomi",
+    name: "Xiaomi 14",
+    image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução Xiaomi 14",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&q=80",
+        duration: "7:20",
+      },
+    ],
+    services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
+    availability: "in_stock",
+    premium: true,
+    popular: true,
+  },
+  {
+    id: "redmi-note-13",
+    brand: "xiaomi",
+    name: "Redmi Note 13",
+    image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&q=80",
+    services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
+    availability: "in_stock",
+    premium: false,
+    popular: true,
+  },
+  {
+    id: "poco-x6",
+    brand: "xiaomi",
+    name: "POCO X6",
+    image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&q=80",
+    services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
+    availability: "in_stock",
+    premium: false,
+    popular: false,
+  },
+  // Mais modelos Motorola
+  {
+    id: "moto-g73",
+    brand: "motorola",
+    name: "Moto G73 5G",
+    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videos: [
+      {
+        id: "1",
+        title: "Reconstrução Moto G73 5G",
+        url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80",
+        duration: "5:30",
+      },
+    ],
+    services: { reconstruction: true, glassReplacement: true, partsAvailable: true },
+    availability: "in_stock",
+    premium: false,
+    popular: true,
+  },
+  {
+    id: "moto-razr-40",
+    brand: "motorola",
+    name: "Moto Razr 40",
+    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80",
+    services: { reconstruction: false, glassReplacement: true, partsAvailable: true },
+    availability: "order",
+    premium: true,
     popular: false,
   },
 ];

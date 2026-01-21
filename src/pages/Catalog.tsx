@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,24 +9,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, LayoutGrid, List, Smartphone } from "lucide-react";
+import { Search, LayoutGrid, List, Smartphone, Video, GitCompare, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import CatalogFilters from "@/components/catalog/CatalogFilters";
 import MobileFiltersSheet from "@/components/catalog/MobileFiltersSheet";
 import ModelCard from "@/components/catalog/ModelCard";
-import { phoneModels, brands, PhoneModel } from "@/data/models";
+import VideoThumbnail from "@/components/video/VideoThumbnail";
+import ComparisonModal from "@/components/ComparisonModal";
+import SearchSuggestions from "@/components/catalog/SearchSuggestions";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import { Loading, LoadingSkeleton } from "@/components/ui/loading";
+import { useModels } from "@/hooks/useModels";
+import { useBrands } from "@/hooks/useBrands";
+import { PhoneModel, phoneModels, brands as staticBrands } from "@/data/models";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 type SortOption = "name" | "brand" | "popular";
 
 const Catalog = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [comparisonModels, setComparisonModels] = useState<string[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
 
   const totalFilters =
     selectedBrands.length + selectedServices.length + selectedAvailability.length;
@@ -70,17 +83,101 @@ const Catalog = () => {
     window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
   };
 
-  const filteredModels = useMemo(() => {
-    let result = [...phoneModels];
+  const handleToggleComparison = (modelId: string) => {
+    setComparisonModels((prev) => {
+      if (prev.includes(modelId)) {
+        return prev.filter((id) => id !== modelId);
+      }
+      if (prev.length >= 3) {
+        toast.error("Você pode comparar até 3 modelos por vez");
+        return prev;
+      }
+      return [...prev, modelId];
+    });
+  };
 
-    // Search filter
+  // Buscar dados da API com filtros
+  const { models: apiModels, loading: modelsLoading, error: modelsError } = useModels({
+    brand: selectedBrands.length > 0 ? selectedBrands : undefined,
+    service: selectedServices.length > 0 ? selectedServices : undefined,
+    availability: selectedAvailability.length > 0 ? selectedAvailability : undefined,
+    search: searchQuery || undefined,
+  });
+
+  const { brands: apiBrands, loading: brandsLoading } = useBrands();
+
+  // Usar dados da API ou fallback para dados estáticos
+  const useApi = !modelsError && apiModels.length > 0;
+  const models = useApi ? apiModels : phoneModels;
+  const brands = useApi && !brandsLoading ? apiBrands : staticBrands;
+
+  const filteredModels = useMemo(() => {
+    // Se estiver usando API e já tiver filtros aplicados, retornar diretamente
+    if (useApi && (selectedBrands.length > 0 || selectedServices.length > 0 || selectedAvailability.length > 0 || searchQuery)) {
+      // A API já aplica os filtros, então retornar os modelos da API
+      let result = [...apiModels];
+
+      // Aplicar ordenação localmente
+      if (sortBy === "name") {
+        result.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (sortBy === "brand") {
+        result.sort((a, b) => a.brand.localeCompare(b.brand));
+      } else if (sortBy === "popular") {
+        result.sort((a, b) => {
+          if (a.popular && !b.popular) return -1;
+          if (!a.popular && b.popular) return 1;
+          if (a.premium && !b.premium) return -1;
+          if (!a.premium && b.premium) return 1;
+          return 0;
+        });
+      }
+
+      return result;
+    }
+
+    // Fallback para filtros locais (dados estáticos)
+    let result = [...models];
+
+    // Advanced Search filter
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (model) =>
-          model.name.toLowerCase().includes(query) ||
-          brands.find((b) => b.id === model.brand)?.name.toLowerCase().includes(query)
-      );
+      const query = searchQuery.toLowerCase().trim();
+      const brand = brands.find((b) => b.name.toLowerCase().includes(query));
+      const brandId = brand?.id || "";
+      
+      result = result.filter((model) => {
+        // Search by model name
+        if (model.name.toLowerCase().includes(query)) return true;
+        
+        // Search by brand name
+        if (model.brand.toLowerCase().includes(query) || model.brand === brandId) return true;
+        
+        // Search by brand display name
+        const modelBrand = brands.find((b) => b.id === model.brand);
+        if (modelBrand?.name.toLowerCase().includes(query)) return true;
+        
+        // Search by service type
+        if (
+          (query.includes("reconstru") && model.services.reconstruction) ||
+          (query.includes("vidro") && model.services.glassReplacement) ||
+          (query.includes("peça") && model.services.partsAvailable) ||
+          (query.includes("tela") && (model.services.reconstruction || model.services.glassReplacement))
+        ) return true;
+        
+        // Search by availability
+        if (
+          (query.includes("estoque") && model.availability === "in_stock") ||
+          (query.includes("encomenda") && model.availability === "order") ||
+          (query.includes("disponível") && model.availability !== "out_of_stock")
+        ) return true;
+        
+        // Search by premium/popular
+        if (
+          (query.includes("premium") && model.premium) ||
+          (query.includes("popular") && model.popular)
+        ) return true;
+        
+        return false;
+      });
     }
 
     // Brand filter
@@ -123,13 +220,28 @@ const Catalog = () => {
     }
 
     return result;
-  }, [searchQuery, selectedBrands, selectedServices, selectedAvailability, sortBy]);
+  }, [useApi, modelsError, apiModels, models, brands, searchQuery, selectedBrands, selectedServices, selectedAvailability, sortBy]);
+
+  const comparisonModelsData = filteredModels.filter((model) =>
+    comparisonModels.includes(model.id)
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="pt-20">
+      <main id="main-content" className="pt-20">
+        {/* Breadcrumbs */}
+        <section className="bg-muted/30 py-4">
+          <div className="container mx-auto px-4">
+            <Breadcrumbs
+              items={[
+                { label: "Catálogo", href: "/catalogo" },
+              ]}
+            />
+          </div>
+        </section>
+
         {/* Page Header */}
         <section className="bg-foreground py-16">
           <div className="container mx-auto px-4">
@@ -148,6 +260,55 @@ const Catalog = () => {
             </div>
           </div>
         </section>
+
+        {/* Featured Videos Section */}
+        {filteredModels.length > 0 && filteredModels.some(m => m.videos && m.videos.length > 0) && (
+          <section className="py-12 bg-muted/30">
+            <div className="container mx-auto px-4">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
+                  <Video className="w-6 h-6 text-primary" />
+                  Vídeos Tutoriais em Destaque
+                </h2>
+                <p className="text-muted-foreground">
+                  Aprenda com nossos tutoriais de reparo e reconstrução
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredModels
+                  .filter((m) => m.videos && m.videos.length > 0)
+                  .slice(0, 6)
+                  .map((model) => {
+                    const brand = brands.find((b) => b.id === model.brand);
+                    return (
+                      model.videos?.[0] && (
+                        <div key={`${model.id}-${model.videos[0].id}`} className="relative">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                            {brand?.logo && (
+                              <img
+                                src={brand.logo}
+                                alt={brand.name}
+                                className="h-4 w-auto object-contain opacity-70"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = "none";
+                                }}
+                              />
+                            )}
+                            <span>{brand?.name}</span>
+                          </div>
+                          <div className="text-xs font-medium text-foreground mb-2">
+                            {model.name}
+                          </div>
+                          <VideoThumbnail video={model.videos[0]} />
+                        </div>
+                      )
+                    );
+                  })}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Catalog Content */}
         <section className="py-12">
@@ -189,10 +350,36 @@ const Catalog = () => {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
-                      placeholder="Buscar por modelo ou marca..."
+                      placeholder="Buscar por modelo, marca, serviço..."
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setShowSearchSuggestions(true);
+                      }}
+                      onFocus={() => setShowSearchSuggestions(true)}
+                      className="pl-10 pr-10"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery("");
+                          setShowSearchSuggestions(false);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xl leading-none w-5 h-5 flex items-center justify-center"
+                        aria-label="Limpar busca"
+                      >
+                        ×
+                      </button>
+                    )}
+                    <SearchSuggestions
+                      searchQuery={searchQuery}
+                      onSelectModel={(model) => {
+                        navigate(`/modelo/${model.id}`);
+                        setShowSearchSuggestions(false);
+                        setSearchQuery("");
+                      }}
+                      onClose={() => setShowSearchSuggestions(false)}
+                      isOpen={showSearchSuggestions}
                     />
                   </div>
 
@@ -229,16 +416,42 @@ const Catalog = () => {
                   </div>
                 </div>
 
-                {/* Results Count */}
-                <div className="flex items-center justify-between mb-6">
+                {/* Results Count & Comparison */}
+                <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
                   <p className="text-muted-foreground">
                     <span className="font-semibold text-foreground">{filteredModels.length}</span>{" "}
                     modelos encontrados
                   </p>
+                  {comparisonModels.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-sm">
+                        {comparisonModels.length} selecionado(s) para comparação
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowComparison(true)}
+                      >
+                        <GitCompare className="w-4 h-4 mr-2" />
+                        Comparar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setComparisonModels([])}
+                      >
+                        Limpar
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Models Grid */}
-                {filteredModels.length > 0 ? (
+                {modelsLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <LoadingSkeleton count={6} className="h-80" />
+                  </div>
+                ) : filteredModels.length > 0 ? (
                   <div
                     className={`grid gap-6 ${
                       viewMode === "grid"
@@ -247,11 +460,30 @@ const Catalog = () => {
                     }`}
                   >
                     {filteredModels.map((model) => (
-                      <ModelCard
-                        key={model.id}
-                        model={model}
-                        onContact={handleContact}
-                      />
+                      <div key={model.id} className="relative">
+                        <ModelCard
+                          model={model}
+                          onContact={handleContact}
+                        />
+                        {/* Comparison Checkbox */}
+                        <div className="absolute top-2 left-2 z-10">
+                          <button
+                            onClick={() => handleToggleComparison(model.id)}
+                            className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
+                              comparisonModels.includes(model.id)
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-card/90 text-foreground hover:bg-card"
+                            }`}
+                            title={
+                              comparisonModels.includes(model.id)
+                                ? "Remover da comparação"
+                                : "Adicionar à comparação"
+                            }
+                          >
+                            <GitCompare className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -278,6 +510,13 @@ const Catalog = () => {
 
       <Footer />
       <WhatsAppFloat />
+      
+      {/* Comparison Modal */}
+      <ComparisonModal
+        models={comparisonModelsData}
+        open={showComparison}
+        onOpenChange={setShowComparison}
+      />
     </div>
   );
 };
