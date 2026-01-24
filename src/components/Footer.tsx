@@ -44,12 +44,18 @@ const Footer = () => {
                 </div>
               )}
               <div>
-                <span className="text-xl font-bold text-card">
-                  {settings?.companyTradeName?.split(' ')[0] || 'Don'}
-                </span>
-                <span className="text-xl font-bold text-primary">
-                  {settings?.companyTradeName?.split(' ').slice(1).join(' ') || 'Assistec'}
-                </span>
+                {(() => {
+                  const name = settings?.companyTradeName || 'Don Assistec';
+                  const words = name.split(' ').filter(Boolean);
+                  const first = words[0] || 'Don';
+                  const rest = words.slice(1).join(' ');
+                  return (
+                    <>
+                      <span className="text-xl font-bold text-card">{first}</span>
+                      {rest ? <span className="text-xl font-bold text-primary"> {rest}</span> : null}
+                    </>
+                  );
+                })()}
               </div>
             </div>
             <p className="text-card/70 mb-4">
