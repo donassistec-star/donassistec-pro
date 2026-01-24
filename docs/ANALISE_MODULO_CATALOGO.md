@@ -224,12 +224,24 @@ Sempre aplicada no front (em `filteredModels`) sobre o resultado já vindo da AP
 
 ## 12. Checklist de manutenção
 
-- [ ] Trocar número fixo de WhatsApp em `handleContact` por configuração (settings).
-- [ ] Definir `onClick` das “Buscas populares” em `SearchSuggestions` ou remover se não for usado.
+- [x] Trocar número fixo de WhatsApp em `handleContact` por configuração (settings).
+- [x] Definir `onClick` das “Buscas populares” em `SearchSuggestions` (prop `onPopularSearchClick`).
 - [ ] Avaliar endpoint de sugestões ou `limit` para `SearchSuggestions` em cenários com muitos modelos.
-- [ ] Implementar layout “lista” para `viewMode === "list"` ou deixar apenas grid.
+- [x] Implementar layout “lista” para `viewMode === "list"` (ModelCard `variant="list"`).
 - [ ] Garantir que a API inclua e que o `modelsService` converta `modelServices` quando existir; remover `(model as any)` no `ModelCard`.
 - [ ] (Opcional) Contagem por marca nos filtros e/ou cache/refetch otimizado em `useModels`.
+
+---
+
+## 13. Revisão (jan 2025) — Catálogo e PM2
+
+### Catálogo
+- **SearchSuggestions**: prop `onPopularSearchClick?: (term: string) => void`; ao clicar em "Buscas populares" aplica o termo na busca. `useEffect` com deps `[searchQuery, phoneModels]`.
+- **Catalog**: passa `onPopularSearchClick` para `SearchSuggestions`.
+
+### PM2 e produção
+- **Script** `start:prod`: `serve -s dist -l 8200` (pacote `serve`). Serve o build na porta 8200.
+- **ecosystem.production.config.cjs**: frontend com `args: "run start:prod"`. Uso: `npm run build` e `pm2 start ecosystem.production.config.cjs`. Ajustar `CORS_ORIGIN` no backend conforme a URL do frontend.
 
 ---
 

@@ -480,6 +480,10 @@ const Catalog = () => {
                       }}
                       onClose={() => setShowSearchSuggestions(false)}
                       isOpen={showSearchSuggestions}
+                      onPopularSearchClick={(term) => {
+                        setSearchInput(term);
+                        setSearchQuery(term);
+                      }}
                     />
                   </div>
 

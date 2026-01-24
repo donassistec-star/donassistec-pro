@@ -12,9 +12,11 @@ interface SearchSuggestionsProps {
   onSelectModel: (model: PhoneModel) => void;
   onClose: () => void;
   isOpen: boolean;
+  /** Ao clicar em uma "Busca popular"; define o termo no campo e aplica a busca. */
+  onPopularSearchClick?: (term: string) => void;
 }
 
-const SearchSuggestions = ({ searchQuery, onSelectModel, onClose, isOpen }: SearchSuggestionsProps) => {
+const SearchSuggestions = ({ searchQuery, onSelectModel, onClose, isOpen, onPopularSearchClick }: SearchSuggestionsProps) => {
   const [suggestions, setSuggestions] = useState<PhoneModel[]>([]);
   const [popularSearches, setPopularSearches] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -64,7 +66,7 @@ const SearchSuggestions = ({ searchQuery, onSelectModel, onClose, isOpen }: Sear
       setSuggestions(filtered);
       setPopularSearches([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, phoneModels]);
 
   if (!isOpen) return null;
 
@@ -192,9 +194,7 @@ const SearchSuggestions = ({ searchQuery, onSelectModel, onClose, isOpen }: Sear
                     key={index}
                     variant="secondary"
                     className="cursor-pointer hover:bg-secondary/80"
-                    onClick={() => {
-                      // This would trigger a search - you'd need to pass a callback
-                    }}
+                    onClick={() => onPopularSearchClick?.(search)}
                   >
                     {search}
                   </Badge>
