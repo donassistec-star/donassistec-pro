@@ -63,7 +63,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { utils, writeFile } from "xlsx";
+import ExcelJS from "exceljs";
 import { formatDate } from "@/utils/format";
 
 const ModelsAdmin = () => {
@@ -249,7 +249,7 @@ const ModelsAdmin = () => {
   };
 
   // Exportar modelos
-  const handleExport = (format: "excel" | "csv") => {
+  const handleExport = async (format: "excel" | "csv") => {
     const dataToExport = filteredModels.map((model) => ({
       ID: model.id,
       Nome: model.name,
@@ -265,10 +265,18 @@ const ModelsAdmin = () => {
     }));
 
     if (format === "excel") {
-      const ws = utils.json_to_sheet(dataToExport);
-      const wb = utils.book_new();
-      utils.book_append_sheet(wb, ws, "Modelos");
-      writeFile(wb, `modelos_${new Date().toISOString().split("T")[0]}.xlsx`);
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Modelos");
+      const keys = Object.keys(dataToExport[0] || {});
+      sheet.addRow(keys);
+      dataToExport.forEach((row) => sheet.addRow(keys.map((k) => (row as Record<string, unknown>)[k])));
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `modelos_${new Date().toISOString().split("T")[0]}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(link.href);
       toast.success("Modelos exportados para Excel!");
     } else {
       // CSV

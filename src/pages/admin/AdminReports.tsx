@@ -30,6 +30,8 @@ import { useBrands } from "@/hooks/useBrands";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/format";
+import { jsPDF } from "jspdf";
+import ExcelJS from "exceljs";
 
 interface ReportStats {
   totalOrders: number;
@@ -141,7 +143,7 @@ const AdminReports = () => {
     return formatCurrency(price);
   };
 
-  const handleExportReport = (format: "txt" | "xlsx" | "pdf") => {
+  const handleExportReport = async (format: "txt" | "xlsx" | "pdf") => {
     const reportData = {
       data: new Date().toLocaleString("pt-BR"),
       totalOrders: stats.totalOrders,
@@ -196,10 +198,8 @@ ${reportData.topBrands.map((brand, index) => `${index + 1}. ${brand.name} - ${br
       URL.revokeObjectURL(url);
       toast.success("Relatório TXT exportado com sucesso!");
     } else if (format === "xlsx") {
-      // Criar workbook
-      const workbook = XLSX.utils.book_new();
+      const workbook = new ExcelJS.Workbook();
 
-      // Dados gerais
       const generalData = [
         ["Relatório DonAssistec", ""],
         ["Data", reportData.data],
@@ -215,7 +215,6 @@ ${reportData.topBrands.map((brand, index) => `${index + 1}. ${brand.name} - ${br
         ["Ticket Médio", formatPrice(reportData.averageOrderValue)],
       ];
 
-      // Dados de status
       const statusData = [
         ["PEDIDOS POR STATUS", ""],
         ["Pendentes", reportData.ordersByStatus.pending],
@@ -224,7 +223,6 @@ ${reportData.topBrands.map((brand, index) => `${index + 1}. ${brand.name} - ${br
         ["Cancelados", reportData.ordersByStatus.cancelled],
       ];
 
-      // Top marcas
       const brandsData = [
         ["TOP 5 MARCAS", ""],
         ["Posição", "Marca", "Quantidade de Modelos"],
@@ -235,13 +233,19 @@ ${reportData.topBrands.map((brand, index) => `${index + 1}. ${brand.name} - ${br
         ]),
       ];
 
-      const ws1 = XLSX.utils.aoa_to_sheet([...generalData, ...statusData]);
-      const ws2 = XLSX.utils.aoa_to_sheet(brandsData);
+      const ws1 = workbook.addWorksheet("Relatório Geral");
+      [...generalData, ...statusData].forEach((row) => ws1.addRow(row));
 
-      XLSX.utils.book_append_sheet(workbook, ws1, "Relatório Geral");
-      XLSX.utils.book_append_sheet(workbook, ws2, "Top Marcas");
+      const ws2 = workbook.addWorksheet("Top Marcas");
+      brandsData.forEach((row) => ws2.addRow(row));
 
-      XLSX.writeFile(workbook, `${fileName}.xlsx`);
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${fileName}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(link.href);
       toast.success("Relatório Excel exportado com sucesso!");
     } else if (format === "pdf") {
       const doc = new jsPDF();
