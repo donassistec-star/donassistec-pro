@@ -24,6 +24,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { LoadingSkeleton } from "@/components/ui/loading";
 import { useModels } from "@/hooks/useModels";
 import { useBrands } from "@/hooks/useBrands";
+import { useSettings } from "@/hooks/useSettings";
 import { PhoneModel, phoneModels, brands as staticBrands } from "@/data/models";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -35,6 +36,7 @@ type SortOption = "name" | "brand" | "popular" | "stock_first";
 
 const Catalog = () => {
   const navigate = useNavigate();
+  const { settings } = useSettings();
   const [sp, setSp] = useSearchParams();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -131,7 +133,8 @@ const Catalog = () => {
     const message = encodeURIComponent(
       `Olá! Sou lojista e gostaria de um orçamento para o modelo ${model.name} (${brand?.name}). Tenho interesse em saber mais sobre os serviços disponíveis.`
     );
-    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
+    const wa = settings?.contactWhatsApp || settings?.contactPhoneRaw || "5511999999999";
+    window.open(`https://wa.me/${wa}?text=${message}`, "_blank");
   };
 
   const handleToggleComparison = (modelId: string) => {
@@ -564,6 +567,7 @@ const Catalog = () => {
                           model={model}
                           onContact={handleContact}
                           brands={brands}
+                          variant={viewMode}
                         />
                         {/* Comparison Checkbox */}
                         <div className="absolute top-2 left-2 z-10">
