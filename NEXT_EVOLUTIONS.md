@@ -9,7 +9,7 @@
 - Sistema de pedidos com status
 - Autenticação JWT com RBAC
 - Configurações do sistema (MySQL)
-- Exportação de relatórios (.txt)
+- Exportação de relatórios (TXT, Excel, PDF) e de modelos (Excel, CSV)
 - Busca e filtros em listagens
 
 ---
@@ -68,13 +68,11 @@
 ### 🟡 Média Prioridade
 
 #### 4. **Exportação em Múltiplos Formatos**
-**Situação Atual:** Apenas .txt
+**Situação Atual:** TXT, Excel (exceljs) e PDF (jspdf) em Relatórios e Modelos. CSV em Modelos (download direto).
 
-**Implementação:**
-- Excel (.xlsx) usando biblioteca `xlsx`
-- PDF usando `pdfkit` ou `puppeteer`
-- CSV para análise de dados
-- Botões de exportação em relatórios
+**Pendente / Melhorias:**
+- CSV nos Relatórios; mais abas ou formatos em Excel
+- (Opcional) `pdfkit` ou `puppeteer` no backend para PDFs mais elaborados
 
 **Benefícios:**
 - Compatibilidade com ferramentas
