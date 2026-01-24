@@ -11,6 +11,20 @@ import {
 import { X, Filter, RotateCcw, Star, Flame } from "lucide-react";
 import { brands as staticBrands, serviceTypes, availabilityOptions } from "@/data/models";
 import { useBrands } from "@/hooks/useBrands";
+import { useServices } from "@/hooks/useServices";
+
+/** Ícones para serviços da API (ids: service_reconstruction, service_glass, etc.) */
+const SERVICE_ICON: Record<string, string> = {
+  service_reconstruction: "🔧",
+  service_glass: "🪟",
+  service_parts: "📦",
+  service_battery: "🔋",
+  service_screen: "📱",
+  service_camera: "📷",
+  service_charging: "🔌",
+  service_software: "💻",
+};
+const DEFAULT_SERVICE_ICON = "🔧";
 
 interface CatalogFiltersProps {
   selectedBrands: string[];
@@ -42,7 +56,18 @@ const CatalogFilters = ({
   totalFilters,
 }: CatalogFiltersProps) => {
   const { brands: apiBrands } = useBrands();
+  const { services: apiServices } = useServices(true);
   const brands = apiBrands.length > 0 ? apiBrands : staticBrands;
+
+  // Lista de serviços: da API (dinâmicos) ou estáticos; formato { id, name, icon }
+  const serviceTypesForFilter =
+    apiServices.length > 0
+      ? apiServices.map((s) => ({
+          id: s.id,
+          name: s.name,
+          icon: SERVICE_ICON[s.id] ?? DEFAULT_SERVICE_ICON,
+        }))
+      : serviceTypes;
 
   return (
     <div className="bg-card rounded-xl border border-border p-6">
@@ -116,7 +141,7 @@ const CatalogFilters = ({
           </AccordionTrigger>
           <AccordionContent className="pt-2">
             <div className="space-y-3">
-              {serviceTypes.map((service) => (
+              {serviceTypesForFilter.map((service) => (
                 <div key={service.id} className="flex items-center gap-3">
                   <Checkbox
                     id={`service-${service.id}`}
@@ -216,7 +241,7 @@ const CatalogFilters = ({
               );
             })}
             {selectedServices.map((serviceId) => {
-              const service = serviceTypes.find((s) => s.id === serviceId);
+              const service = serviceTypesForFilter.find((s) => s.id === serviceId);
               return (
                 <Badge
                   key={serviceId}

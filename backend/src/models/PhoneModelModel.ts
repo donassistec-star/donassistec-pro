@@ -1,6 +1,7 @@
 import pool from "../config/database";
 import { PhoneModel, ModelService, ModelVideo } from "../types";
 import mysql2 from "mysql2";
+import ServiceModel from "./ServiceModel";
 
 class PhoneModelModel {
   async findAll(): Promise<PhoneModel[]> {
@@ -87,26 +88,74 @@ class PhoneModelModel {
       values.push(filters.popular);
     }
 
+    // Normalizar ids de serviço (API: service_reconstruction, estático: reconstruction) e montar listas para NEW/OLD
+    const serviceIdsForSubquery: string[] = [];
+    const legacyColumns: string[] = [];
     if (filters.services && filters.services.length > 0) {
-      const serviceConditions: string[] = [];
-      if (filters.services.includes("reconstruction")) {
-        serviceConditions.push("ms.reconstruction = TRUE");
-      }
-      if (filters.services.includes("glassReplacement")) {
-        serviceConditions.push("ms.glass_replacement = TRUE");
-      }
-      if (filters.services.includes("partsAvailable")) {
-        serviceConditions.push("ms.parts_available = TRUE");
-      }
-      if (serviceConditions.length > 0) {
-        query += ` AND (${serviceConditions.join(" OR ")})`;
+      for (const s of filters.services) {
+        if (s === "reconstruction" || s === "service_reconstruction") {
+          serviceIdsForSubquery.push("service_reconstruction");
+          legacyColumns.push("reconstruction");
+        } else if (s === "glassReplacement" || s === "service_glass") {
+          serviceIdsForSubquery.push("service_glass");
+          legacyColumns.push("glass_replacement");
+        } else if (s === "partsAvailable" || s === "service_parts") {
+          serviceIdsForSubquery.push("service_parts");
+          legacyColumns.push("parts_available");
+        } else if (typeof s === "string" && s.startsWith("service_")) {
+          serviceIdsForSubquery.push(s);
+        }
       }
     }
 
+    const serviceConditionNew =
+      serviceIdsForSubquery.length > 0
+        ? ` AND (pm.id IN (SELECT model_id FROM model_services WHERE service_id IN (${serviceIdsForSubquery.map(() => "?").join(",")}) AND available = TRUE))`
+        : "";
+    const serviceConditionOld =
+      legacyColumns.length > 0
+        ? ` AND (${legacyColumns.map((c) => `ms.${c} = TRUE`).join(" OR ")})`
+        : "";
+
+    query += serviceConditionNew;
+    values.push(...serviceIdsForSubquery);
     query += ` GROUP BY pm.id ORDER BY pm.popular DESC, pm.premium DESC, pm.name ASC`;
 
-    const [rows] = await pool.execute<mysql2.RowDataPacket[]>(query, values);
-    return this.mapRowsToModels(rows);
+    try {
+      const [rows] = await pool.execute<mysql2.RowDataPacket[]>(query, values);
+      return this.mapRowsToModels(rows);
+    } catch (err: any) {
+      const useLegacy =
+        serviceConditionOld &&
+        (err?.code === "ER_BAD_FIELD_ERROR" || err?.message?.includes("service_id") || err?.message?.includes("Unknown column"));
+      if (useLegacy) {
+        const baseQuery = `SELECT pm.*, b.name as brand_name, b.logo_url as brand_logo_url, b.icon_name as brand_icon_name
+                 FROM phone_models pm
+                 LEFT JOIN brands b ON pm.brand_id = b.id
+                 LEFT JOIN model_services ms ON pm.id = ms.model_id
+                 WHERE 1=1`;
+        const baseValues: any[] = [];
+        if (filters.brands?.length) {
+          baseValues.push(...filters.brands);
+        }
+        if (filters.availability?.length) {
+          baseValues.push(...filters.availability);
+        }
+        if (filters.premium !== undefined) baseValues.push(filters.premium);
+        if (filters.popular !== undefined) baseValues.push(filters.popular);
+        const q2 =
+          baseQuery +
+          (filters.brands?.length ? ` AND pm.brand_id IN (${filters.brands!.map(() => "?").join(",")})` : "") +
+          (filters.availability?.length ? ` AND pm.availability IN (${filters.availability!.map(() => "?").join(",")})` : "") +
+          (filters.premium !== undefined ? " AND pm.premium = ?" : "") +
+          (filters.popular !== undefined ? " AND pm.popular = ?" : "") +
+          serviceConditionOld +
+          " GROUP BY pm.id ORDER BY pm.popular DESC, pm.premium DESC, pm.name ASC";
+        const [rows2] = await pool.execute<mysql2.RowDataPacket[]>(q2, baseValues);
+        return this.mapRowsToModels(rows2);
+      }
+      throw err;
+    }
   }
 
   async getServices(modelId: string): Promise<ModelService | null> {
@@ -220,16 +269,26 @@ class PhoneModelModel {
           : undefined,
       };
 
-      // Buscar serviços e vídeos
-      const [services, videos] = await Promise.all([
-        this.getServices(model.id),
-        this.getVideos(model.id),
-      ]);
-
-      if (services) {
-        model.services = services;
+      // Serviços: tentar dinâmicos (model_services.service_id) ou legado (reconstruction, glass_replacement, parts_available)
+      let modelServices: any[] = [];
+      try {
+        modelServices = await ServiceModel.getModelServices(model.id);
+      } catch {
+        modelServices = [];
+      }
+      if (modelServices.length > 0) {
+        model.modelServices = modelServices;
+        model.services = {
+          reconstruction: modelServices.some((ms: any) => ms.service_id === "service_reconstruction" && ms.available),
+          glass_replacement: modelServices.some((ms: any) => ms.service_id === "service_glass" && ms.available),
+          parts_available: modelServices.some((ms: any) => ms.service_id === "service_parts" && ms.available),
+        };
+      } else {
+        const services = await this.getServices(model.id);
+        if (services) model.services = services;
       }
 
+      const videos = await this.getVideos(model.id);
       if (videos.length > 0) {
         model.videos = videos;
       }

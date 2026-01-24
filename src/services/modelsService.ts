@@ -31,6 +31,13 @@ export interface ApiPhoneModel {
     duration?: string;
     video_order: number;
   }[];
+  /** Serviços dinâmicos (model_services com service_id). Se existir, prevalece sobre services. */
+  modelServices?: {
+    service_id: string;
+    price: number;
+    available: boolean;
+    service?: { id: string; name: string; description?: string; active?: boolean };
+  }[];
 }
 
 export interface ApiBrand {
@@ -49,7 +56,17 @@ interface ApiResponse<T> {
 
 // Converter modelo da API para formato do frontend
 const convertApiModelToFrontend = (apiModel: ApiPhoneModel): PhoneModel => {
-  return {
+  const ms = (apiModel as any).modelServices;
+  const servicesFromModelServices =
+    ms && ms.length > 0
+      ? {
+          reconstruction: ms.some((m: any) => m.service_id === "service_reconstruction" && m.available),
+          glassReplacement: ms.some((m: any) => m.service_id === "service_glass" && m.available),
+          partsAvailable: ms.some((m: any) => m.service_id === "service_parts" && m.available),
+        }
+      : null;
+
+  const result: PhoneModel & { modelServices?: any[] } = {
     id: apiModel.id,
     brand: apiModel.brand_id,
     name: apiModel.name,
@@ -62,7 +79,7 @@ const convertApiModelToFrontend = (apiModel: ApiPhoneModel): PhoneModel => {
       thumbnail: v.thumbnail_url,
       duration: v.duration,
     })),
-    services: {
+    services: servicesFromModelServices ?? {
       reconstruction: apiModel.services?.reconstruction || false,
       glassReplacement: apiModel.services?.glass_replacement || false,
       partsAvailable: apiModel.services?.parts_available || false,
@@ -71,6 +88,8 @@ const convertApiModelToFrontend = (apiModel: ApiPhoneModel): PhoneModel => {
     premium: apiModel.premium,
     popular: apiModel.popular,
   };
+  if (ms && ms.length > 0) result.modelServices = ms;
+  return result;
 };
 
 // Converter marca da API para formato do frontend

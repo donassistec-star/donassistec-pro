@@ -250,13 +250,19 @@ const Catalog = () => {
       result = result.filter((model) => selectedBrands.includes(model.brand));
     }
 
-    // Service filter
+    // Service filter (suporta ids estáticos e da API: service_reconstruction, etc.)
     if (selectedServices.length > 0) {
       result = result.filter((model) => {
+        const dyn = (model as any).modelServices;
         return selectedServices.some((service) => {
-          if (service === "reconstruction") return model.services.reconstruction;
-          if (service === "glassReplacement") return model.services.glassReplacement;
-          if (service === "partsAvailable") return model.services.partsAvailable;
+          if (service === "reconstruction" || service === "service_reconstruction")
+            return model.services?.reconstruction || dyn?.some((m: any) => m.service_id === "service_reconstruction" && m.available);
+          if (service === "glassReplacement" || service === "service_glass")
+            return model.services?.glassReplacement || dyn?.some((m: any) => m.service_id === "service_glass" && m.available);
+          if (service === "partsAvailable" || service === "service_parts")
+            return model.services?.partsAvailable || dyn?.some((m: any) => m.service_id === "service_parts" && m.available);
+          if (typeof service === "string" && service.startsWith("service_"))
+            return dyn?.some((m: any) => m.service_id === service && m.available);
           return false;
         });
       });

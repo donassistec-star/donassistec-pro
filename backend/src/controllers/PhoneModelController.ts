@@ -44,16 +44,21 @@ class PhoneModelController {
             models = models.filter((m: any) => Boolean(m.popular) === filters.popular);
           }
           if (filters.services?.length) {
-            models = models.filter((m: any) => {
-              const s = m.services;
-              if (!s) return false;
-              return filters.services.some((sv: string) => {
-                if (sv === "reconstruction") return s.reconstruction;
-                if (sv === "glassReplacement") return s.glass_replacement;
-                if (sv === "partsAvailable") return s.parts_available;
+            models = models.filter((m: any) =>
+              filters.services.some((sv: string) => {
+                const legacy = m.services;
+                const dyn = m.modelServices;
+                if (sv === "reconstruction" || sv === "service_reconstruction")
+                  return legacy?.reconstruction || dyn?.some((ms: any) => ms.service_id === "service_reconstruction" && ms.available);
+                if (sv === "glassReplacement" || sv === "service_glass")
+                  return legacy?.glass_replacement || dyn?.some((ms: any) => ms.service_id === "service_glass" && ms.available);
+                if (sv === "partsAvailable" || sv === "service_parts")
+                  return legacy?.parts_available || dyn?.some((ms: any) => ms.service_id === "service_parts" && ms.available);
+                if (typeof sv === "string" && sv.startsWith("service_"))
+                  return dyn?.some((ms: any) => ms.service_id === sv && ms.available);
                 return false;
-              });
-            });
+              })
+            );
           }
         } else {
           models = await PhoneModelModel.filter(filters);
