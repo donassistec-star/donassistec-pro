@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Monitor, Wrench, Package, MessageCircle, Star, ArrowRight, ShoppingCart, Play, Heart } from "lucide-react";
-import { PhoneModel, brands } from "@/data/models";
+import { PhoneModel, Brand, brands as defaultBrands } from "@/data/models";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { toast } from "sonner";
@@ -12,9 +12,11 @@ import VideoPlayer from "@/components/video/VideoPlayer";
 interface ModelCardProps {
   model: PhoneModel;
   onContact: (model: PhoneModel) => void;
+  /** Marcas (da API ou estáticas). Se não informado, usa marcas estáticas. */
+  brands?: Brand[];
 }
 
-const ModelCard = ({ model, onContact }: ModelCardProps) => {
+const ModelCard = ({ model, onContact, brands = defaultBrands }: ModelCardProps) => {
   const navigate = useNavigate();
   const { addItem, getItemCount } = useCart();
   const { toggleFavorite, isFavorite } = useFavorites();
@@ -52,6 +54,7 @@ const ModelCard = ({ model, onContact }: ModelCardProps) => {
         <img
           src={model.image}
           alt={model.name}
+          loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         

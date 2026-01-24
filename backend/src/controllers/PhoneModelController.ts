@@ -18,39 +18,48 @@ class PhoneModelController {
       // Se houver filtros ou busca, usar método filter
       if (search || brand || availability || premium || popular || service) {
         const filters: any = {};
+        if (brand) filters.brands = Array.isArray(brand) ? brand : [brand];
+        if (availability) {
+          filters.availability = Array.isArray(availability) ? availability : [availability];
+        }
+        if (premium !== undefined) filters.premium = premium === "true" || premium === "1";
+        if (popular !== undefined) filters.popular = popular === "true" || popular === "1";
+        if (service) filters.services = Array.isArray(service) ? service : [service];
+
+        let models: any[];
 
         if (search && typeof search === "string") {
-          const models = await PhoneModelModel.search(search);
-          const response: ApiResponse<typeof models> = {
-            success: true,
-            data: models,
-          };
-          return res.json(response);
+          models = await PhoneModelModel.search(search);
+          // Aplicar os demais filtros em cima do resultado da busca
+          if (filters.brands?.length) {
+            models = models.filter((m: any) => filters.brands.includes(m.brand_id));
+          }
+          if (filters.availability?.length) {
+            models = models.filter((m: any) => filters.availability.includes(m.availability));
+          }
+          if (filters.premium !== undefined) {
+            models = models.filter((m: any) => Boolean(m.premium) === filters.premium);
+          }
+          if (filters.popular !== undefined) {
+            models = models.filter((m: any) => Boolean(m.popular) === filters.popular);
+          }
+          if (filters.services?.length) {
+            models = models.filter((m: any) => {
+              const s = m.services;
+              if (!s) return false;
+              return filters.services.some((sv: string) => {
+                if (sv === "reconstruction") return s.reconstruction;
+                if (sv === "glassReplacement") return s.glass_replacement;
+                if (sv === "partsAvailable") return s.parts_available;
+                return false;
+              });
+            });
+          }
+        } else {
+          models = await PhoneModelModel.filter(filters);
         }
 
-        if (brand) {
-          filters.brands = Array.isArray(brand) ? brand : [brand];
-        }
-        if (availability) {
-          filters.availability = Array.isArray(availability)
-            ? availability
-            : [availability];
-        }
-        if (premium !== undefined) {
-          filters.premium = premium === "true" || premium === "1";
-        }
-        if (popular !== undefined) {
-          filters.popular = popular === "true" || popular === "1";
-        }
-        if (service) {
-          filters.services = Array.isArray(service) ? service : [service];
-        }
-
-        const models = await PhoneModelModel.filter(filters);
-        const response: ApiResponse<typeof models> = {
-          success: true,
-          data: models,
-        };
+        const response: ApiResponse<typeof models> = { success: true, data: models };
         return res.json(response);
       }
 

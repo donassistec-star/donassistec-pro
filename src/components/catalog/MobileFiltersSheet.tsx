@@ -13,9 +13,13 @@ interface MobileFiltersSheetProps {
   selectedBrands: string[];
   selectedServices: string[];
   selectedAvailability: string[];
+  selectedPremium: boolean;
+  selectedPopular: boolean;
   onBrandChange: (brandId: string) => void;
   onServiceChange: (serviceId: string) => void;
   onAvailabilityChange: (availabilityId: string) => void;
+  onPremiumChange: (v: boolean) => void;
+  onPopularChange: (v: boolean) => void;
   onClearFilters: () => void;
   totalFilters: number;
 }
@@ -24,9 +28,13 @@ const MobileFiltersSheet = ({
   selectedBrands,
   selectedServices,
   selectedAvailability,
+  selectedPremium,
+  selectedPopular,
   onBrandChange,
   onServiceChange,
   onAvailabilityChange,
+  onPremiumChange,
+  onPopularChange,
   onClearFilters,
   totalFilters,
 }: MobileFiltersSheetProps) => {
@@ -52,9 +60,13 @@ const MobileFiltersSheet = ({
             selectedBrands={selectedBrands}
             selectedServices={selectedServices}
             selectedAvailability={selectedAvailability}
+            selectedPremium={selectedPremium}
+            selectedPopular={selectedPopular}
             onBrandChange={onBrandChange}
             onServiceChange={onServiceChange}
             onAvailabilityChange={onAvailabilityChange}
+            onPremiumChange={onPremiumChange}
+            onPopularChange={onPopularChange}
             onClearFilters={onClearFilters}
             totalFilters={totalFilters}
           />

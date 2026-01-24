@@ -116,6 +116,7 @@ const Favorites = () => {
                   key={model.id}
                   model={model}
                   onContact={handleContact}
+                  brands={brands}
                 />
               ))}
             </div>

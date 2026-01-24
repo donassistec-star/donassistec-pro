@@ -8,7 +8,7 @@ import {
   AccordionItem, 
   AccordionTrigger 
 } from "@/components/ui/accordion";
-import { X, Filter, RotateCcw } from "lucide-react";
+import { X, Filter, RotateCcw, Star, Flame } from "lucide-react";
 import { brands as staticBrands, serviceTypes, availabilityOptions } from "@/data/models";
 import { useBrands } from "@/hooks/useBrands";
 
@@ -16,9 +16,13 @@ interface CatalogFiltersProps {
   selectedBrands: string[];
   selectedServices: string[];
   selectedAvailability: string[];
+  selectedPremium: boolean;
+  selectedPopular: boolean;
   onBrandChange: (brandId: string) => void;
   onServiceChange: (serviceId: string) => void;
   onAvailabilityChange: (availabilityId: string) => void;
+  onPremiumChange: (v: boolean) => void;
+  onPopularChange: (v: boolean) => void;
   onClearFilters: () => void;
   totalFilters: number;
 }
@@ -27,9 +31,13 @@ const CatalogFilters = ({
   selectedBrands,
   selectedServices,
   selectedAvailability,
+  selectedPremium,
+  selectedPopular,
   onBrandChange,
   onServiceChange,
   onAvailabilityChange,
+  onPremiumChange,
+  onPopularChange,
   onClearFilters,
   totalFilters,
 }: CatalogFiltersProps) => {
@@ -61,7 +69,7 @@ const CatalogFilters = ({
         )}
       </div>
 
-      <Accordion type="multiple" defaultValue={["brands", "services", "availability"]} className="space-y-2">
+      <Accordion type="multiple" defaultValue={["brands", "services", "availability", "highlights"]} className="space-y-2">
         {/* Brands Filter */}
         <AccordionItem value="brands" className="border-none">
           <AccordionTrigger className="text-sm font-medium text-foreground py-3 hover:no-underline">
@@ -153,6 +161,39 @@ const CatalogFilters = ({
             </div>
           </AccordionContent>
         </AccordionItem>
+
+        {/* Destaques: Premium e Popular */}
+        <AccordionItem value="highlights" className="border-none">
+          <AccordionTrigger className="text-sm font-medium text-foreground py-3 hover:no-underline">
+            Destaques
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="filter-premium"
+                  checked={selectedPremium}
+                  onCheckedChange={(c) => onPremiumChange(c === true)}
+                />
+                <Label htmlFor="filter-premium" className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  Premium
+                </Label>
+              </div>
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="filter-popular"
+                  checked={selectedPopular}
+                  onCheckedChange={(c) => onPopularChange(c === true)}
+                />
+                <Label htmlFor="filter-popular" className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  Popular
+                </Label>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
       </Accordion>
 
       {/* Active Filters Tags */}
@@ -202,6 +243,26 @@ const CatalogFilters = ({
                 </Badge>
               );
             })}
+            {selectedPremium && (
+              <Badge
+                variant="outline"
+                className="text-xs cursor-pointer hover:bg-destructive/10"
+                onClick={() => onPremiumChange(false)}
+              >
+                Premium
+                <X className="w-3 h-3 ml-1" />
+              </Badge>
+            )}
+            {selectedPopular && (
+              <Badge
+                variant="outline"
+                className="text-xs cursor-pointer hover:bg-destructive/10"
+                onClick={() => onPopularChange(false)}
+              >
+                Popular
+                <X className="w-3 h-3 ml-1" />
+              </Badge>
+            )}
           </div>
         </div>
       )}

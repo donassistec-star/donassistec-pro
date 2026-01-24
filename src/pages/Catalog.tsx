@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, LayoutGrid, List, Smartphone, Video, GitCompare, AlertCircle } from "lucide-react";
+import { Search, LayoutGrid, List, Smartphone, Video, GitCompare } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -20,29 +21,72 @@ import VideoThumbnail from "@/components/video/VideoThumbnail";
 import ComparisonModal from "@/components/ComparisonModal";
 import SearchSuggestions from "@/components/catalog/SearchSuggestions";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { Loading, LoadingSkeleton } from "@/components/ui/loading";
+import { LoadingSkeleton } from "@/components/ui/loading";
 import { useModels } from "@/hooks/useModels";
 import { useBrands } from "@/hooks/useBrands";
 import { PhoneModel, phoneModels, brands as staticBrands } from "@/data/models";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-type SortOption = "name" | "brand" | "popular";
+const PAGE_SIZE = 24;
+const DEBOUNCE_MS = 400;
+
+type SortOption = "name" | "brand" | "popular" | "stock_first";
 
 const Catalog = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<SortOption>("popular");
+  const [sp, setSp] = useSearchParams();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Inicializar estado a partir da URL
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(() => sp.getAll("brand") || []);
+  const [selectedServices, setSelectedServices] = useState<string[]>(() => sp.getAll("service") || []);
+  const [selectedAvailability, setSelectedAvailability] = useState<string[]>(() => sp.getAll("availability") || []);
+  const [searchInput, setSearchInput] = useState(() => sp.get("search") || "");
+  const [searchQuery, setSearchQuery] = useState(() => sp.get("search") || "");
+  const [selectedPremium, setSelectedPremium] = useState(() => sp.get("premium") === "1");
+  const [selectedPopular, setSelectedPopular] = useState(() => sp.get("popular") === "1");
+  const [sortBy, setSortBy] = useState<SortOption>(() => {
+    const s = sp.get("sort");
+    return (s === "name" || s === "brand" || s === "stock_first" ? s : "popular") as SortOption;
+  });
+  const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [comparisonModels, setComparisonModels] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
 
   const totalFilters =
-    selectedBrands.length + selectedServices.length + selectedAvailability.length;
+    selectedBrands.length + selectedServices.length + selectedAvailability.length +
+    (selectedPremium ? 1 : 0) + (selectedPopular ? 1 : 0);
+
+  // Debounce da busca
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearchQuery(searchInput);
+      debounceRef.current = null;
+    }, DEBOUNCE_MS);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchInput]);
+
+  // Sincronizar filtros para a URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    selectedBrands.forEach((b) => params.append("brand", b));
+    selectedServices.forEach((s) => params.append("service", s));
+    selectedAvailability.forEach((a) => params.append("availability", a));
+    if (searchQuery) params.set("search", searchQuery);
+    if (selectedPremium) params.set("premium", "1");
+    if (selectedPopular) params.set("popular", "1");
+    if (sortBy !== "popular") params.set("sort", sortBy);
+    setSp(params, { replace: true });
+  }, [selectedBrands, selectedServices, selectedAvailability, searchQuery, selectedPremium, selectedPopular, sortBy, setSp]);
+
+  // Resetar página ao mudar filtros
+  useEffect(() => {
+    setPage(1);
+  }, [selectedBrands, selectedServices, selectedAvailability, searchQuery, selectedPremium, selectedPopular, sortBy]);
 
   const handleBrandChange = (brandId: string) => {
     setSelectedBrands((prev) =>
@@ -72,8 +116,15 @@ const Catalog = () => {
     setSelectedBrands([]);
     setSelectedServices([]);
     setSelectedAvailability([]);
+    setSearchInput("");
     setSearchQuery("");
+    setSelectedPremium(false);
+    setSelectedPopular(false);
+    setPage(1);
   };
+
+  const handlePremiumChange = (v: boolean) => setSelectedPremium(v);
+  const handlePopularChange = (v: boolean) => setSelectedPopular(v);
 
   const handleContact = (model: PhoneModel) => {
     const brand = brands.find((b) => b.id === model.brand);
@@ -102,6 +153,8 @@ const Catalog = () => {
     service: selectedServices.length > 0 ? selectedServices : undefined,
     availability: selectedAvailability.length > 0 ? selectedAvailability : undefined,
     search: searchQuery || undefined,
+    premium: selectedPremium || undefined,
+    popular: selectedPopular || undefined,
   });
 
   const { brands: apiBrands, loading: brandsLoading } = useBrands();
@@ -113,15 +166,25 @@ const Catalog = () => {
 
   const filteredModels = useMemo(() => {
     // Se estiver usando API e já tiver filtros aplicados, retornar diretamente
-    if (useApi && (selectedBrands.length > 0 || selectedServices.length > 0 || selectedAvailability.length > 0 || searchQuery)) {
-      // A API já aplica os filtros, então retornar os modelos da API
+    if (useApi && (selectedBrands.length > 0 || selectedServices.length > 0 || selectedAvailability.length > 0 || searchQuery || selectedPremium || selectedPopular)) {
       let result = [...apiModels];
+      if (selectedPremium) result = result.filter((m) => m.premium);
+      if (selectedPopular) result = result.filter((m) => m.popular);
 
-      // Aplicar ordenação localmente
       if (sortBy === "name") {
         result.sort((a, b) => a.name.localeCompare(b.name));
       } else if (sortBy === "brand") {
         result.sort((a, b) => a.brand.localeCompare(b.brand));
+      } else if (sortBy === "stock_first") {
+        const order = { in_stock: 0, order: 1, out_of_stock: 2 };
+        result.sort((a, b) => {
+          const ao = order[a.availability];
+          const bo = order[b.availability];
+          if (ao !== bo) return ao - bo;
+          if (a.popular && !b.popular) return -1;
+          if (!a.popular && b.popular) return 1;
+          return a.name.localeCompare(b.name);
+        });
       } else if (sortBy === "popular") {
         result.sort((a, b) => {
           if (a.popular && !b.popular) return -1;
@@ -131,12 +194,14 @@ const Catalog = () => {
           return 0;
         });
       }
-
       return result;
     }
 
     // Fallback para filtros locais (dados estáticos)
     let result = [...models];
+
+    if (selectedPremium) result = result.filter((m) => m.premium);
+    if (selectedPopular) result = result.filter((m) => m.popular);
 
     // Advanced Search filter
     if (searchQuery) {
@@ -209,6 +274,16 @@ const Catalog = () => {
       result.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === "brand") {
       result.sort((a, b) => a.brand.localeCompare(b.brand));
+    } else if (sortBy === "stock_first") {
+      const order = { in_stock: 0, order: 1, out_of_stock: 2 };
+      result.sort((a, b) => {
+        const ao = order[a.availability];
+        const bo = order[b.availability];
+        if (ao !== bo) return ao - bo;
+        if (a.popular && !b.popular) return -1;
+        if (!a.popular && b.popular) return 1;
+        return a.name.localeCompare(b.name);
+      });
     } else if (sortBy === "popular") {
       result.sort((a, b) => {
         if (a.popular && !b.popular) return -1;
@@ -220,11 +295,17 @@ const Catalog = () => {
     }
 
     return result;
-  }, [useApi, modelsError, apiModels, models, brands, searchQuery, selectedBrands, selectedServices, selectedAvailability, sortBy]);
+  }, [useApi, modelsError, apiModels, models, brands, searchQuery, selectedBrands, selectedServices, selectedAvailability, selectedPremium, selectedPopular, sortBy]);
 
   const comparisonModelsData = filteredModels.filter((model) =>
     comparisonModels.includes(model.id)
   );
+
+  const paginatedModels = useMemo(
+    () => filteredModels.slice(0, page * PAGE_SIZE),
+    [filteredModels, page]
+  );
+  const hasMore = filteredModels.length > page * PAGE_SIZE;
 
   return (
     <div className="min-h-screen bg-background">
@@ -321,9 +402,13 @@ const Catalog = () => {
                     selectedBrands={selectedBrands}
                     selectedServices={selectedServices}
                     selectedAvailability={selectedAvailability}
+                    selectedPremium={selectedPremium}
+                    selectedPopular={selectedPopular}
                     onBrandChange={handleBrandChange}
                     onServiceChange={handleServiceChange}
                     onAvailabilityChange={handleAvailabilityChange}
+                    onPremiumChange={handlePremiumChange}
+                    onPopularChange={handlePopularChange}
                     onClearFilters={handleClearFilters}
                     totalFilters={totalFilters}
                   />
@@ -339,9 +424,13 @@ const Catalog = () => {
                     selectedBrands={selectedBrands}
                     selectedServices={selectedServices}
                     selectedAvailability={selectedAvailability}
+                    selectedPremium={selectedPremium}
+                    selectedPopular={selectedPopular}
                     onBrandChange={handleBrandChange}
                     onServiceChange={handleServiceChange}
                     onAvailabilityChange={handleAvailabilityChange}
+                    onPremiumChange={handlePremiumChange}
+                    onPopularChange={handlePopularChange}
                     onClearFilters={handleClearFilters}
                     totalFilters={totalFilters}
                   />
@@ -351,17 +440,18 @@ const Catalog = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       placeholder="Buscar por modelo, marca, serviço..."
-                      value={searchQuery}
+                      value={searchInput}
                       onChange={(e) => {
-                        setSearchQuery(e.target.value);
+                        setSearchInput(e.target.value);
                         setShowSearchSuggestions(true);
                       }}
                       onFocus={() => setShowSearchSuggestions(true)}
                       className="pl-10 pr-10"
                     />
-                    {searchQuery && (
+                    {searchInput && (
                       <button
                         onClick={() => {
+                          setSearchInput("");
                           setSearchQuery("");
                           setShowSearchSuggestions(false);
                         }}
@@ -372,10 +462,11 @@ const Catalog = () => {
                       </button>
                     )}
                     <SearchSuggestions
-                      searchQuery={searchQuery}
+                      searchQuery={searchInput}
                       onSelectModel={(model) => {
                         navigate(`/modelo/${model.id}`);
                         setShowSearchSuggestions(false);
+                        setSearchInput("");
                         setSearchQuery("");
                       }}
                       onClose={() => setShowSearchSuggestions(false)}
@@ -392,6 +483,7 @@ const Catalog = () => {
                       <SelectItem value="popular">Mais Populares</SelectItem>
                       <SelectItem value="name">Nome A-Z</SelectItem>
                       <SelectItem value="brand">Marca</SelectItem>
+                      <SelectItem value="stock_first">Em estoque primeiro</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -452,6 +544,7 @@ const Catalog = () => {
                     <LoadingSkeleton count={6} className="h-80" />
                   </div>
                 ) : filteredModels.length > 0 ? (
+                  <>
                   <div
                     className={`grid gap-6 ${
                       viewMode === "grid"
@@ -459,11 +552,12 @@ const Catalog = () => {
                         : "grid-cols-1"
                     }`}
                   >
-                    {filteredModels.map((model) => (
+                    {paginatedModels.map((model) => (
                       <div key={model.id} className="relative">
                         <ModelCard
                           model={model}
                           onContact={handleContact}
+                          brands={brands}
                         />
                         {/* Comparison Checkbox */}
                         <div className="absolute top-2 left-2 z-10">
@@ -486,6 +580,19 @@ const Catalog = () => {
                       </div>
                     ))}
                   </div>
+                  {hasMore && (
+                    <div className="mt-8 flex justify-center">
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => setPage((p) => p + 1)}
+                        className="min-w-[200px]"
+                      >
+                        Carregar mais
+                      </Button>
+                    </div>
+                  )}
+                  </>
                 ) : (
                   <div className="text-center py-16">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
