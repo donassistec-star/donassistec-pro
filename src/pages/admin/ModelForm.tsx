@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,8 @@ const ModelForm = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [allServices, setAllServices] = useState<Service[]>([]);
   const [modelServices, setModelServices] = useState<ModelService[]>([]);
+  /** IDs dos serviços que estavam no modelo ao carregar; usados no submit para chamar removeModelService nos que foram excluídos. */
+  const initialModelServiceIds = useRef<Set<string>>(new Set());
   
   const [formData, setFormData] = useState<Partial<PhoneModel>>({
     id: "",
@@ -92,6 +94,7 @@ const ModelForm = () => {
       if (model) {
         setFormData(model);
         setModelServices(services);
+        initialModelServiceIds.current = new Set(services.map((s) => s.service_id));
       } else {
         toast.error("Modelo não encontrado");
         navigate("/admin/modelos");
@@ -133,7 +136,19 @@ const ModelForm = () => {
         toast.success("Modelo criado com sucesso!");
       }
 
-      // Salvar serviços do modelo
+      // Remover do backend os serviços que o usuário excluiu na tela
+      const currentIds = new Set(modelServices.map((ms) => ms.service_id));
+      const toRemove = [...initialModelServiceIds.current].filter((sid) => !currentIds.has(sid));
+      for (const serviceId of toRemove) {
+        try {
+          await servicesService.removeModelService(modelId, serviceId);
+        } catch (removeErr: any) {
+          console.error("Erro ao remover serviço:", removeErr);
+          toast.error(`Erro ao remover serviço: ${removeErr.message || "Erro desconhecido"}`);
+        }
+      }
+
+      // Salvar serviços do modelo (criar/atualizar os que estão na lista)
       if (modelServices.length > 0) {
         for (const modelService of modelServices) {
           try {
@@ -145,12 +160,12 @@ const ModelForm = () => {
             );
           } catch (serviceError: any) {
             console.error("Erro ao salvar serviço:", serviceError);
-            // Continuar com os outros serviços mesmo se um falhar
             toast.error(`Erro ao salvar serviço ${modelService.service?.name || modelService.service_id}: ${serviceError.message || "Erro desconhecido"}`);
           }
         }
       }
-      
+
+      initialModelServiceIds.current = new Set(modelServices.map((ms) => ms.service_id));
       navigate("/admin/modelos");
     } catch (error: any) {
       console.error("Erro ao salvar modelo:", error);
@@ -428,7 +443,8 @@ const ModelForm = () => {
                     Nenhum serviço adicionado. Selecione um serviço acima para começar.
                   </p>
                 ) : (
-                  modelServices.map((modelService) => (
+                  <>
+                  {modelServices.map((modelService) => (
                     <Card key={modelService.service_id} className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 space-y-3">
@@ -444,10 +460,12 @@ const ModelForm = () => {
                               )}
                             </div>
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
                               onClick={() => handleRemoveService(modelService.service_id)}
                               className="text-destructive hover:text-destructive"
+                              title="Excluir este serviço do modelo"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -507,7 +525,15 @@ const ModelForm = () => {
                         </div>
                       </div>
                     </Card>
-                  ))
+                  ))}
+                  {/* Soma dos preços */}
+                  <div className="flex items-center justify-between border-t pt-4 mt-2">
+                    <span className="text-sm text-muted-foreground">Soma dos preços:</span>
+                    <span className="font-semibold text-foreground">
+                      {formatCurrency(modelServices.reduce((acc, ms) => acc + (ms.price || 0), 0))}
+                    </span>
+                  </div>
+                  </>
                 )}
               </div>
             </CardContent>
