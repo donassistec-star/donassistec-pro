@@ -1,19 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Smartphone, Mail, Lock, Building2, User, Phone, FileText } from "lucide-react";
+import { Smartphone, Mail, Lock, Building2, User, Phone, FileText, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { validation } from "@/utils/validation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const RetailerLogin = () => {
   const navigate = useNavigate();
-  const { login, register, isAuthenticated } = useAuth();
+  const { login, register, isAuthenticated, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [loginData, setLoginData] = useState({
     email: "",
@@ -31,36 +33,38 @@ const RetailerLogin = () => {
   });
 
   // Redirect se já estiver autenticado
-  if (isAuthenticated) {
-    navigate("/lojista/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate("/lojista/dashboard");
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     if (!loginData.email || !loginData.password) {
-      toast.error("Preencha email e senha");
+      setError("Preencha email e senha");
       return;
     }
 
     if (!validation.isValidEmail(loginData.email)) {
-      toast.error("Email inválido");
+      setError("Email inválido");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const success = await login(loginData.email, loginData.password);
-      if (success) {
+      const result = await login(loginData.email, loginData.password);
+      if (result.success) {
         toast.success("Login realizado com sucesso!");
         navigate("/lojista/dashboard");
       } else {
-        toast.error("Email ou senha inválidos");
+        setError(result.error || "Email ou senha inválidos");
       }
     } catch (error) {
-      toast.error("Erro ao fazer login. Tente novamente.");
+      setError("Erro ao fazer login. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -68,43 +72,44 @@ const RetailerLogin = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     // Validações
     if (!registerData.email || !registerData.password || !registerData.companyName || !registerData.contactName) {
-      toast.error("Preencha todos os campos obrigatórios");
+      setError("Preencha todos os campos obrigatórios");
       return;
     }
 
     if (!validation.isValidEmail(registerData.email)) {
-      toast.error("Email inválido");
+      setError("Email inválido");
       return;
     }
 
     const passwordValidation = validation.isValidPassword(registerData.password);
     if (!passwordValidation.valid) {
-      toast.error(passwordValidation.message || "Senha inválida");
+      setError(passwordValidation.message || "Senha inválida");
       return;
     }
 
     if (!validation.passwordsMatch(registerData.password, registerData.confirmPassword)) {
-      toast.error("As senhas não coincidem");
+      setError("As senhas não coincidem");
       return;
     }
 
     if (registerData.phone && !validation.isValidPhone(registerData.phone)) {
-      toast.error("Telefone inválido");
+      setError("Telefone inválido");
       return;
     }
 
     if (registerData.cnpj && !validation.isValidCNPJ(registerData.cnpj)) {
-      toast.error("CNPJ inválido");
+      setError("CNPJ inválido");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const success = await register({
+      const result = await register({
         email: registerData.email,
         password: registerData.password,
         companyName: registerData.companyName,
@@ -113,18 +118,26 @@ const RetailerLogin = () => {
         cnpj: registerData.cnpj || undefined,
       });
 
-      if (success) {
+      if (result.success) {
         toast.success("Cadastro realizado com sucesso!");
         navigate("/lojista/dashboard");
       } else {
-        toast.error("Erro ao criar conta. Tente novamente.");
+        setError(result.error || "Erro ao criar conta. Tente novamente.");
       }
     } catch (error) {
-      toast.error("Erro ao criar conta. Tente novamente.");
+      setError("Erro ao criar conta. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center py-12 px-4">
@@ -164,6 +177,13 @@ const RetailerLogin = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {error && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-email">E-mail</Label>
@@ -209,10 +229,6 @@ const RetailerLogin = () => {
                   >
                     {isLoading ? "Entrando..." : "Entrar"}
                   </Button>
-
-                  <p className="text-xs text-center text-muted-foreground mt-4">
-                    Acesso demo: use qualquer email e senha para testar
-                  </p>
                 </form>
               </CardContent>
             </TabsContent>
@@ -226,6 +242,13 @@ const RetailerLogin = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {error && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="register-email">E-mail *</Label>

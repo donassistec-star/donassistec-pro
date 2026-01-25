@@ -1,18 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Mail, Lock } from "lucide-react";
+import { Shield, Mail, Lock, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { validation } from "@/utils/validation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isAdmin, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [loginData, setLoginData] = useState({
     email: "",
@@ -20,57 +22,58 @@ const AdminLogin = () => {
   });
 
   // Redirect se já estiver autenticado como admin
-  if (isAuthenticated) {
-    const userStr = localStorage.getItem("donassistec_auth");
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      if (user.role === "admin") {
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      if (isAdmin) {
         navigate("/admin/dashboard");
       } else {
-        navigate("/admin/dashboard");
+        // User is authenticated but not admin
+        setError("Acesso negado. Esta área é apenas para administradores.");
       }
     }
-    return null;
-  }
+  }, [isAuthenticated, isAdmin, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     if (!loginData.email || !loginData.password) {
-      toast.error("Preencha email e senha");
+      setError("Preencha email e senha");
       return;
     }
 
     if (!validation.isValidEmail(loginData.email)) {
-      toast.error("Email inválido");
+      setError("Email inválido");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const success = await login(loginData.email, loginData.password);
-      if (success) {
-        const userStr = localStorage.getItem("donassistec_auth");
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          if (user.role === "admin") {
-            toast.success("Login realizado com sucesso!");
-            navigate("/admin/dashboard");
-          } else {
-            toast.error("Acesso negado. Esta área é apenas para administradores.");
-            navigate("/lojista/login");
-          }
-        }
+      const result = await login(loginData.email, loginData.password);
+      
+      if (result.success) {
+        // Wait a bit for the role to be fetched
+        setTimeout(() => {
+          // The useEffect will handle the redirect based on role
+        }, 500);
       } else {
-        toast.error("Email ou senha inválidos");
+        setError(result.error || "Email ou senha inválidos");
       }
     } catch (error) {
-      toast.error("Erro ao fazer login. Tente novamente.");
+      setError("Erro ao fazer login. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center py-12 px-4">
@@ -102,6 +105,13 @@ const AdminLogin = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="admin-email">E-mail</Label>
@@ -110,7 +120,7 @@ const AdminLogin = () => {
                   <Input
                     id="admin-email"
                     type="email"
-                    placeholder="admin@donassistec.com"
+                    placeholder="admin@exemplo.com"
                     value={loginData.email}
                     onChange={(e) =>
                       setLoginData({ ...loginData, email: e.target.value })
