@@ -1,23 +1,28 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { authService, User as ApiUser } from "@/services/authService";
+import { supabase } from "@/integrations/supabase/client";
+import { User, Session } from "@supabase/supabase-js";
 
-interface User {
+interface UserProfile {
   id: string;
   email: string;
   companyName: string;
   contactName: string;
   phone: string;
   cnpj?: string;
-  role: "retailer" | "admin";
+  city?: string;
+  state?: string;
+  role: "dealer" | "admin" | "user";
 }
 
 interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (data: RegisterData) => Promise<boolean>;
-  logout: () => void;
+  user: UserProfile | null;
+  session: Session | null;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAdmin: boolean;
 }
 
 interface RegisterData {
@@ -31,143 +36,170 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_STORAGE_KEY = "donassistec_auth";
-const TOKEN_STORAGE_KEY = "donassistec_token";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchUserProfile = async (userId: string, email: string) => {
+    try {
+      // Fetch profile data
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      // Fetch user role
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const userProfile: UserProfile = {
+        id: userId,
+        email: email,
+        companyName: profile?.company_name || "",
+        contactName: profile?.company_name || "", // Using company_name as fallback
+        phone: profile?.phone || "",
+        cnpj: profile?.cnpj || undefined,
+        city: profile?.city || undefined,
+        state: profile?.state || undefined,
+        role: (roleData?.role as "dealer" | "admin" | "user") || "dealer",
+      };
+
+      setUser(userProfile);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+  };
+
   useEffect(() => {
-    // Carregar usuário e token do localStorage
-    const loadUser = async () => {
-      const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
-      const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
-      
-      if (storedToken && storedUser) {
-        try {
-          const userData = JSON.parse(storedUser);
-          setUser(userData);
-          
-          // Verificar se o token ainda é válido
-          const meResponse = await authService.me(storedToken);
-          if (meResponse.success && meResponse.user) {
-            // Atualizar dados do usuário
-            const updatedUser: User = {
-              id: meResponse.user.id,
-              email: meResponse.user.email,
-              companyName: meResponse.user.company_name,
-              contactName: meResponse.user.contact_name,
-              phone: meResponse.user.phone || "",
-              cnpj: meResponse.user.cnpj,
-              role: meResponse.user.role,
-            };
-            setUser(updatedUser);
-            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser));
-          } else {
-            // Token inválido, limpar
-            localStorage.removeItem(TOKEN_STORAGE_KEY);
-            localStorage.removeItem(AUTH_STORAGE_KEY);
-            setUser(null);
-          }
-        } catch {
-          // Ignore invalid data
-          localStorage.removeItem(TOKEN_STORAGE_KEY);
-          localStorage.removeItem(AUTH_STORAGE_KEY);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        
+        if (session?.user) {
+          // Defer Supabase calls with setTimeout to prevent deadlock
+          setTimeout(() => {
+            fetchUserProfile(session.user.id, session.user.email || "");
+          }, 0);
+        } else {
+          setUser(null);
         }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id, session.user.email || "");
       }
       setIsLoading(false);
-    };
-    
-    loadUser();
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await authService.login({ email, password });
-      
-      if (response.success && response.token && response.user) {
-        const userData: User = {
-          id: response.user.id,
-          email: response.user.email,
-          companyName: response.user.company_name,
-          contactName: response.user.contact_name,
-          phone: response.user.phone || "",
-          cnpj: response.user.cnpj,
-          role: response.user.role,
-        };
-
-        setUser(userData);
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
-        localStorage.setItem(TOKEN_STORAGE_KEY, response.token);
-        setIsLoading(false);
-        return true;
-      }
-
-      setIsLoading(false);
-      return false;
-    } catch (error) {
-      setIsLoading(false);
-      return false;
-    }
-  };
-
-  const register = async (data: RegisterData): Promise<boolean> => {
-    setIsLoading(true);
-
-    try {
-      const response = await authService.register({
-        email: data.email,
-        password: data.password,
-        company_name: data.companyName,
-        contact_name: data.contactName,
-        phone: data.phone,
-        cnpj: data.cnpj,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (response.success && response.token && response.user) {
-        const userData: User = {
-          id: response.user.id,
-          email: response.user.email,
-          companyName: response.user.company_name,
-          contactName: response.user.contact_name,
-          phone: response.user.phone || "",
-          cnpj: response.user.cnpj,
-          role: response.user.role,
-        };
-
-        setUser(userData);
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
-        localStorage.setItem(TOKEN_STORAGE_KEY, response.token);
-        setIsLoading(false);
-        return true;
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          return { success: false, error: "Email ou senha inválidos" };
+        }
+        return { success: false, error: error.message };
       }
 
-      setIsLoading(false);
-      return false;
-    } catch (error) {
-      setIsLoading(false);
-      return false;
+      if (data.user) {
+        await fetchUserProfile(data.user.id, data.user.email || "");
+        return { success: true };
+      }
+
+      return { success: false, error: "Erro desconhecido" };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Erro ao fazer login" };
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  const register = async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { data: authData, error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            company_name: data.companyName,
+            contact_name: data.contactName,
+            phone: data.phone,
+            cnpj: data.cnpj,
+          }
+        }
+      });
+
+      if (error) {
+        if (error.message.includes("User already registered")) {
+          return { success: false, error: "Este email já está cadastrado" };
+        }
+        return { success: false, error: error.message };
+      }
+
+      if (authData.user) {
+        // Update profile with additional data
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({
+            company_name: data.companyName,
+            phone: data.phone,
+            cnpj: data.cnpj,
+          })
+          .eq("user_id", authData.user.id);
+
+        if (profileError) {
+          console.error("Error updating profile:", profileError);
+        }
+
+        await fetchUserProfile(authData.user.id, authData.user.email || "");
+        return { success: true };
+      }
+
+      return { success: false, error: "Erro desconhecido" };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Erro ao criar conta" };
+    }
   };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+  };
+
+  const isAdmin = user?.role === "admin";
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        session,
         login,
         register,
         logout,
-        isAuthenticated: !!user,
+        isAuthenticated: !!session,
         isLoading,
+        isAdmin,
       }}
     >
       {children}
