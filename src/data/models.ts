@@ -20,6 +20,8 @@ export interface PhoneModel {
   availability: "in_stock" | "order" | "out_of_stock";
   premium: boolean;
   popular: boolean;
+  stock_quantity?: number;
+  min_stock_level?: number;
 }
 
 export interface Brand {
@@ -70,9 +72,9 @@ export const brands: Brand[] = [
 ];
 
 export const serviceTypes = [
-  { id: "reconstruction", name: "Reconstrução de Tela", icon: "🔧" },
-  { id: "glassReplacement", name: "Troca de Vidro", icon: "🪟" },
-  { id: "partsAvailable", name: "Peças Disponíveis", icon: "📦" },
+  { id: "reconstruction", name: "Reconstrução de Tela", icon: "🔧", description: "Reconstrução completa de tela" },
+  { id: "glassReplacement", name: "Troca de Vidro", icon: "🪟", description: "Troca apenas do vidro frontal" },
+  { id: "partsAvailable", name: "Peças Disponíveis", icon: "📦", description: "Peças de reposição disponíveis" },
 ];
 
 export const availabilityOptions = [

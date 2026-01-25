@@ -31,6 +31,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/format";
 import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import ExcelJS from "exceljs";
 
 interface ReportStats {

@@ -48,6 +48,8 @@ const AdminDashboard = () => {
     pendingOrders: 0,
     completedOrders: 0,
     totalRetailers: 0,
+    totalProductViews: 0,
+    topViewedProducts: [],
   });
   const [loading, setLoading] = useState(true);
   const [orderTrends, setOrderTrends] = useState<OrderTrend[]>([]);
@@ -92,7 +94,7 @@ const AdminDashboard = () => {
         const trends = last7Days.map(date => {
           const dayOrders = orders.filter(o => o.created_at?.startsWith(date));
           const dayRevenue = dayOrders.reduce((sum, order) => {
-            const orderTotal = order.items.reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
+            const orderTotal = order.total || 0;
             return sum + orderTotal;
           }, 0);
 

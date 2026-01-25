@@ -254,7 +254,7 @@ const BrandsAdmin = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDelete(brand.id, brand.name)}
+                              onClick={() => handleDeleteClick(brand.id, brand.name)}
                               title="Deletar"
                               className="text-destructive hover:text-destructive"
                             >
