@@ -165,7 +165,7 @@ const AdminTickets = () => {
 
   const getPriorityBadge = (priority: Ticket["priority"]) => {
     const variants: Record<Ticket["priority"], "default" | "secondary" | "destructive"> = {
-      low: "outline",
+      low: "secondary",
       medium: "secondary",
       high: "default",
       urgent: "destructive",

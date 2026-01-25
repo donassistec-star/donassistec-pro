@@ -47,7 +47,7 @@ export interface ApiBrand {
   icon_name?: string;
 }
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;

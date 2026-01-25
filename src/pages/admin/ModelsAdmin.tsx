@@ -168,8 +168,8 @@ const ModelsAdmin = () => {
           comparison = a.name.localeCompare(b.name);
           break;
         case "brand":
-          const brandA = brands.find((b) => b.id === a.brand)?.name || "";
-          const brandB = brands.find((b) => b.id === b.brand)?.name || "";
+          const brandA = brands.find((br) => br.id === a.brand)?.name || "";
+          const brandB = brands.find((br) => br.id === b.brand)?.name || "";
           comparison = brandA.localeCompare(brandB);
           break;
         case "availability":

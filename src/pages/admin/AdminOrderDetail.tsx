@@ -114,7 +114,7 @@ const AdminOrderDetail = () => {
           description="O pedido solicitado não foi encontrado."
           action={{
             label: "Voltar para Pedidos",
-            href: "/admin/pedidos",
+            onClick: () => navigate("/admin/pedidos"),
           }}
         />
       </AdminLayout>

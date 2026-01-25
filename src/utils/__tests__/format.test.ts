@@ -18,7 +18,7 @@ describe('Format Utils', () => {
   describe('formatDate', () => {
     it('should format date correctly', () => {
       const date = new Date('2024-01-15');
-      expect(formatDate(date, 'dd/MM/yyyy')).toContain('15/01/2024');
+      expect(formatDate(date, 'short')).toContain('15/01/2024');
     });
 
     it('should handle null and undefined', () => {

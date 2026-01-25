@@ -17,6 +17,11 @@ export interface Order {
   total: number;
   created_at?: string;
   updated_at?: string;
+  // Aliases for admin views compatibility
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  shipping_address?: string;
 }
 
 export interface OrderItem {
@@ -31,6 +36,10 @@ export interface OrderItem {
   parts_available: boolean;
   notes?: string;
   created_at?: string;
+  // Aliases for admin views compatibility
+  name?: string;
+  price?: number;
+  description?: string;
 }
 
 export interface OrderWithItems extends Order {

@@ -28,6 +28,7 @@ import {
   Smartphone,
   Filter,
   X,
+  Video,
 } from "lucide-react";
 import RetailerLayout from "@/components/retailer/RetailerLayout";
 import { modelsService, brandsService } from "@/services/modelsService";
