@@ -142,6 +142,12 @@ const Header = () => {
             >
               Área do Lojista
             </Button>
+            <Button 
+              variant="outline"
+              onClick={() => navigate("/admin/login")}
+            >
+              Admin
+            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -216,6 +222,15 @@ const Header = () => {
               onClick={() => navigate("/lojista/dashboard")}
             >
               Área do Lojista
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                navigate("/admin/login");
+                setIsMenuOpen(false);
+              }}
+            >
+              Admin
             </Button>
           </nav>
         </div>
