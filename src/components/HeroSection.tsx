@@ -4,9 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Smartphone, Monitor, Shield, ArrowRight } from "lucide-react";
 import heroImage from "@/assets/hero-laboratory.jpg";
 import { useHomeContent } from "@/contexts/HomeContentContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const HeroSection = () => {
   const { content } = useHomeContent();
+  const { user } = useAuth();
+  const isLojista = user?.role === "retailer";
 
   return (
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
@@ -42,8 +45,8 @@ const HeroSection = () => {
 
           <div className="flex flex-wrap gap-4 mb-12">
             <Button variant="hero" size="xl" asChild>
-              <Link to={content.heroCtaLink || "/catalogo"}>
-                {content.heroCtaLabel || "Consultar Catálogo"}
+              <Link to={isLojista ? (content.heroCtaLink || "/catalogo") : "/lojista/login"}>
+                {isLojista ? (content.heroCtaLabel || "Consultar Catálogo") : "Área do Lojista"}
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </Button>

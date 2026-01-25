@@ -1,6 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { PhoneModel } from "@/data/models";
 
+/** Serviço ou peça selecionada pelo lojista no modelo (com preço para orçamento) */
+export interface SelectedService {
+  service_id: string;
+  name: string;
+  price: number;
+}
+
 interface CartItem {
   model: PhoneModel;
   services: {
@@ -10,11 +17,21 @@ interface CartItem {
   };
   quantity: number;
   notes?: string;
+  /** Serviços/peças escolhidos pelo lojista (com preço). Se vazio, orçamento sob consulta. */
+  selectedServices?: SelectedService[];
+}
+
+function selectionKey(selected?: SelectedService[]): string {
+  if (!selected || selected.length === 0) return "";
+  return selected
+    .map((s) => s.service_id)
+    .sort()
+    .join(",");
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (model: PhoneModel, services: CartItem["services"], quantity?: number, notes?: string) => void;
+  addItem: (model: PhoneModel, services: CartItem["services"], quantity?: number, notes?: string, selectedServices?: SelectedService[]) => void;
   removeItem: (modelId: string) => void;
   updateItem: (modelId: string, updates: Partial<CartItem>) => void;
   clearCart: () => void;
@@ -47,24 +64,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items]);
 
-  const addItem = (model: PhoneModel, services: CartItem["services"], quantity = 1, notes?: string) => {
+  const addItem = (
+    model: PhoneModel,
+    services: CartItem["services"],
+    quantity = 1,
+    notes?: string,
+    selectedServices?: SelectedService[]
+  ) => {
     setItems((prev) => {
-      const existingIndex = prev.findIndex((item) => item.model.id === model.id);
-      
+      const key = selectionKey(selectedServices);
+      const existingIndex = prev.findIndex(
+        (item) => item.model.id === model.id && selectionKey(item.selectedServices) === key
+      );
+
       if (existingIndex >= 0) {
-        // Atualiza item existente
         const updated = [...prev];
         updated[existingIndex] = {
           ...updated[existingIndex],
           quantity: updated[existingIndex].quantity + quantity,
           services: { ...updated[existingIndex].services, ...services },
           notes: notes || updated[existingIndex].notes,
+          selectedServices: selectedServices ?? updated[existingIndex].selectedServices,
         };
         return updated;
       }
-      
-      // Adiciona novo item
-      return [...prev, { model, services, quantity, notes }];
+
+      return [...prev, { model, services, quantity, notes, selectedServices }];
     });
   };
 

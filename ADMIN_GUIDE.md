@@ -86,6 +86,15 @@ Visualize e gerencie todos os pedidos do sistema:
 - Data de criação
 - Observações
 
+### 5.1. Pré-pedidos (`/admin/pre-pedidos`)
+Registros de pré-pedidos enviados pelo fluxo "Finalizar e enviar pré-pedido" no pré-orçamento:
+- **Listar**: pré-pedidos com data, contato, itens
+- **Dados de contato**: nome, empresa, telefone, e-mail, observações (quando preenchidos)
+- **Urgente**: badge para pedidos marcados como urgentes
+- **Busca**: por ID, sessão, nome, empresa ou e-mail
+- **Exportar CSV**: Contato, Empresa, Telefone, E-mail, Urgente, Observações, itens
+- **Expandir**: ver itens e serviços de cada pré-pedido
+
 ### 6. Lojistas (`/admin/lojistas`)
 Gerencie contas de lojistas:
 - **Listar**: Visualize todos os lojistas (ativos/inativos)
@@ -223,5 +232,5 @@ pm2 logs donassistec-frontend
 
 ---
 
-**Última atualização**: Janeiro 2025
-**Versão do Sistema**: 1.0.0
+**Última atualização**: Janeiro 2026
+**Versão do Sistema**: 1.2.0

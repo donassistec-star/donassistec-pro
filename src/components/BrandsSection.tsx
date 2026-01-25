@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { brands as staticBrands } from "@/data/models";
 import { ArrowRight } from "lucide-react";
 import { useBrands } from "@/hooks/useBrands";
+import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSkeleton } from "@/components/ui/loading";
 
 const brandData = [
@@ -18,7 +19,9 @@ const brandData = [
 
 const BrandsSection = () => {
   const { brands: apiBrands, loading } = useBrands();
+  const { user } = useAuth();
   const brands = apiBrands && apiBrands.length > 0 ? apiBrands : staticBrands;
+  const isLojista = user?.role === "retailer";
 
   if (loading) {
     return (
@@ -58,7 +61,7 @@ const BrandsSection = () => {
             if (!brand) return null;
 
             return (
-              <Link key={brand.id} to={`/catalogo?brand=${brand.id}`}>
+              <Link key={brand.id} to={isLojista ? `/catalogo?brand=${brand.id}` : "/lojista/login"}>
                 <Card
                   className="group relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-2 border-border hover:border-primary/50 bg-gradient-to-br from-card to-muted/30 hover:from-card hover:to-muted/50"
                 >

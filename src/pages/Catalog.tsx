@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, LayoutGrid, List, Smartphone, Video, GitCompare } from "lucide-react";
+import { Search, LayoutGrid, List, Smartphone, Video, GitCompare, Star } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -25,20 +25,35 @@ import { LoadingSkeleton } from "@/components/ui/loading";
 import { useModels } from "@/hooks/useModels";
 import { useBrands } from "@/hooks/useBrands";
 import { useSettings } from "@/hooks/useSettings";
-import { PhoneModel, phoneModels, brands as staticBrands } from "@/data/models";
+import { PhoneModel, phoneModels, brands as staticBrands, serviceTypes, availabilityOptions } from "@/data/models";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { validation } from "@/utils/validation";
+import { CheckCircle2, X } from "lucide-react";
 
 const PAGE_SIZE = 24;
 const DEBOUNCE_MS = 400;
 
 type SortOption = "name" | "brand" | "popular" | "stock_first";
 
+function hasService(model: PhoneModel, serviceId: string): boolean {
+  const dyn = (model as any).modelServices;
+  if (serviceId === "service_reconstruction" || serviceId === "reconstruction")
+    return !!(model.services?.reconstruction || dyn?.some((m: any) => m.service_id === "service_reconstruction" && m.available));
+  if (serviceId === "service_glass" || serviceId === "glassReplacement")
+    return !!(model.services?.glassReplacement || dyn?.some((m: any) => m.service_id === "service_glass" && m.available));
+  if (serviceId === "service_parts" || serviceId === "partsAvailable")
+    return !!(model.services?.partsAvailable || dyn?.some((m: any) => m.service_id === "service_parts" && m.available));
+  return !!dyn?.some((m: any) => m.service_id === serviceId && m.available);
+}
+
 const Catalog = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { settings } = useSettings();
   const [sp, setSp] = useSearchParams();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showFinalizadoBanner, setShowFinalizadoBanner] = useState(false);
 
   // Inicializar estado a partir da URL
   const [selectedBrands, setSelectedBrands] = useState<string[]>(() => sp.getAll("brand") || []);
@@ -48,6 +63,7 @@ const Catalog = () => {
   const [searchQuery, setSearchQuery] = useState(() => sp.get("search") || "");
   const [selectedPremium, setSelectedPremium] = useState(() => sp.get("premium") === "1");
   const [selectedPopular, setSelectedPopular] = useState(() => sp.get("popular") === "1");
+  const [selectedWithVideo, setSelectedWithVideo] = useState(() => sp.get("with_video") === "1");
   const [sortBy, setSortBy] = useState<SortOption>(() => {
     const s = sp.get("sort");
     return (s === "name" || s === "brand" || s === "stock_first" ? s : "popular") as SortOption;
@@ -57,10 +73,11 @@ const Catalog = () => {
   const [comparisonModels, setComparisonModels] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const totalFilters =
     selectedBrands.length + selectedServices.length + selectedAvailability.length +
-    (selectedPremium ? 1 : 0) + (selectedPopular ? 1 : 0);
+    (selectedPremium ? 1 : 0) + (selectedPopular ? 1 : 0) + (selectedWithVideo ? 1 : 0);
 
   // Debounce da busca
   useEffect(() => {
@@ -81,14 +98,24 @@ const Catalog = () => {
     if (searchQuery) params.set("search", searchQuery);
     if (selectedPremium) params.set("premium", "1");
     if (selectedPopular) params.set("popular", "1");
+    if (selectedWithVideo) params.set("with_video", "1");
     if (sortBy !== "popular") params.set("sort", sortBy);
     setSp(params, { replace: true });
-  }, [selectedBrands, selectedServices, selectedAvailability, searchQuery, selectedPremium, selectedPopular, sortBy, setSp]);
+  }, [selectedBrands, selectedServices, selectedAvailability, searchQuery, selectedPremium, selectedPopular, selectedWithVideo, sortBy, setSp]);
 
   // Resetar página ao mudar filtros
   useEffect(() => {
     setPage(1);
-  }, [selectedBrands, selectedServices, selectedAvailability, searchQuery, selectedPremium, selectedPopular, sortBy]);
+  }, [selectedBrands, selectedServices, selectedAvailability, searchQuery, selectedPremium, selectedPopular, selectedWithVideo, sortBy]);
+
+  // Banner "Pré-pedido enviado" ao chegar do Finalizar
+  useEffect(() => {
+    const fromFinalizar = (location.state as { fromFinalizar?: boolean } | null)?.fromFinalizar;
+    if (fromFinalizar) {
+      setShowFinalizadoBanner(true);
+      navigate(location.pathname + (location.search || ""), { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, location.search, navigate]);
 
   const handleBrandChange = (brandId: string) => {
     setSelectedBrands((prev) =>
@@ -122,19 +149,33 @@ const Catalog = () => {
     setSearchQuery("");
     setSelectedPremium(false);
     setSelectedPopular(false);
+    setSelectedWithVideo(false);
     setPage(1);
   };
+
+  const handleWithVideoChange = (v: boolean) => setSelectedWithVideo(v);
+
+  const toggleChipStock = () => {
+    setSelectedAvailability((prev) =>
+      prev.includes("in_stock") ? prev.filter((x) => x !== "in_stock") : [...prev, "in_stock"]
+    );
+  };
+  const toggleChipPremium = () => setSelectedPremium((p) => !p);
+  const toggleChipPopular = () => setSelectedPopular((p) => !p);
+  const toggleChipVideo = () => setSelectedWithVideo((p) => !p);
 
   const handlePremiumChange = (v: boolean) => setSelectedPremium(v);
   const handlePopularChange = (v: boolean) => setSelectedPopular(v);
 
   const handleContact = (model: PhoneModel) => {
     const brand = brands.find((b) => b.id === model.brand);
-    const message = encodeURIComponent(
-      `Olá! Sou lojista e gostaria de um orçamento para o modelo ${model.name} (${brand?.name}). Tenho interesse em saber mais sobre os serviços disponíveis.`
-    );
-    const wa = settings?.contactWhatsApp || settings?.contactPhoneRaw || "5511999999999";
-    window.open(`https://wa.me/${wa}?text=${message}`, "_blank");
+    const rawMessage = `Olá! Sou lojista e gostaria de um orçamento para o modelo ${model.name} (${brand?.name}). Tenho interesse em saber mais sobre os serviços disponíveis.`;
+    const wa = validation.cleanWhatsAppNumber(settings?.contactWhatsApp || settings?.contactPhoneRaw || "5511999999999") || "5511999999999";
+    const w = window.open(validation.generateWhatsAppUrl(wa, rawMessage), "_blank");
+    if (!w) {
+      toast.error("Permita pop-ups para abrir o WhatsApp e tente novamente.");
+      return;
+    }
   };
 
   const handleToggleComparison = (modelId: string) => {
@@ -169,10 +210,11 @@ const Catalog = () => {
 
   const filteredModels = useMemo(() => {
     // Se estiver usando API e já tiver filtros aplicados, retornar diretamente
-    if (useApi && (selectedBrands.length > 0 || selectedServices.length > 0 || selectedAvailability.length > 0 || searchQuery || selectedPremium || selectedPopular)) {
+    if (useApi && (selectedBrands.length > 0 || selectedServices.length > 0 || selectedAvailability.length > 0 || searchQuery || selectedPremium || selectedPopular || selectedWithVideo)) {
       let result = [...apiModels];
       if (selectedPremium) result = result.filter((m) => m.premium);
       if (selectedPopular) result = result.filter((m) => m.popular);
+      if (selectedWithVideo) result = result.filter((m) => m.videoUrl || (m.videos && m.videos.length > 0));
 
       if (sortBy === "name") {
         result.sort((a, b) => a.name.localeCompare(b.name));
@@ -205,6 +247,7 @@ const Catalog = () => {
 
     if (selectedPremium) result = result.filter((m) => m.premium);
     if (selectedPopular) result = result.filter((m) => m.popular);
+    if (selectedWithVideo) result = result.filter((m) => m.videoUrl || (m.videos && m.videos.length > 0));
 
     // Advanced Search filter
     if (searchQuery) {
@@ -225,10 +268,10 @@ const Catalog = () => {
         
         // Search by service type
         if (
-          (query.includes("reconstru") && model.services.reconstruction) ||
-          (query.includes("vidro") && model.services.glassReplacement) ||
-          (query.includes("peça") && model.services.partsAvailable) ||
-          (query.includes("tela") && (model.services.reconstruction || model.services.glassReplacement))
+          (query.includes("reconstru") && model.services?.reconstruction) ||
+          (query.includes("vidro") && model.services?.glassReplacement) ||
+          (query.includes("peça") && model.services?.partsAvailable) ||
+          (query.includes("tela") && (model.services?.reconstruction || model.services?.glassReplacement))
         ) return true;
         
         // Search by availability
@@ -304,7 +347,25 @@ const Catalog = () => {
     }
 
     return result;
-  }, [useApi, modelsError, apiModels, models, brands, searchQuery, selectedBrands, selectedServices, selectedAvailability, selectedPremium, selectedPopular, sortBy]);
+  }, [useApi, modelsError, apiModels, models, brands, searchQuery, selectedBrands, selectedServices, selectedAvailability, selectedPremium, selectedPopular, selectedWithVideo, sortBy]);
+
+  const modelCountByBrand = useMemo(() => {
+    const m: Record<string, number> = {};
+    filteredModels.forEach((mo) => { m[mo.brand] = (m[mo.brand] || 0) + 1; });
+    return m;
+  }, [filteredModels]);
+
+  const modelCountByService = useMemo(() => {
+    const m: Record<string, number> = {};
+    serviceTypes.forEach((s) => { m[s.id] = filteredModels.filter((mo) => hasService(mo, s.id)).length; });
+    return m;
+  }, [filteredModels]);
+
+  const modelCountByAvailability = useMemo(() => {
+    const m: Record<string, number> = {};
+    availabilityOptions.forEach((a) => { m[a.id] = filteredModels.filter((mo) => mo.availability === a.id).length; });
+    return m;
+  }, [filteredModels]);
 
   const comparisonModelsData = filteredModels.filter((model) =>
     comparisonModels.includes(model.id)
@@ -331,6 +392,29 @@ const Catalog = () => {
             />
           </div>
         </section>
+
+        {/* Banner: Pré-pedido enviado (após Finalizar) */}
+        {showFinalizadoBanner && (
+          <section className="border-b border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/50">
+            <div className="container mx-auto px-4 py-3">
+              <div className="flex items-center gap-3 rounded-lg">
+                <CheckCircle2 className="w-5 h-5 shrink-0 text-green-600 dark:text-green-400" />
+                <p className="flex-1 text-sm text-green-800 dark:text-green-200">
+                  Pré-pedido enviado. Nossa equipe entrará em contato por WhatsApp.
+                </p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 h-8 w-8 text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-100"
+                  onClick={() => setShowFinalizadoBanner(false)}
+                  aria-label="Fechar"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Page Header */}
         <section className="bg-foreground py-16">
@@ -364,7 +448,7 @@ const Catalog = () => {
                   Aprenda com nossos tutoriais de reparo e reconstrução
                 </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6">
                 {filteredModels
                   .filter((m) => m.videos && m.videos.length > 0)
                   .slice(0, 6)
@@ -372,7 +456,7 @@ const Catalog = () => {
                     const brand = brands.find((b) => b.id === model.brand);
                     return (
                       model.videos?.[0] && (
-                        <div key={`${model.id}-${model.videos[0].id}`} className="relative">
+                        <div key={`${model.id}-${model.videos[0].id}`} className="relative min-w-[260px] md:min-w-0 shrink-0 md:shrink">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                             {brand?.logo && (
                               <img
@@ -413,13 +497,18 @@ const Catalog = () => {
                     selectedAvailability={selectedAvailability}
                     selectedPremium={selectedPremium}
                     selectedPopular={selectedPopular}
+                    selectedWithVideo={selectedWithVideo}
                     onBrandChange={handleBrandChange}
                     onServiceChange={handleServiceChange}
                     onAvailabilityChange={handleAvailabilityChange}
                     onPremiumChange={handlePremiumChange}
                     onPopularChange={handlePopularChange}
+                    onWithVideoChange={handleWithVideoChange}
                     onClearFilters={handleClearFilters}
                     totalFilters={totalFilters}
+                    modelCountByBrand={modelCountByBrand}
+                    modelCountByService={modelCountByService}
+                    modelCountByAvailability={modelCountByAvailability}
                   />
                 </div>
               </aside>
@@ -427,21 +516,30 @@ const Catalog = () => {
               {/* Main Content */}
               <div className="flex-1">
                 {/* Search & Controls */}
-                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <div className="flex flex-col gap-4 mb-8">
+                  <div className="flex flex-col sm:flex-row gap-4">
                   {/* Mobile Filters */}
                   <MobileFiltersSheet
+                    open={mobileFiltersOpen}
+                    onOpenChange={setMobileFiltersOpen}
+                    resultsCount={filteredModels.length}
                     selectedBrands={selectedBrands}
                     selectedServices={selectedServices}
                     selectedAvailability={selectedAvailability}
                     selectedPremium={selectedPremium}
                     selectedPopular={selectedPopular}
+                    selectedWithVideo={selectedWithVideo}
                     onBrandChange={handleBrandChange}
                     onServiceChange={handleServiceChange}
                     onAvailabilityChange={handleAvailabilityChange}
                     onPremiumChange={handlePremiumChange}
                     onPopularChange={handlePopularChange}
+                    onWithVideoChange={handleWithVideoChange}
                     onClearFilters={handleClearFilters}
                     totalFilters={totalFilters}
+                    modelCountByBrand={modelCountByBrand}
+                    modelCountByService={modelCountByService}
+                    modelCountByAvailability={modelCountByAvailability}
                   />
 
                   {/* Search */}
@@ -518,6 +616,41 @@ const Catalog = () => {
                     >
                       <List className="w-4 h-4" />
                     </Button>
+                  </div>
+                  </div>
+
+                  {/* Chips rápidos */}
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <Badge
+                      variant={selectedAvailability.includes("in_stock") ? "default" : "outline"}
+                      className="cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={toggleChipStock}
+                    >
+                      Em estoque
+                    </Badge>
+                    <Badge
+                      variant={selectedPremium ? "secondary" : "outline"}
+                      className="cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={toggleChipPremium}
+                    >
+                      <Star className="w-3 h-3 mr-1 fill-current" />
+                      Premium
+                    </Badge>
+                    <Badge
+                      variant={selectedPopular ? "secondary" : "outline"}
+                      className="cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={toggleChipPopular}
+                    >
+                      Popular
+                    </Badge>
+                    <Badge
+                      variant={selectedWithVideo ? "default" : "outline"}
+                      className="cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={toggleChipVideo}
+                    >
+                      <Video className="w-3 h-3 mr-1" />
+                      Com vídeo
+                    </Badge>
                   </div>
                 </div>
 
@@ -608,17 +741,20 @@ const Catalog = () => {
                   )}
                   </>
                 ) : (
-                  <div className="text-center py-16">
-                    <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
-                      <Smartphone className="w-10 h-10 text-muted-foreground" />
+                  <div className="text-center py-16 px-4">
+                    <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-muted/60 flex items-center justify-center ring-4 ring-muted/40">
+                      <Smartphone className="w-12 h-12 text-muted-foreground" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">
                       Nenhum modelo encontrado
                     </h3>
-                    <p className="text-muted-foreground mb-6">
+                    <p className="text-muted-foreground mb-2 max-w-md mx-auto">
                       Tente ajustar os filtros ou buscar por outro termo.
                     </p>
-                    <Button variant="outline" onClick={handleClearFilters}>
+                    <p className="text-sm text-muted-foreground/80 mb-6">
+                      Dica: remova alguns filtros ou use menos termos na busca para ver mais resultados.
+                    </p>
+                    <Button variant="outline" onClick={handleClearFilters} className="gap-2">
                       Limpar Filtros
                     </Button>
                   </div>
@@ -637,6 +773,7 @@ const Catalog = () => {
         models={comparisonModelsData}
         open={showComparison}
         onOpenChange={setShowComparison}
+        brands={brands}
       />
     </div>
   );

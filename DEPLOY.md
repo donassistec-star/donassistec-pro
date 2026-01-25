@@ -136,38 +136,71 @@ Edite o `.env` com senhas fortes:
 - `MYSQL_PASSWORD`
 - `JWT_SECRET`
 
-### 2. Configurar HTTPS
+### 2. Nginx como proxy reverso (VPS)
 
-Use um reverse proxy (Nginx/Traefik) com certificados SSL:
+Na raiz do projeto existe `nginx-vps.conf` para deploy em VPS:
+
+- **Porta 80** → proxy `/` para o frontend em `127.0.0.1:8200`
+- **`/api`** → proxy para o backend em `127.0.0.1:3001`
+- **`/uploads`** e **`/health`** → backend
+- **server_name**: `177.67.32.204`, `donassistec.com.br`, `www.donassistec.com.br`
+
+**Comandos no servidor:**
+
+```bash
+sudo cp /home/DonAssistec/nginx-vps.conf /etc/nginx/sites-available/donassistec
+sudo ln -sf /etc/nginx/sites-available/donassistec /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+**Firewall (firewalld):** libere 80 e 443:
+
+```bash
+sudo firewall-cmd --zone=public --add-port=80/tcp --permanent
+sudo firewall-cmd --zone=public --add-port=443/tcp --permanent
+sudo firewall-cmd --reload
+```
+
+**Backend (`.env`):** para o domínio, use `CORS_ORIGIN=https://donassistec.com.br` (ou `http://` se ainda sem SSL).
+
+### 3. Configurar HTTPS
+
+Use Nginx com certificados SSL (Let's Encrypt, etc.):
 
 ```nginx
-# Exemplo Nginx
 server {
     listen 443 ssl;
-    server_name seu-dominio.com;
+    server_name donassistec.com.br www.donassistec.com.br;
 
     ssl_certificate /path/to/cert.pem;
     ssl_certificate_key /path/to/key.pem;
 
     location / {
-        proxy_pass http://localhost:8200;
+        proxy_pass http://127.0.0.1:8200;
+        proxy_set_header Host 127.0.0.1;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location /api {
-        proxy_pass http://localhost:3001;
-    }
+    location /api { proxy_pass http://127.0.0.1:3001; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; }
+    location /uploads { proxy_pass http://127.0.0.1:3001; proxy_set_header Host $host; }
+    location /health { proxy_pass http://127.0.0.1:3001; }
 }
 ```
 
-### 3. Firewall
+### 4. Firewall
 
-- Abra apenas portas necessárias (80, 443)
-- Restrinja acesso ao MySQL (porta 3307) apenas internamente
-- Restrinja acesso ao phpMyAdmin apenas em desenvolvimento
+- Abra as portas necessárias: **80** (HTTP), **443** (HTTPS). No firewalld: `sudo firewall-cmd --zone=public --add-port=80/tcp --permanent` (e 443); depois `--reload`.
+- Restrinja acesso ao MySQL (porta 3307) e ao phpMyAdmin apenas em desenvolvimento ou a IPs de confiança.
 
-### 4. Variáveis de Ambiente
+### 5. Variáveis de Ambiente
 
 Nunca commite o arquivo `.env` no Git. Ele já está no `.gitignore`.
+
+**Produção com domínio (ex.: donassistec.com.br):**
+- **Backend** `backend/.env`: `CORS_ORIGIN=https://donassistec.com.br`
+- O frontend detecta `donassistec.com.br` e `177.67.32.204` e usa `/api` no mesmo host (sem `:3001`).
 
 ## 📊 Monitoramento
 
@@ -214,10 +247,17 @@ Se alguma porta estiver em uso, altere no `.env`:
 
 ### Rebuild necessário após mudanças no código
 
+**Docker:**
 ```bash
 docker-compose down
 docker-compose build --no-cache
 docker-compose up -d
+```
+
+**VPS com PM2:** após alterar o backend, recompile e reinicie:
+```bash
+cd backend && npm run build
+pm2 restart donassistec-backend
 ```
 
 ## 🔄 Atualizações
@@ -230,6 +270,18 @@ docker-compose down
 docker-compose build
 docker-compose up -d
 ```
+
+### Rodar migrations (quando houver novas)
+
+Após atualizar o código, se houver novas migrations em `backend/database/migrations/`, execute-as. Ex.: pré-pedidos (23 e 24):
+
+```bash
+cd backend
+npm run migrate:pre-pedidos       # 23: tabela pre_pedidos
+npm run migrate:pre-pedidos-contact   # 24: campos de contato
+```
+
+**VPS com PM2** (backend fora do Docker): use o mesmo `backend/.env` e rode os scripts acima antes de `pm2 restart donassistec-backend`.
 
 ### Atualizar dependências
 
@@ -292,4 +344,4 @@ Em caso de problemas:
 
 ---
 
-**Última atualização**: Janeiro 2025
+**Última atualização**: Janeiro 2026

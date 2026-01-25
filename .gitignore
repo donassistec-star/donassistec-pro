@@ -38,6 +38,7 @@ backend/uploads/*
 
 # Build outputs
 dist/
+backend/dist/
 build/
 *.tsbuildinfo
 

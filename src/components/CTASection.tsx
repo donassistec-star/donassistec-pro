@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { MessageCircle, Phone } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { validation } from "@/utils/validation";
+import { toast } from "sonner";
 
 const CTASection = () => {
   const { settings } = useSettings();
@@ -29,7 +30,12 @@ const CTASection = () => {
           <Button
             variant="whatsapp"
             size="xl"
-            onClick={() => window.open(whatsappUrl, "_blank")}
+            onClick={() => {
+              const w = window.open(whatsappUrl, "_blank");
+              if (!w) {
+                toast.error("Permita pop-ups para abrir o WhatsApp e tente novamente.");
+              }
+            }}
             className="gap-3"
           >
             <MessageCircle className="w-6 h-6" />

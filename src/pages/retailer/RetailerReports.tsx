@@ -66,7 +66,7 @@ const RetailerReports = () => {
     let partsCount = 0;
 
     // Estatísticas de pedidos
-    let totalOrders = orders.length;
+    const totalOrders = orders.length;
     let pendingOrders = 0;
     let completedOrders = 0;
 

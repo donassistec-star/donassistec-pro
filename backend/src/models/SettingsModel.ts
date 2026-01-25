@@ -110,6 +110,36 @@ class SettingsModel {
     }
   }
 
+  /** Chaves permitidas para leitura pública (sem autenticação) */
+  private static readonly PUBLIC_KEYS = [
+    "contactPhone", "contactPhoneRaw", "contactEmail", "contactAddress", "contactWhatsApp",
+    "contactCep", "contactCity", "contactState", "whatsappContactMessage",
+    "brandingLogoUrl", "brandingLogoFavicon", "brandingPrimaryColor", "brandingSecondaryColor",
+    "companyTradeName", "companyDescription", "companySlogan", "companyLegalName", "companyWebsite",
+    "siteName", "siteDescription", "supportPhone", "supportEmail",
+    "socialInstagram", "socialFacebook", "socialYoutube", "socialLinkedin", "socialTwitter", "socialTikTok",
+    "seoTitle", "seoDescription", "seoOgImage", "seoKeywords",
+    "googleAnalyticsId", "facebookPixelId", "whatsappEnabled", "whatsappNumber",
+  ];
+
+  async getPublic(): Promise<SettingsMap> {
+    if (SettingsModel.PUBLIC_KEYS.length === 0) return {};
+    const placeholders = SettingsModel.PUBLIC_KEYS.map(() => "?").join(",");
+    const [rows] = await pool.execute<mysql2.RowDataPacket[]>(
+      `SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN (${placeholders})`,
+      SettingsModel.PUBLIC_KEYS
+    );
+    const settings: SettingsMap = {};
+    rows.forEach((row) => {
+      let value: string | boolean | number = row.setting_value;
+      if (value === "true") value = true;
+      else if (value === "false") value = false;
+      else if (!isNaN(Number(value)) && value !== "") value = Number(value);
+      settings[row.setting_key] = value;
+    });
+    return settings;
+  }
+
   async getHistory(settingKey?: string, limit: number = 50): Promise<any[]> {
     const connection = await pool.getConnection();
     try {

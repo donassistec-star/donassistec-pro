@@ -69,10 +69,16 @@ export const brands: Brand[] = [
   },
 ];
 
+/** Tipos de serviço para filtro (fallback quando a API não retorna); IDs alinhados com a tabela services */
 export const serviceTypes = [
-  { id: "reconstruction", name: "Reconstrução de Tela", icon: "🔧" },
-  { id: "glassReplacement", name: "Troca de Vidro", icon: "🪟" },
-  { id: "partsAvailable", name: "Peças Disponíveis", icon: "📦" },
+  { id: "service_reconstruction", name: "Reconstrução", icon: "🔧" },
+  { id: "service_glass", name: "Troca de Vidro", icon: "🪟" },
+  { id: "service_parts", name: "Peças Disponíveis", icon: "📦" },
+  { id: "service_battery", name: "Troca de Bateria", icon: "🔋" },
+  { id: "service_screen", name: "Troca de Tela", icon: "📱" },
+  { id: "service_camera", name: "Reparo de Câmera", icon: "📷" },
+  { id: "service_charging", name: "Reparo de Carregamento", icon: "🔌" },
+  { id: "service_software", name: "Atualização/Formatação", icon: "💻" },
 ];
 
 export const availabilityOptions = [

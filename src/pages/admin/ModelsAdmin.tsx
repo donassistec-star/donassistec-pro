@@ -167,11 +167,12 @@ const ModelsAdmin = () => {
         case "name":
           comparison = a.name.localeCompare(b.name);
           break;
-        case "brand":
+        case "brand": {
           const brandA = brands.find((b) => b.id === a.brand)?.name || "";
           const brandB = brands.find((b) => b.id === b.brand)?.name || "";
           comparison = brandA.localeCompare(brandB);
           break;
+        }
         case "availability":
           comparison = a.availability.localeCompare(b.availability);
           break;

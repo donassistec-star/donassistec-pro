@@ -30,7 +30,7 @@ const RetailerSupport = () => {
   const faqs = [
     {
       question: "Como faço um pedido?",
-      answer: "Acesse o catálogo, adicione os produtos ao carrinho e finalize o pedido na página de checkout. Nossa equipe entrará em contato com o orçamento personalizado.",
+      answer: "Acesse o catálogo, adicione os itens ao pré-orçamento e use o botão Orçamento (WhatsApp) para enviar. Nossa equipe retornará em seguida.",
     },
     {
       question: "Qual o prazo de entrega?",

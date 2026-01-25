@@ -48,6 +48,8 @@ DB_PASSWORD=donassistec_password
 CORS_ORIGIN=http://localhost:8200
 ```
 
+> **Produção:** com domínio (ex.: donassistec.com.br), use `CORS_ORIGIN=https://donassistec.com.br`.
+
 ### 3. Iniciar o servidor
 
 **Desenvolvimento:**
@@ -111,6 +113,31 @@ GET /api/models?availability=in_stock&popular=true
 GET /api/models?service=reconstruction&service=glassReplacement
 ```
 
+### Configurações (Settings)
+
+```
+GET /api/settings/public   - Configurações públicas (contato, branding, redes) — sem auth
+GET /api/settings          - Todas as configurações (admin)
+PUT /api/settings          - Atualizar configurações (admin)
+GET /api/settings/history  - Histórico de alterações (admin)
+```
+
+### Tabela de preços (Price Table)
+
+```
+GET /api/price-table       - Modelos × serviços × preços (público)
+GET /api/price-table?brand=:id  - Filtrado por marca (opcional)
+```
+
+### Pré-pedidos
+
+```
+GET  /api/pre-pedidos   - Listar pré-pedidos (admin)
+POST /api/pre-pedidos   - Registrar pré-pedido (público, fluxo Finalizar)
+```
+
+O **POST** aceita opcionalmente: `contact_name`, `contact_company`, `contact_phone`, `contact_email`, `notes`, `is_urgent`, `retailer_id` (dados do formulário de finalização).
+
 ## 📦 Estrutura do Projeto
 
 ```
@@ -139,6 +166,22 @@ Certifique-se de que o Docker Compose está rodando:
 cd /home/DonAssistec
 docker-compose up -d
 ```
+
+### Migrations
+
+As migrations ficam em `database/migrations/`. Para o fluxo **pré-pedidos** (Finalizar e enviar pré-pedido):
+
+```bash
+cd backend
+
+# 1. Tabela pre_pedidos (id, session_id, items_json, created_at)
+npm run migrate:pre-pedidos
+
+# 2. Campos de contato e observações (contact_name, contact_company, contact_phone, contact_email, notes, is_urgent, retailer_id)
+npm run migrate:pre-pedidos-contact
+```
+
+Ou execute o conteúdo de `23_pre_pedidos.sql` e em seguida `24_pre_pedidos_contact.sql` no seu cliente MySQL.
 
 ## 📝 Exemplos de Uso
 

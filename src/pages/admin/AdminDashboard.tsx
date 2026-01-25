@@ -14,7 +14,8 @@ import {
   Tag,
   BarChart3,
   Settings,
-  Wrench
+  Wrench,
+  ClipboardList
 } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -23,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ordersService } from "@/services/ordersService";
 import { retailersService } from "@/services/retailersService";
 import { productViewsService } from "@/services/productViewsService";
+import { prePedidosService } from "@/services/prePedidosService";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Eye, Activity } from "lucide-react";
 
@@ -32,6 +34,8 @@ interface DashboardStats {
   completedOrders: number;
   totalRetailers: number;
   totalProductViews: number;
+  prePedidosCount: number;
+  prePedidosLast7: number;
   topViewedProducts: { model_id: string; total_views: number }[];
 }
 
@@ -48,6 +52,10 @@ const AdminDashboard = () => {
     pendingOrders: 0,
     completedOrders: 0,
     totalRetailers: 0,
+    totalProductViews: 0,
+    prePedidosCount: 0,
+    prePedidosLast7: 0,
+    topViewedProducts: [],
   });
   const [loading, setLoading] = useState(true);
   const [orderTrends, setOrderTrends] = useState<OrderTrend[]>([]);
@@ -70,12 +78,24 @@ const AdminDashboard = () => {
         const totalRetailers = retailers.filter(r => r.active).length;
         const totalProductViews = mostViewed.reduce((sum, item) => sum + item.total_views, 0);
 
+        let prePedidosCount = 0;
+        let prePedidosLast7 = 0;
+        try {
+          const preList = await prePedidosService.getAll();
+          prePedidosCount = preList.length;
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          prePedidosLast7 = preList.filter((r) => new Date(r.created_at) >= sevenDaysAgo).length;
+        } catch { void 0; /* prePedidos fetch failed; stats use defaults */ }
+
         setStats({
           totalOrders,
           pendingOrders,
           completedOrders,
           totalRetailers,
           totalProductViews,
+          prePedidosCount,
+          prePedidosLast7,
           topViewedProducts: mostViewed.slice(0, 5),
         });
 
@@ -156,6 +176,12 @@ const AdminDashboard = () => {
       description: "Visualize e gerencie todos os pedidos",
       href: "/admin/pedidos",
       icon: Package,
+    },
+    {
+      title: "Pré-pedidos",
+      description: "Registros do fluxo Finalizar (pré-orçamento)",
+      href: "/admin/pre-pedidos",
+      icon: ClipboardList,
     },
     {
       title: "Gerenciar Lojistas",
@@ -279,6 +305,22 @@ const AdminDashboard = () => {
               <p className="text-xs text-muted-foreground">
                 Visualizações por pedido
               </p>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-2 lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pré-pedidos</CardTitle>
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.prePedidosCount}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.prePedidosLast7} nos últimos 7 dias
+              </p>
+              <Link to="/admin/pre-pedidos" className="text-xs text-primary hover:underline mt-1 inline-block">
+                Ver todos →
+              </Link>
             </CardContent>
           </Card>
         </div>

@@ -4,11 +4,14 @@ import { Upload, X, Loader2 } from "lucide-react";
 import { uploadService } from "@/services/uploadService";
 import { toast } from "sonner";
 
+// Hosts que usam o mesmo host para /uploads (nginx proxy)
+const PRODUCTION_DOMAIN = /^((www\.)?donassistec\.com\.br|177\.67\.32\.204)$/;
+
 // Função para detectar URL da API (mesma lógica do api.ts)
 const getApiBaseUrl = () => {
   // Se VITE_API_URL estiver definido, usar ele
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace('/api', '');
+    return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "");
   }
 
   // Se estiver rodando localmente, usar localhost
@@ -16,9 +19,15 @@ const getApiBaseUrl = () => {
     return "http://localhost:3001";
   }
 
-  // Caso contrário, usar o mesmo hostname e porta 3001
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
+
+  // donassistec.com.br ou 177.67.32.204: mesmo host sem porta (uploads em /uploads)
+  if (PRODUCTION_DOMAIN.test(hostname)) {
+    return `${protocol}//${hostname}`;
+  }
+
+  // Outros hostnames: mesmo host e porta 3001
   return `${protocol}//${hostname}:3001`;
 };
 

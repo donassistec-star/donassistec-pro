@@ -1,27 +1,35 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Menu, X, Phone, Smartphone, ShoppingCart, Heart } from "lucide-react";
+import { Menu, X, Phone, Smartphone, FileText, Heart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useSettings } from "@/hooks/useSettings";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationsContext";
+import Notifications from "@/components/Notifications";
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { getTotalItems } = useCart();
   const { favorites } = useFavorites();
   const { settings } = useSettings();
+  const { user } = useAuth();
+  const { notifications, markAsRead, removeNotification, markAllAsRead, unreadCount } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const cartItemsCount = getTotalItems();
+  const preOrcamentoCount = getTotalItems();
   const favoritesCount = favorites.length;
+  const isHome = location.pathname === "/";
+  const isLojista = user?.role === "retailer";
 
   const contactPhone = settings?.contactPhone || "(11) 99999-9999";
   const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
 
   const navLinks = [
     { label: "Home", href: "/" },
-    { label: "Catálogo", href: "/catalogo" },
+    ...(isLojista ? [{ label: "Catálogo", href: "/catalogo" }] : []),
     { label: "Favoritos", href: "/favoritos" },
     { label: "Sobre", href: "/sobre" },
     { label: "Ajuda", href: "/ajuda" },
@@ -108,6 +116,13 @@ const Header = () => {
               <Phone className="w-4 h-4" />
               {contactPhone}
             </a>
+            <Notifications
+              notifications={notifications}
+              onMarkAsRead={markAsRead}
+              onRemove={removeNotification}
+              onMarkAllAsRead={markAllAsRead}
+              unreadCount={unreadCount}
+            />
             <Button 
               variant="outline" 
               size="icon"
@@ -127,12 +142,12 @@ const Header = () => {
               size="icon"
               className="relative"
               onClick={() => navigate("/carrinho")}
-              title="Carrinho"
+              title="Pré-orçamento"
             >
-              <ShoppingCart className="w-5 h-5" />
-              {cartItemsCount > 0 && (
+              <FileText className="w-5 h-5" />
+              {preOrcamentoCount > 0 && (
                 <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-primary text-primary-foreground text-xs">
-                  {cartItemsCount}
+                  {preOrcamentoCount}
                 </Badge>
               )}
             </Button>
@@ -179,6 +194,15 @@ const Header = () => {
                 </a>
               )
             ))}
+            <div className="flex items-center gap-2 mt-2">
+              <Notifications
+                notifications={notifications}
+                onMarkAsRead={markAsRead}
+                onRemove={removeNotification}
+                onMarkAllAsRead={markAllAsRead}
+                unreadCount={unreadCount}
+              />
+            </div>
             <Button 
               variant="outline" 
               className="mt-2 relative justify-start"
@@ -203,11 +227,11 @@ const Header = () => {
                 setIsMenuOpen(false);
               }}
             >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Carrinho
-              {cartItemsCount > 0 && (
+              <FileText className="w-4 h-4 mr-2" />
+              Pré-orçamento
+              {preOrcamentoCount > 0 && (
                 <Badge className="ml-auto bg-primary text-primary-foreground">
-                  {cartItemsCount}
+                  {preOrcamentoCount}
                 </Badge>
               )}
             </Button>

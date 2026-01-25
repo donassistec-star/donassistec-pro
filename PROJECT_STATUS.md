@@ -1,7 +1,7 @@
 # Status do Projeto DonAssistec
 
-**Data**: Janeiro 2025  
-**Versão**: 1.0.0  
+**Data**: Janeiro 2026  
+**Versão**: 1.2.0  
 **Status**: ✅ **Produção - Completo e Funcional**
 
 ## 📊 Resumo Executivo
@@ -35,6 +35,10 @@ O DonAssistec está **100% funcional** e pronto para produção com todas as fun
    - Histórico completo
    - Exportação (PDF, Excel, TXT)
    - Notificações em tempo real
+
+2.1 **Pré-orçamento e Pré-pedidos** ✅
+   - Finalizar com formulário (contato, observações, urgente)
+   - Admin: lista, busca, exportação CSV, dados de contato
 
 3. **Dashboard Administrativo** ✅
    - Métricas em tempo real

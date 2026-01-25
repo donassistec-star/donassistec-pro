@@ -82,6 +82,13 @@ Lista detalhada de todas as funcionalidades implementadas no sistema DonAssistec
 - ✅ Exportação (PDF, Excel, TXT)
 - ✅ Notificações em tempo real
 
+### 📋 Pré-orçamento e Pré-pedidos
+- ✅ Finalizar pré-orçamento por WhatsApp (itens + mensagem)
+- ✅ Formulário de contato ao finalizar (nome, empresa, telefone, e-mail, observações, urgente)
+- ✅ Pré-preenchimento quando lojista logado
+- ✅ Admin: lista de pré-pedidos, busca por nome/empresa/e-mail, exportar CSV
+- ✅ Dados de contato e badge “Urgente” na lista admin
+
 ### 👥 Gerenciamento de Lojistas
 - ✅ Listagem de lojistas
 - ✅ Aprovação/rejeição

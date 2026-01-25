@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   LayoutDashboard, 
   Package, 
   User, 
@@ -19,7 +19,8 @@ import {
   MessageSquare,
   PackageCheck,
   Ticket,
-  Wrench
+  Wrench,
+  ClipboardList
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
@@ -75,6 +76,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       label: "Pedidos",
       href: "/admin/pedidos",
       icon: Package,
+    },
+    {
+      label: "Pré-pedidos",
+      href: "/admin/pre-pedidos",
+      icon: ClipboardList,
     },
     {
       label: "Tickets de Suporte",

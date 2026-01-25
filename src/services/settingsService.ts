@@ -131,14 +131,21 @@ export interface SettingsHistory {
 }
 
 export const settingsService = {
+  /** Configurações públicas (Header, Footer, etc.) – não exige login */
+  async getPublic(): Promise<SystemSettings | null> {
+    try {
+      const response = await api.get<ApiResponse<SystemSettings>>("/settings/public");
+      if (response.data.success && response.data.data) return response.data.data;
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
   async getAll(): Promise<SystemSettings | null> {
     try {
       const response = await api.get<ApiResponse<SystemSettings>>("/settings");
-      
-      if (response.data.success && response.data.data) {
-        return response.data.data;
-      }
-      
+      if (response.data.success && response.data.data) return response.data.data;
       return null;
     } catch (error) {
       console.error("Erro ao buscar configurações:", error);

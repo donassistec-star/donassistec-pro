@@ -199,6 +199,27 @@ GET /api/models?service=reconstruction&service=glassReplacement
 GET /api/models?brand=apple&premium=true&availability=in_stock&popular=true
 ```
 
+### ⚙️ Configurações
+
+#### Configurações públicas (sem autenticação)
+```http
+GET /api/settings/public
+```
+Retorna contato, branding, redes sociais etc. para Header, Footer e páginas públicas.
+
+#### Configurações completas (admin)
+```http
+GET /api/settings
+Authorization: Bearer <token>
+```
+
+### 📊 Tabela de preços
+
+```http
+GET /api/price-table?brand=apple
+```
+**Público.** Retorna `{ services, models }` com preços por modelo e serviço. Query `brand` opcional.
+
 ## 📦 Estrutura da Resposta
 
 Todas as respostas seguem o formato:
@@ -323,10 +344,11 @@ PORT=3002
 
 ### Erro de CORS
 
-Verifique se o `CORS_ORIGIN` no `.env` está correto:
+Verifique o `CORS_ORIGIN` no `backend/.env`:
 ```env
 CORS_ORIGIN=http://localhost:8200
 ```
+Em produção com domínio: `CORS_ORIGIN=https://donassistec.com.br`. O backend já inclui `donassistec.com.br`, `www.donassistec.com.br` e `177.67.32.204` em `allowedOrigins`.
 
 ## 📊 Status da API
 

@@ -8,10 +8,10 @@ export const useSettings = () => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const data = await settingsService.getAll();
+        const data = await settingsService.getPublic();
         setSettings(data);
-      } catch (error) {
-        console.error("Erro ao carregar configurações:", error);
+      } catch {
+        // getPublic não exige login; falha silenciosa com defaults
       } finally {
         setLoading(false);
       }

@@ -3,7 +3,7 @@
 Todas as rotas da API REST do DonAssistec.
 
 **Base URL**: `http://localhost:3001/api` (desenvolvimento)  
-**Produção**: `http://seu-servidor:3001/api`
+**Produção**: `http://donassistec.com.br/api` (via Nginx) ou `http://seu-servidor:3001/api`
 
 ## 📋 Índice
 
@@ -11,8 +11,10 @@ Todas as rotas da API REST do DonAssistec.
 - [Marcas](#marcas)
 - [Modelos](#modelos)
 - [Pedidos](#pedidos)
+- [Pré-pedidos](#pré-pedidos)
 - [Lojistas](#lojistas)
 - [Configurações](#configurações)
+- [Tabela de Preços](#tabela-de-preços)
 - [Serviços](#serviços)
 - [Upload](#upload)
 - [Visualizações](#visualizações)
@@ -131,6 +133,45 @@ Atualizar status do pedido (admin).
 
 ---
 
+## 📋 Pré-pedidos
+
+Registros de pré-pedidos enviados pelo fluxo "Finalizar e enviar pré-pedido" no pré-orçamento.
+
+### GET `/api/pre-pedidos`
+Lista todos os pré-pedidos (admin).
+
+### POST `/api/pre-pedidos`
+Registra um pré-pedido (público). Chamado pelo frontend ao finalizar o pré-orçamento (formulário de contato + itens).
+
+**Body:**
+```json
+{
+  "items": [
+    {
+      "model_id": "uuid",
+      "model_name": "iPhone 15",
+      "brand_name": "Apple",
+      "quantity": 1,
+      "selected_services": [
+        { "service_id": "service_glass", "name": "Troca de Tela", "price": 800 }
+      ]
+    }
+  ],
+  "session_id": "opcional",
+  "contact_name": "opcional",
+  "contact_company": "opcional",
+  "contact_phone": "opcional",
+  "contact_email": "opcional",
+  "notes": "opcional",
+  "is_urgent": false,
+  "retailer_id": "id do lojista quando logado"
+}
+```
+
+Campos opcionais: `contact_name`, `contact_company`, `contact_phone`, `contact_email`, `notes`, `is_urgent` (boolean), `retailer_id`.
+
+---
+
 ## 👥 Lojistas
 
 ### GET `/api/retailers`
@@ -146,6 +187,23 @@ Atualizar status do lojista (admin).
 
 ## ⚙️ Configurações
 
+### GET `/api/settings/public`
+Obter configurações **públicas** (contato, branding, redes sociais, etc.) para Header, Footer e páginas públicas. **Não exige autenticação.**
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "contactPhone": "...",
+    "contactEmail": "...",
+    "brandingLogoUrl": "...",
+    "companyTradeName": "...",
+    ...
+  }
+}
+```
+
 ### GET `/api/settings`
 Obter todas as configurações (admin).
 
@@ -158,6 +216,33 @@ Histórico de mudanças nas configurações (admin).
 **Query Params:**
 - `settingKey`: Filtrar por chave específica
 - `limit`: Limite de resultados (padrão: 50)
+
+---
+
+## 📊 Tabela de Preços
+
+### GET `/api/price-table`
+Tabela de valores: modelos × serviços × preços. **Público.**
+
+**Query Params:**
+- `brand`: (opcional) ID da marca para filtrar
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "services": [{ "id": "...", "name": "..." }],
+    "models": [{
+      "id": "...",
+      "name": "...",
+      "brand_id": "...",
+      "brand_name": "...",
+      "prices": [{ "service_id": "...", "price": 100, "available": true }]
+    }]
+  }
+}
+```
 
 ---
 
