@@ -3,19 +3,24 @@
  */
 
 /**
- * Formata um valor numérico como moeda brasileira (BRL)
+ * Formata um valor numérico como moeda brasileira (BRL).
+ * Intl.NumberFormat em pt-BR pode usar espaço não-quebrável (U+00A0); normalizamos para espaço.
  */
-export const formatCurrency = (value: number): string => {
+export const formatCurrency = (value: number | null | undefined): string => {
+  const n = value ?? 0;
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(value);
+  })
+    .format(n)
+    .replace(/\u00A0/g, " ");
 };
 
 /**
- * Formata uma data para exibição em português
+ * Formata uma data para exibição em português. Retorna "N/A" para null/undefined.
  */
-export const formatDate = (date: string | Date, format: "short" | "long" | "time" = "short"): string => {
+export const formatDate = (date: string | Date | null | undefined, format: "short" | "long" | "time" = "short"): string => {
+  if (date == null) return "N/A";
   const dateObj = typeof date === "string" ? new Date(date) : date;
 
   if (format === "short") {

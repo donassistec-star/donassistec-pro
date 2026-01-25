@@ -112,12 +112,12 @@ const SearchSuggestions = ({ searchQuery, onSelectModel, onClose, isOpen, onPopu
                     </div>
                     <div className="font-semibold text-foreground truncate">{model.name}</div>
                     <div className="flex gap-2 mt-1">
-                      {model.services.reconstruction && (
+                      {model.services?.reconstruction && (
                         <Badge variant="outline" className="text-xs">
                           Reconstrução
                         </Badge>
                       )}
-                      {model.services.glassReplacement && (
+                      {model.services?.glassReplacement && (
                         <Badge variant="outline" className="text-xs">
                           Vidro
                         </Badge>

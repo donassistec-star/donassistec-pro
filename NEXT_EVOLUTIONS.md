@@ -3,10 +3,11 @@
 ## 📊 Análise Atual
 
 ### ✅ Funcionalidades Implementadas
-- Sistema administrativo completo (11 páginas)
+- Sistema administrativo completo (11+ páginas)
 - Área do lojista com dashboard e relatórios
 - CRUD completo de modelos, marcas e vídeos
 - Sistema de pedidos com status
+- **Pré-orçamento e pré-pedidos** (formulário de contato, urgente, admin com exportação CSV)
 - Autenticação JWT com RBAC
 - Configurações do sistema (MySQL)
 - Exportação de relatórios (TXT, Excel, PDF) e de modelos (Excel, CSV)

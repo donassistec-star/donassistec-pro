@@ -1,65 +1,88 @@
-import { MessageCircle, Shield, Clock, Award } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/hero-b2c.jpg";
-
-const WHATSAPP_NUMBER = "5551999999999";
-const whatsappLink = (text: string) =>
-  `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+import { Badge } from "@/components/ui/badge";
+import { Smartphone, Monitor, Shield, ArrowRight } from "lucide-react";
+import heroImage from "@/assets/hero-laboratory.jpg";
+import { useHomeContent } from "@/contexts/HomeContentContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const HeroSection = () => {
+  const { content } = useHomeContent();
+  const { user } = useAuth();
+  const isLojista = user?.role === "retailer";
   return (
-    <section className="relative min-h-[100svh] flex items-center pt-16 overflow-hidden">
-      {/* Background */}
+    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+      {/* Background Image with Overlay */}
       <div className="absolute inset-0">
         <img
-          src={heroImage}
-          alt="Técnico reconstruindo tela de celular"
+          src={content.heroImage || heroImage}
+          alt="Laboratório DonAssistec"
           className="w-full h-full object-cover"
-          width={1920}
-          height={1080}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-secondary/95 via-secondary/80 to-secondary/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-foreground/95 via-foreground/85 to-foreground/60" />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10 py-12">
+      <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-2xl">
-          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-card leading-tight mb-6">
-            Não troque sua tela original por uma paralela.{" "}
-            <span className="text-primary-foreground/90">Recupere-a na Don Tech.</span>
+          <Badge className="mb-6 bg-secondary/20 text-secondary border-secondary/40 hover:bg-secondary/30">
+            <Shield className="w-3 h-3 mr-1" />
+            {content.heroBadge || "Laboratório Premium B2B"}
+          </Badge>
+
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-card mb-6 leading-tight">
+            {content.heroTitle || (
+              <>
+                Reconstrução de Telas com{" "}
+                <span className="text-secondary">Tecnologia Industrial</span>
+              </>
+            )}
           </h1>
 
-          <p className="text-base sm:text-lg md:text-xl text-card/85 mb-8 leading-relaxed max-w-xl">
-            Única assistência no RS com tecnologia de fábrica para reconstrução
-            de vidro. Economize até 70% mantendo o toque e as cores originais.
+          <p className="text-lg md:text-xl text-card/80 mb-8 leading-relaxed">
+            {content.heroSubtitle ||
+              "Peças premium e telas reconstruídas para lojistas e assistências técnicas. Máquinas de última geração e atendimento exclusivo B2B."}
           </p>
 
-          <Button
-            size="lg"
-            className="bg-[hsl(142,72%,40%)] hover:bg-[hsl(142,72%,35%)] text-card font-heading font-bold text-base sm:text-lg px-8 py-6 rounded-lg shadow-lg"
-            asChild
-          >
-            <a
-              href={whatsappLink("Olá! Gostaria de fazer um orçamento grátis.")}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <MessageCircle className="w-5 h-5 mr-2" />
-              Fazer Orçamento Grátis no WhatsApp
-            </a>
-          </Button>
+          <div className="flex flex-wrap gap-4 mb-12">
+            <Button variant="hero" size="xl" asChild>
+              <Link to={isLojista ? (content.heroCtaLink || "/catalogo") : "/lojista/login"}>
+                {isLojista ? (content.heroCtaLabel || "Consultar Catálogo") : "Área do Lojista"}
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </Button>
+            <Button variant="outline" size="xl" className="border-card/40 text-card hover:bg-card hover:text-foreground">
+              {content.heroSecondaryCtaLabel || "Falar no WhatsApp"}
+            </Button>
+          </div>
 
-          {/* Quick trust badges */}
-          <div className="flex flex-wrap gap-6 mt-10">
-            {[
-              { icon: Clock, text: "No mesmo dia" },
-              { icon: Shield, text: "90 dias garantia" },
-              { icon: Award, text: "Qualidade de fábrica" },
-            ].map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-2 text-card/80">
-                <Icon className="w-5 h-5 text-primary-foreground/70" />
-                <span className="text-sm font-medium">{text}</span>
+          <div className="flex flex-wrap gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                <Smartphone className="w-6 h-6 text-primary" />
               </div>
-            ))}
+              <div>
+                <p className="text-2xl font-bold text-card">500+</p>
+                <p className="text-sm text-card/70">Modelos Compatíveis</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center">
+                <Monitor className="w-6 h-6 text-secondary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-card">10k+</p>
+                <p className="text-sm text-card/70">Telas Reconstruídas</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-card">90 dias</p>
+                <p className="text-sm text-card/70">Garantia Total</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

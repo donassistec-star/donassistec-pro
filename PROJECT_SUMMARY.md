@@ -2,8 +2,8 @@
 
 ## 📊 Estatísticas do Projeto
 
-- **Versão**: 1.0.0
-- **Data de Lançamento**: Janeiro 2025
+- **Versão**: 1.2.0
+- **Data de Lançamento**: Janeiro 2026
 - **Status**: ✅ Produção
 
 ## 🎯 Visão Geral
@@ -19,6 +19,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 - ✅ Gerenciamento de marcas e modelos
 - ✅ Gerenciamento de serviços dinâmicos
 - ✅ Gestão de pedidos e status
+- ✅ Pré-pedidos (formulário de contato, urgente, exportação CSV)
 - ✅ Gerenciamento de lojistas
 - ✅ Sistema de tickets e suporte
 - ✅ Relatórios e exportação (PDF, Excel, TXT)
@@ -35,6 +36,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 #### Lojistas
 - ✅ Dashboard personalizado
 - ✅ Catálogo completo
+- ✅ Pré-orçamento com finalização (contato, observações, urgente)
 - ✅ Favoritos e comparação
 - ✅ Sistema de pedidos
 - ✅ Acompanhamento de status

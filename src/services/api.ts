@@ -1,6 +1,9 @@
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
+// Hosts que usam /api no mesmo host (nginx proxy) – sem :3001
+const PRODUCTION_DOMAIN = /^((www\.)?donassistec\.com\.br|177\.67\.32\.204)$/;
+
 // Detectar automaticamente a URL da API baseado na origem atual
 const getApiUrl = () => {
   // Se VITE_API_URL estiver definido, usar ele
@@ -13,9 +16,15 @@ const getApiUrl = () => {
     return "http://localhost:3001/api";
   }
 
-  // Caso contrário, usar o mesmo hostname e porta 3001
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
+
+  // donassistec.com.br ou 177.67.32.204: API em /api (nginx proxy, sem porta)
+  if (PRODUCTION_DOMAIN.test(hostname)) {
+    return `${protocol}//${hostname}/api`;
+  }
+
+  // Outros hostnames: mesmo host e porta 3001
   return `${protocol}//${hostname}:3001/api`;
 };
 
@@ -31,16 +40,10 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("donassistec_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.warn("Token não encontrado no localStorage para requisição:", config.url);
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Interceptor para tratamento de erros

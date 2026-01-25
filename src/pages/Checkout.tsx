@@ -90,7 +90,7 @@ const Checkout = () => {
     e.preventDefault();
     
     if (items.length === 0) {
-      toast.error("Seu carrinho está vazio");
+      toast.error("Seu pré-orçamento está vazio");
       return;
     }
 
@@ -120,19 +120,28 @@ const Checkout = () => {
         total: 0, // Orçamento sob consulta
       };
 
-      // Preparar itens do pedido
+      // Preparar itens do pedido (derivar reconstruction/glass/parts de selectedServices quando existir)
       const orderItems: OrderItem[] = items.map((item) => {
         const brand = brands.find((b) => b.id === item.model.brand);
+        const sel = item.selectedServices;
+        const reconstruction = sel?.some((s) => s.service_id === "service_reconstruction") ?? item.services?.reconstruction ?? false;
+        const glass_replacement = sel?.some((s) => s.service_id === "service_glass") ?? item.services?.glassReplacement ?? false;
+        const parts_available = sel?.some((s) => s.service_id === "service_parts") ?? item.services?.partsAvailable ?? false;
+        let notes = item.notes;
+        if (sel && sel.length > 0) {
+          const svc = "Serviços: " + sel.map((s) => s.name).join(", ");
+          notes = notes ? `${notes} | ${svc}` : svc;
+        }
         return {
           order_id: orderId,
           model_id: item.model.id,
           model_name: item.model.name,
           brand_name: brand?.name,
           quantity: item.quantity,
-          reconstruction: item.services.reconstruction || false,
-          glass_replacement: item.services.glassReplacement || false,
-          parts_available: item.services.partsAvailable || false,
-          notes: item.notes,
+          reconstruction,
+          glass_replacement,
+          parts_available,
+          notes,
         };
       });
 
@@ -178,9 +187,9 @@ const Checkout = () => {
               <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted/50 flex items-center justify-center">
                 <ShoppingCart className="w-12 h-12 text-muted-foreground" />
               </div>
-              <h1 className="text-3xl font-bold mb-4">Seu carrinho está vazio</h1>
+              <h1 className="text-3xl font-bold mb-4">Seu pré-orçamento está vazio</h1>
               <p className="text-muted-foreground mb-8">
-                Adicione produtos ao carrinho para continuar com o pedido.
+                Adicione itens ao pré-orçamento para continuar.
               </p>
               <Button onClick={() => navigate("/catalogo")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -398,7 +407,7 @@ const Checkout = () => {
                           onClick={() => navigate("/carrinho")}
                         >
                           <ArrowLeft className="w-4 h-4 mr-2" />
-                          Voltar
+                          Voltar ao pré-orçamento
                         </Button>
                       </div>
                     </form>

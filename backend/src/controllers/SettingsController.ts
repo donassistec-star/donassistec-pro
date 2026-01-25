@@ -10,6 +10,21 @@ interface ApiResponse<T> {
 }
 
 class SettingsController {
+  /** Configurações públicas (contato, branding, redes) – sem autenticação */
+  async getPublic(_req: Request, res: Response) {
+    try {
+      const settings = await SettingsModel.getPublic();
+      const response: ApiResponse<typeof settings> = { success: true, data: settings };
+      res.json(response);
+    } catch (error: any) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: error.message || "Erro ao buscar configurações públicas",
+      };
+      res.status(500).json(response);
+    }
+  }
+
   async getAll(req: AuthRequest, res: Response) {
     try {
       const settings = await SettingsModel.getAll();

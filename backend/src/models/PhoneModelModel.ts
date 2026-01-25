@@ -379,6 +379,7 @@ class PhoneModelModel {
     );
     return result.affectedRows > 0;
   }
+
 }
 
 export default new PhoneModelModel();

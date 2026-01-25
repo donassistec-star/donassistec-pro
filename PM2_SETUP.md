@@ -92,10 +92,11 @@ O arquivo `ecosystem.config.cjs` contém a configuração completa dos processos
 - `DB_PORT`: 3307
 - `PORT`: 3001
 - `JWT_SECRET`: Configure em produção!
+- `CORS_ORIGIN`: Em produção com domínio, use `https://donassistec.com.br` (ou `http://` se sem SSL)
 
 **Frontend** (`donassistec-frontend`):
 - `PORT`: 8200
-- `VITE_API_URL`: http://localhost:3001/api
+- `VITE_API_URL`: opcional; o frontend detecta `donassistec.com.br` e `177.67.32.204` e usa `/api` no mesmo host quando atrás de Nginx.
 
 ## 📊 Estrutura de Logs
 
@@ -110,17 +111,29 @@ Os logs são salvos em `./logs/`:
 ## 🔄 Reiniciar após mudanças no código
 
 ```bash
-# 1. Rebuild do backend (se necessário)
+# 1. Rebuild do backend (obrigatório se alterou rotas/controllers/models)
 cd backend
 npm run build
+pm2 restart donassistec-backend
 
 # 2. Rebuild do frontend (se necessário)
 cd ..
 npm run build
-
-# 3. Reiniciar processos
-pm2 restart donassistec-backend
 pm2 restart donassistec-frontend
+```
+
+**Importante:** após adicionar ou alterar rotas no backend (ex.: `/api/settings/public`), sempre rode `npm run build` na pasta `backend` e `pm2 restart donassistec-backend`.
+
+### Migrations
+
+Se houver **novas migrations** (ex.: pré-pedidos 23 e 24), execute-as **antes** do restart:
+
+```bash
+cd backend
+npm run migrate:pre-pedidos         # 23: tabela pre_pedidos
+npm run migrate:pre-pedidos-contact # 24: campos de contato
+npm run build
+pm2 restart donassistec-backend
 ```
 
 ## 🐳 Docker (MySQL e phpMyAdmin)
@@ -141,10 +154,12 @@ docker-compose down
 
 ## 🌐 Acessos
 
-- **Frontend**: http://localhost:8200
-- **Backend API**: http://localhost:3001
+- **Frontend**: http://localhost:8200 (ou via Nginx na porta 80: http://donassistec.com.br)
+- **Backend API**: http://localhost:3001 (ou via Nginx: http://donassistec.com.br/api)
 - **Health Check**: http://localhost:3001/health
 - **phpMyAdmin**: http://localhost:8081
+
+Com **Nginx** na frente (`nginx-vps.conf`), o acesso externo é pela porta 80; Nginx faz proxy de `/` para :8200 e de `/api`, `/uploads`, `/health` para :3001.
 
 ## ⚠️ Troubleshooting
 
@@ -184,4 +199,4 @@ docker exec -it donassistec_mysql mysql -u donassistec_user -p
 
 ---
 
-**Última atualização**: Janeiro 2025
+**Última atualização**: Janeiro 2026

@@ -146,7 +146,7 @@ docker exec -i donassistec_mysql mysql -u donassistec_user -pdonassistec_passwor
 Execute todas as migrations em ordem:
 
 ```bash
-# Migration 6 até 20
+# Todas as migrations em ordem (ex.: 06 até 24, incluindo 23_pre_pedidos e 24_pre_pedidos_contact)
 for file in backend/database/migrations/*.sql; do
   docker exec -i donassistec_mysql mysql -u donassistec_user -pdonassistec_password donassistec_db < "$file"
 done

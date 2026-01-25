@@ -27,6 +27,10 @@ import {
   Trash2,
   Video,
   Loader2,
+  ChevronUp,
+  ChevronDown,
+  Image,
+  BookOpen,
 } from "lucide-react";
 import RetailerLayout from "@/components/retailer/RetailerLayout";
 import { modelsService } from "@/services/modelsService";
@@ -119,6 +123,14 @@ const ModelVideosAdmin = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ id: number; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [movingId, setMovingId] = useState<number | null>(null);
+
+  const getFuncaoLabel = (order?: number) => {
+    const o = order ?? 0;
+    if (o === 0) return { label: "Capa (principal)", icon: Image };
+    if (o === 1) return { label: "Tutorial", icon: BookOpen };
+    return { label: "Extra", icon: Video };
+  };
 
   const handleDeleteClick = (videoId?: number, title?: string) => {
     if (!videoId) return;
@@ -140,6 +152,41 @@ const ModelVideosAdmin = () => {
       toast.error(error.message || "Erro ao deletar vídeo");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleMoveUp = async (video: ModelVideoFrontend) => {
+    const o = video.order ?? 0;
+    if (o <= 0 || !video.id || !modelId) return;
+    const prev = videos.find((v) => (v.order ?? 0) === o - 1);
+    if (!prev?.id) return;
+    try {
+      setMovingId(video.id);
+      await modelVideosService.update(modelId, video.id, { order: o - 1 });
+      await modelVideosService.update(modelId, prev.id, { order: o });
+      toast.success("Ordem atualizada");
+      loadData();
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao reordenar");
+    } finally {
+      setMovingId(null);
+    }
+  };
+
+  const handleMoveDown = async (video: ModelVideoFrontend) => {
+    const o = video.order ?? 0;
+    const next = videos.find((v) => (v.order ?? 0) === o + 1);
+    if (!next?.id || !video.id || !modelId) return;
+    try {
+      setMovingId(video.id);
+      await modelVideosService.update(modelId, video.id, { order: o + 1 });
+      await modelVideosService.update(modelId, next.id, { order: o });
+      toast.success("Ordem atualizada");
+      loadData();
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao reordenar");
+    } finally {
+      setMovingId(null);
     }
   };
 
@@ -246,6 +293,17 @@ const ModelVideosAdmin = () => {
           </div>
         </div>
 
+        {/* Info: Capa e Tutorial */}
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="py-4">
+            <p className="text-sm text-foreground">
+              <strong>Vídeo de capa (principal):</strong> ordem <Badge variant="outline">0</Badge> — catálogo e área da imagem. •{" "}
+              <strong>Vídeo tutorial:</strong> ordem <Badge variant="outline">1</Badge> — &quot;Assistir Vídeo Tutorial&quot;. •{" "}
+              <strong>Extra:</strong> ordem 2+. Use ↑ ↓ na tabela para reordenar.
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Formulário */}
         <Card>
           <CardHeader>
@@ -325,21 +383,44 @@ const ModelVideosAdmin = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="order">Ordem (opcional)</Label>
-                <Input
-                  id="order"
-                  type="number"
-                  value={formData.order ?? ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      order: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    }))
-                  }
-                  placeholder="0, 1, 2..."
-                />
+                <Label htmlFor="order">Função / Ordem</Label>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Button
+                    type="button"
+                    variant={formData.order === 0 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFormData((p) => ({ ...p, order: 0 }))}
+                  >
+                    <Image className="w-4 h-4 mr-1" />
+                    Capa (0)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={formData.order === 1 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFormData((p) => ({ ...p, order: 1 }))}
+                  >
+                    <BookOpen className="w-4 h-4 mr-1" />
+                    Tutorial (1)
+                  </Button>
+                  <Input
+                    id="order"
+                    type="number"
+                    className="w-24"
+                    value={formData.order ?? ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        order: e.target.value ? Number(e.target.value) : undefined,
+                      }))
+                    }
+                    placeholder="0, 1, 2..."
+                    min={0}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  0 = Capa • 1 = Tutorial • 2+ = Extra
+                </p>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
@@ -396,6 +477,7 @@ const ModelVideosAdmin = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Ordem</TableHead>
+                      <TableHead>Função</TableHead>
                       <TableHead>Título</TableHead>
                       <TableHead>URL</TableHead>
                       <TableHead>Duração</TableHead>
@@ -403,62 +485,93 @@ const ModelVideosAdmin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {videos.map((video) => (
-                      <TableRow key={video.id}>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {video.order ?? 0}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-xs">
-                          <div className="font-medium truncate">
-                            {video.title}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            ID: {video.id}
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-xs">
-                          <div className="text-xs text-muted-foreground truncate">
-                            {video.url}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {video.duration ? (
-                            <Badge variant="secondary">
-                              {video.duration}
-                            </Badge>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              Não informado
+                    {videos.map((video) => {
+                      const { label, icon: Icon } = getFuncaoLabel(video.order);
+                      const o = video.order ?? 0;
+                      const isMoving = movingId === video.id;
+                      return (
+                        <TableRow key={video.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => handleMoveUp(video)}
+                                disabled={o <= 0 || isMoving}
+                                title="Subir"
+                              >
+                                <ChevronUp className="w-4 h-4" />
+                              </Button>
+                              <Badge variant="outline">{o}</Badge>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => handleMoveDown(video)}
+                                disabled={!videos.some((v) => (v.order ?? 0) === o + 1) || isMoving}
+                                title="Descer"
+                              >
+                                <ChevronDown className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center gap-1.5 text-sm">
+                              <Icon className="w-4 h-4 text-muted-foreground" />
+                              {label}
                             </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(video)}
-                              title="Editar"
-                            >
-                              <Plus className="w-4 h-4 rotate-45" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                handleDeleteClick(video.id, video.title)
-                              }
-                              title="Deletar"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="max-w-xs">
+                            <div className="font-medium truncate">
+                              {video.title}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ID: {video.id}
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-xs">
+                            <div className="text-xs text-muted-foreground truncate">
+                              {video.url}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {video.duration ? (
+                              <Badge variant="secondary">
+                                {video.duration}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                Não informado
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEdit(video)}
+                                title="Editar"
+                              >
+                                <Plus className="w-4 h-4 rotate-45" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  handleDeleteClick(video.id, video.title)
+                                }
+                                title="Deletar"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

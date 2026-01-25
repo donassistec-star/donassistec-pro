@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useHomeContent } from "@/contexts/HomeContentContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "step-1": ShoppingCart,
@@ -21,6 +22,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 const ProcessSection = () => {
   const { content } = useHomeContent();
+  const { user } = useAuth();
+  const isLojista = user?.role === "retailer";
 
   return (
     <section className="py-20 bg-background">
@@ -63,9 +66,9 @@ const ProcessSection = () => {
                         {step.description}
                       </p>
                       {step.action && step.href && (
-                        <Link to={step.href}>
+                        <Link to={step.href === "/catalogo" && !isLojista ? "/lojista/login" : step.href}>
                           <Button variant="outline" size="sm" className="w-full group-hover:border-primary group-hover:text-primary transition-colors">
-                            {step.action}
+                            {step.href === "/catalogo" && !isLojista ? "Acessar como Lojista" : step.action}
                             <ArrowRight className="w-4 h-4 ml-2" />
                           </Button>
                         </Link>

@@ -18,6 +18,7 @@ import ticketsRoutes from "./routes/tickets";
 import couponsRoutes from "./routes/coupons";
 import servicesRoutes from "./routes/services";
 import productViewsRoutes from "./routes/productViews";
+import prePedidosRoutes from "./routes/prePedidos";
 import pool from "./config/database";
 import path from "path";
 
@@ -43,6 +44,11 @@ app.use(cors({
       "http://localhost:8200",
       "http://127.0.0.1:8200",
       "http://177.67.32.204:8200",
+      "http://177.67.32.204",
+      "http://donassistec.com.br",
+      "https://donassistec.com.br",
+      "http://www.donassistec.com.br",
+      "https://www.donassistec.com.br",
       /^http:\/\/.*:8200$/, // Aceitar qualquer IP na porta 8200
     ];
     
@@ -107,7 +113,7 @@ app.use("/api/tickets", ticketsRoutes);
 app.use("/api/coupons", couponsRoutes);
 app.use("/api/services", servicesRoutes);
 app.use("/api/product-views", productViewsRoutes);
-
+app.use("/api/pre-pedidos", prePedidosRoutes);
 // 404 Handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({

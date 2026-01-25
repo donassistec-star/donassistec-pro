@@ -7,7 +7,9 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "migrate:pre-pedidos": "tsx scripts/run-migration-23.ts",
+    "migrate:pre-pedidos-contact": "tsx scripts/run-migration-24.ts"
   },
   "keywords": [
     "donassistec",

@@ -1,23 +1,157 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, ArrowRight } from "lucide-react";
+import { FileText, Trash2, Plus, Minus, ArrowLeft, MessageCircle, Pencil, Smartphone, CheckCircle2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useCart } from "@/contexts/CartContext";
+import { useSettings } from "@/hooks/useSettings";
+import { useBrands } from "@/hooks/useBrands";
 import { brands } from "@/data/models";
 import { toast } from "sonner";
+import { formatCurrency } from "@/utils/format";
+import { validation } from "@/utils/validation";
+import { buildPreOrcamentoMessageList, buildPrePedidoMessageList } from "@/utils/whatsappOrcamento";
+import { useNotifications } from "@/contexts/NotificationsContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { prePedidosService } from "@/services/prePedidosService";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Cart = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { settings } = useSettings();
+  const { brands: apiBrands } = useBrands();
   const { items, removeItem, updateItem, clearCart, getTotalItems } = useCart();
+  const { addNotification } = useNotifications();
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [showFinalizarConfirm, setShowFinalizarConfirm] = useState(false);
+  const [isFinalizando, setIsFinalizando] = useState(false);
+  const [formData, setFormData] = useState({
+    contactName: "",
+    contactCompany: "",
+    contactPhone: "",
+    contactEmail: "",
+    notes: "",
+    isUrgent: false,
+  });
 
+  const allBrands = apiBrands?.length ? apiBrands : brands;
   const totalItems = getTotalItems();
+  const wa = validation.cleanWhatsAppNumber(settings?.contactWhatsApp || settings?.contactPhoneRaw || "5511999999999") || "5511999999999";
+
+  const handleEditItem = (modelId: string) => {
+    removeItem(modelId);
+    setImageErrors((p) => {
+      const next = { ...p };
+      delete next[modelId];
+      return next;
+    });
+    navigate(`/modelo/${modelId}`);
+    toast.info("Altere os serviços e adicione novamente ao pré-orçamento.");
+  };
+
+  const handleOrcamentoWhatsApp = () => {
+    const list = items.map((item) => ({
+      model: item.model,
+      brand: allBrands.find((b) => b.id === item.model.brand),
+      quantity: item.quantity,
+      selectedServices: item.selectedServices,
+    }));
+    const msg = buildPreOrcamentoMessageList(list);
+    const w = window.open(validation.generateWhatsAppUrl(wa, msg), "_blank");
+    if (!w) {
+      toast.error("Permita pop-ups para abrir o WhatsApp e tente novamente.");
+      return;
+    }
+  };
+
+  const prefillFormAndOpen = () => {
+    setFormData({
+      contactName: user?.contactName ?? "",
+      contactCompany: user?.companyName ?? "",
+      contactPhone: user?.phone ?? "",
+      contactEmail: user?.email ?? "",
+      notes: "",
+      isUrgent: false,
+    });
+    setShowFinalizarConfirm(true);
+  };
+
+  const handleFinalizar = async () => {
+    const list = items.map((item) => ({
+      model: item.model,
+      brand: allBrands.find((b) => b.id === item.model.brand),
+      quantity: item.quantity,
+      selectedServices: item.selectedServices,
+    }));
+    const contact = {
+      contactName: formData.contactName || undefined,
+      contactCompany: formData.contactCompany || undefined,
+      notes: formData.notes || undefined,
+      isUrgent: formData.isUrgent,
+    };
+    const msg = buildPrePedidoMessageList(list, contact);
+    const w = window.open(validation.generateWhatsAppUrl(wa, msg), "_blank");
+    if (!w) {
+      toast.error("Permita pop-ups para abrir o WhatsApp e tente novamente.");
+      setShowFinalizarConfirm(false);
+      return;
+    }
+    setIsFinalizando(true);
+    try {
+      await prePedidosService.create({
+        items: list.map((item) => ({
+          model_id: item.model.id,
+          model_name: item.model.name,
+          brand_name: item.brand?.name,
+          quantity: item.quantity,
+          selected_services:
+            item.selectedServices?.map((s) => ({
+              service_id: s.service_id,
+              name: s.name,
+              price: s.price,
+            })) || [],
+        })),
+        session_id: sessionStorage.getItem("donassistec_session_id") || undefined,
+        contact_name: formData.contactName || undefined,
+        contact_company: formData.contactCompany || undefined,
+        contact_phone: formData.contactPhone || undefined,
+        contact_email: formData.contactEmail || undefined,
+        notes: formData.notes || undefined,
+        is_urgent: formData.isUrgent,
+        retailer_id: user?.id,
+      });
+    } catch {
+      // Ignorar: fluxo segue mesmo se o registro falhar
+    }
+    clearCart();
+    setImageErrors({});
+    toast.success("Pré-pedido finalizado! Nossa equipe entrará em contato por WhatsApp.");
+    addNotification({
+      type: "success",
+      title: "Pré-pedido em andamento",
+      message: "Seu pré-pedido foi enviado por WhatsApp. Nossa equipe entrará em contato em breve.",
+    });
+    navigate("/catalogo", { state: { fromFinalizar: true } });
+  };
 
   const handleQuantityChange = (modelId: string, change: number) => {
     const item = items.find((item) => item.model.id === modelId);
@@ -26,7 +160,12 @@ const Cart = () => {
     const newQuantity = item.quantity + change;
     if (newQuantity <= 0) {
       removeItem(modelId);
-      toast.success("Item removido do carrinho");
+      setImageErrors((p) => {
+        const next = { ...p };
+        delete next[modelId];
+        return next;
+      });
+      toast.success("Item removido do pré-orçamento");
     } else {
       updateItem(modelId, { quantity: newQuantity });
     }
@@ -34,12 +173,18 @@ const Cart = () => {
 
   const handleRemove = (modelId: string) => {
     removeItem(modelId);
-    toast.success("Item removido do carrinho");
+    setImageErrors((p) => {
+      const next = { ...p };
+      delete next[modelId];
+      return next;
+    });
+    toast.success("Item removido do pré-orçamento");
   };
 
-  const handleClearCart = () => {
+  const handleClearPreOrcamento = () => {
     clearCart();
-    toast.success("Carrinho limpo");
+    setImageErrors({});
+    toast.success("Pré-orçamento limpo");
   };
 
   if (items.length === 0) {
@@ -52,7 +197,7 @@ const Cart = () => {
             <div className="container mx-auto px-4">
               <Breadcrumbs
                 items={[
-                  { label: "Carrinho" },
+                  { label: "Pré-orçamento" },
                 ]}
               />
             </div>
@@ -60,11 +205,11 @@ const Cart = () => {
           <section className="container mx-auto px-4 py-16">
             <div className="max-w-2xl mx-auto text-center">
               <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted/50 flex items-center justify-center">
-                <ShoppingCart className="w-12 h-12 text-muted-foreground" />
+                <FileText className="w-12 h-12 text-muted-foreground" />
               </div>
-              <h1 className="text-3xl font-bold mb-4">Seu carrinho está vazio</h1>
+              <h1 className="text-3xl font-bold mb-4">Seu pré-orçamento está vazio</h1>
               <p className="text-muted-foreground mb-8">
-                Adicione produtos ao carrinho para continuar com o pedido.
+                Adicione itens ao pré-orçamento a partir do catálogo e envie por WhatsApp.
               </p>
               <div className="flex gap-4 justify-center">
                 <Button onClick={() => navigate("/catalogo")}>
@@ -94,7 +239,7 @@ const Cart = () => {
           <div className="container mx-auto px-4">
             <Breadcrumbs
               items={[
-                { label: "Carrinho" },
+                { label: "Pré-orçamento" },
               ]}
             />
           </div>
@@ -106,41 +251,50 @@ const Cart = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-card mb-2">
-                  Carrinho de Compras
+                  Pré-orçamento
                 </h1>
                 <p className="text-card/70">
-                  {totalItems} {totalItems === 1 ? "item" : "itens"} no carrinho
+                  {totalItems} {totalItems === 1 ? "item" : "itens"} no pré-orçamento
                 </p>
               </div>
               {items.length > 0 && (
-                <Button variant="outline" onClick={handleClearCart}>
+                <Button variant="outline" onClick={handleClearPreOrcamento}>
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Limpar Carrinho
+                  Limpar pré-orçamento
                 </Button>
               )}
             </div>
           </div>
         </section>
 
-        {/* Cart Content */}
+        {/* Pré-orçamento Content */}
         <section className="py-12">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Cart Items */}
+              {/* Itens do pré-orçamento */}
               <div className="lg:col-span-2 space-y-4">
                 {items.map((item) => {
-                  const brand = brands.find((b) => b.id === item.model.brand);
+                  const brand = allBrands.find((b) => b.id === item.model.brand);
+                  const imgError = imageErrors[item.model.id];
                   return (
                     <Card key={item.model.id} className="border-border">
                       <CardContent className="p-6">
                         <div className="flex flex-col sm:flex-row gap-6">
                           {/* Image */}
                           <div className="relative w-full sm:w-32 h-32 bg-muted/30 rounded-lg overflow-hidden shrink-0">
-                            <img
-                              src={item.model.image}
-                              alt={item.model.name}
-                              className="w-full h-full object-cover"
-                            />
+                            {imgError ? (
+                              <div className="flex flex-col items-center justify-center w-full h-full bg-muted/50 text-muted-foreground">
+                                <Smartphone className="w-10 h-10 mb-1" />
+                                <span className="text-xs font-medium px-2 text-center truncate">{item.model.name}</span>
+                              </div>
+                            ) : (
+                              <img
+                                src={item.model.image}
+                                alt={item.model.name}
+                                className="w-full h-full object-cover"
+                                onError={() => setImageErrors((p) => ({ ...p, [item.model.id]: true }))}
+                              />
+                            )}
                           </div>
 
                           {/* Details */}
@@ -162,28 +316,62 @@ const Cart = () => {
                                 )}
                                 <span className="font-medium">{brand?.name}</span>
                               </div>
-                              <h3 className="text-lg font-semibold text-foreground mb-2">
-                                {item.model.name}
-                              </h3>
-                              
-                              {/* Services */}
-                              <div className="flex flex-wrap gap-2">
-                                {item.services.reconstruction && (
-                                  <Badge variant="outline" className="text-xs">
-                                    🔧 Reconstrução
-                                  </Badge>
-                                )}
-                                {item.services.glassReplacement && (
-                                  <Badge variant="outline" className="text-xs">
-                                    🪟 Troca de Vidro
-                                  </Badge>
-                                )}
-                                {item.services.partsAvailable && (
-                                  <Badge variant="outline" className="text-xs">
-                                    📦 Peças
-                                  </Badge>
-                                )}
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <Link
+                                  to={`/modelo/${item.model.id}`}
+                                  className="text-lg font-semibold text-foreground hover:text-primary hover:underline underline-offset-2"
+                                >
+                                  {item.model.name}
+                                </Link>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="shrink-0"
+                                  onClick={() => handleEditItem(item.model.id)}
+                                  title="Alterar serviços e quantidade"
+                                >
+                                  <Pencil className="w-4 h-4 mr-1" />
+                                  Editar
+                                </Button>
                               </div>
+                              
+                              {/* Serviços/peças selecionados ou badges legados */}
+                              {item.selectedServices && item.selectedServices.length > 0 ? (
+                                <div className="space-y-1">
+                                  <p className="text-xs font-medium text-muted-foreground">Seleção:</p>
+                                  <ul className="text-sm space-y-0.5">
+                                    {item.selectedServices.map((s) => (
+                                      <li key={s.service_id} className="flex justify-between gap-2">
+                                        <span>{s.name}</span>
+                                        <span>{s.price > 0 ? formatCurrency(s.price) : "Sob consulta"}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  <p className="text-sm font-semibold pt-1">
+                                    Total:{" "}
+                                    {item.selectedServices.every((s) => s.price > 0)
+                                      ? formatCurrency(
+                                          item.selectedServices.reduce((a, b) => a + b.price, 0) * item.quantity
+                                        )
+                                      : "Sob consulta"}
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="flex flex-wrap gap-2">
+                                  {item.services?.reconstruction && (
+                                    <Badge variant="outline" className="text-xs">🔧 Reconstrução</Badge>
+                                  )}
+                                  {item.services?.glassReplacement && (
+                                    <Badge variant="outline" className="text-xs">🪟 Troca de Vidro</Badge>
+                                  )}
+                                  {item.services?.partsAvailable && (
+                                    <Badge variant="outline" className="text-xs">📦 Peças</Badge>
+                                  )}
+                                  {(!item.services?.reconstruction && !item.services?.glassReplacement && !item.services?.partsAvailable) && (
+                                    <span className="text-xs text-muted-foreground">Orçamento sob consulta</span>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
                             {/* Quantity Controls */}
@@ -237,39 +425,156 @@ const Cart = () => {
                 })}
               </div>
 
-              {/* Order Summary */}
+              {/* Resumo e Orçamento */}
               <div className="lg:col-span-1">
                 <Card className="sticky top-24 border-border">
                   <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold mb-6">Resumo do Pedido</h2>
+                    <h2 className="text-xl font-semibold mb-6">Resumo do pré-orçamento</h2>
 
                     <div className="space-y-4 mb-6">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Itens ({totalItems})</span>
-                        <span className="font-medium">Orçamento sob consulta</span>
-                      </div>
-                      
-                      <Separator />
-
-                      <div className="bg-muted/50 rounded-lg p-4">
-                        <p className="text-sm text-muted-foreground mb-2">
-                          💡 Os preços serão informados no orçamento personalizado.
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Nossa equipe entrará em contato em breve com os valores detalhados.
-                        </p>
-                      </div>
+                      {(() => {
+                        const lines = items.map((item) => {
+                          if (item.selectedServices && item.selectedServices.length > 0 && item.selectedServices.every((s) => s.price > 0)) {
+                            return item.selectedServices.reduce((a, b) => a + b.price, 0) * item.quantity;
+                          }
+                          return null;
+                        });
+                        const totalKnown = lines.reduce((a, b) => a + (b ?? 0), 0);
+                        const hasConsult = lines.some((v) => v === null);
+                      return (
+                        <>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Itens ({totalItems})</span>
+                            <span className="font-medium">
+                              {totalKnown > 0 && !hasConsult
+                                ? formatCurrency(totalKnown)
+                                : totalKnown > 0 && hasConsult
+                                ? `${formatCurrency(totalKnown)} + itens sob consulta`
+                                : "Orçamento sob consulta"}
+                            </span>
+                          </div>
+                          <Separator />
+                          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                            <p className="text-sm text-muted-foreground">
+                              💡 {totalKnown > 0 ? "Valores parciais dos itens com preço. " : ""}Os demais preços serão informados no orçamento personalizado.
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Nossa equipe entrará em contato em breve com os valores detalhados.
+                            </p>
+                            <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
+                              Use <strong>Editar</strong> em um item para alterar serviços e quantidade na página do modelo.
+                            </p>
+                          </div>
+                        </>
+                      );
+                      })()}
                     </div>
 
                     <div className="space-y-3">
                       <Button
                         size="lg"
                         className="w-full"
-                        onClick={() => navigate("/checkout")}
+                        onClick={prefillFormAndOpen}
                       >
-                        Finalizar Pedido
-                        <ArrowRight className="w-4 h-4 ml-2" />
+                        <CheckCircle2 className="w-5 h-5 mr-2" />
+                        Finalizar e enviar pré-pedido
                       </Button>
+                      <Dialog open={showFinalizarConfirm} onOpenChange={(open) => { if (!isFinalizando) setShowFinalizarConfirm(open); }}>
+                        <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
+                          <DialogHeader>
+                            <DialogTitle>Finalizar pré-orçamento</DialogTitle>
+                            <DialogDescription>
+                              Informe seu contato (opcional) e observações. O pré-pedido será enviado por WhatsApp e o carrinho será esvaziado.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <ScrollArea className="flex-1 max-h-[50vh] pr-4">
+                            <div className="space-y-4 py-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="finalizar-name">Nome</Label>
+                                  <Input
+                                    id="finalizar-name"
+                                    value={formData.contactName}
+                                    onChange={(e) => setFormData((p) => ({ ...p, contactName: e.target.value }))}
+                                    placeholder="Seu nome"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="finalizar-company">Empresa</Label>
+                                  <Input
+                                    id="finalizar-company"
+                                    value={formData.contactCompany}
+                                    onChange={(e) => setFormData((p) => ({ ...p, contactCompany: e.target.value }))}
+                                    placeholder="Nome da empresa"
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="finalizar-phone">Telefone / WhatsApp</Label>
+                                  <Input
+                                    id="finalizar-phone"
+                                    value={formData.contactPhone}
+                                    onChange={(e) => setFormData((p) => ({ ...p, contactPhone: e.target.value }))}
+                                    placeholder="(11) 99999-9999"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="finalizar-email">E-mail</Label>
+                                  <Input
+                                    id="finalizar-email"
+                                    type="email"
+                                    value={formData.contactEmail}
+                                    onChange={(e) => setFormData((p) => ({ ...p, contactEmail: e.target.value }))}
+                                    placeholder="seu@email.com"
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="finalizar-notes">Observações</Label>
+                                <Textarea
+                                  id="finalizar-notes"
+                                  value={formData.notes}
+                                  onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
+                                  placeholder="Observações gerais sobre o pedido, prazo desejado, etc."
+                                  rows={3}
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id="finalizar-urgent"
+                                  checked={formData.isUrgent}
+                                  onCheckedChange={(c) => setFormData((p) => ({ ...p, isUrgent: c === true }))}
+                                />
+                                <Label htmlFor="finalizar-urgent" className="cursor-pointer text-sm">Marcar como urgente</Label>
+                              </div>
+                            </div>
+                          </ScrollArea>
+                          <DialogFooter className="gap-2 sm:gap-0">
+                            <Button variant="outline" onClick={() => setShowFinalizarConfirm(false)} disabled={isFinalizando}>
+                              Cancelar
+                            </Button>
+                            <Button onClick={handleFinalizar} disabled={isFinalizando}>
+                              {isFinalizando ? "Enviando..." : "Enviar pré-pedido"}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                      <p className="text-xs text-muted-foreground">
+                        Envia o pré-pedido por WhatsApp, finaliza o carrinho e nossa equipe entra em contato.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-full"
+                        onClick={handleOrcamentoWhatsApp}
+                      >
+                        <MessageCircle className="w-5 h-5 mr-2" />
+                        Orçamento (WhatsApp)
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Só envia por WhatsApp; o carrinho permanece.
+                      </p>
                       <Button
                         variant="outline"
                         size="lg"
@@ -277,8 +582,14 @@ const Cart = () => {
                         onClick={() => navigate("/catalogo")}
                       >
                         <ArrowLeft className="w-4 h-4 mr-2" />
-                        Continuar Comprando
+                        Continuar no Catálogo
                       </Button>
+                      <p className="text-xs text-center text-muted-foreground">
+                        Ou{" "}
+                        <Link to="/checkout" className="text-primary hover:underline font-medium">
+                          solicite orçamento por formulário
+                        </Link>
+                      </p>
                     </div>
 
                     <div className="mt-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">

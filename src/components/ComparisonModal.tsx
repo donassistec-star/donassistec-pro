@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { X, Monitor, Wrench, Package, Download, Eye, ExternalLink, CheckCircle2, XCircle } from "lucide-react";
-import { PhoneModel, brands } from "@/data/models";
+import { PhoneModel, Brand, brands as defaultBrands } from "@/data/models";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { productViewsService } from "@/services/productViewsService";
@@ -15,9 +15,11 @@ interface ComparisonModalProps {
   models: PhoneModel[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Marcas (da API ou estáticas). Se não informado, usa marcas padrão. */
+  brands?: Brand[];
 }
 
-const ComparisonModal = ({ models, open, onOpenChange }: ComparisonModalProps) => {
+const ComparisonModal = ({ models, open, onOpenChange, brands = defaultBrands }: ComparisonModalProps) => {
   const navigate = useNavigate();
   const [viewStats, setViewStats] = useState<Record<string, { total_views: number }>>({});
   const [modelServices, setModelServices] = useState<Record<string, ModelService[]>>({});
@@ -236,7 +238,7 @@ const ComparisonModal = ({ models, open, onOpenChange }: ComparisonModalProps) =
                 <TableCell className="font-medium">Reconstrução de Tela</TableCell>
                 {models.map((model) => (
                   <TableCell key={model.id} className="text-center">
-                    {model.services.reconstruction ? (
+                    {(model.services?.reconstruction || (model as any).modelServices?.some((ms: any) => ms.service_id === "service_reconstruction" && ms.available)) ? (
                       <div className="flex items-center justify-center gap-2">
                         <Monitor className="w-4 h-4 text-primary" />
                         <Badge variant="outline">Disponível</Badge>
@@ -251,7 +253,7 @@ const ComparisonModal = ({ models, open, onOpenChange }: ComparisonModalProps) =
                 <TableCell className="font-medium">Troca de Vidro</TableCell>
                 {models.map((model) => (
                   <TableCell key={model.id} className="text-center">
-                    {model.services.glassReplacement ? (
+                    {(model.services?.glassReplacement || (model as any).modelServices?.some((ms: any) => ms.service_id === "service_glass" && ms.available)) ? (
                       <div className="flex items-center justify-center gap-2">
                         <Wrench className="w-4 h-4 text-primary" />
                         <Badge variant="outline">Disponível</Badge>
@@ -266,7 +268,7 @@ const ComparisonModal = ({ models, open, onOpenChange }: ComparisonModalProps) =
                 <TableCell className="font-medium">Peças Disponíveis</TableCell>
                 {models.map((model) => (
                   <TableCell key={model.id} className="text-center">
-                    {model.services.partsAvailable ? (
+                    {(model.services?.partsAvailable || (model as any).modelServices?.some((ms: any) => ms.service_id === "service_parts" && ms.available)) ? (
                       <div className="flex items-center justify-center gap-2">
                         <Package className="w-4 h-4 text-primary" />
                         <Badge variant="outline">Disponível</Badge>

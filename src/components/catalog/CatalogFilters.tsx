@@ -8,23 +8,23 @@ import {
   AccordionItem, 
   AccordionTrigger 
 } from "@/components/ui/accordion";
-import { X, Filter, RotateCcw, Star, Flame } from "lucide-react";
+import { X, Filter, RotateCcw, Star, Flame, Film } from "lucide-react";
 import { brands as staticBrands, serviceTypes, availabilityOptions } from "@/data/models";
 import { useBrands } from "@/hooks/useBrands";
 import { useServices } from "@/hooks/useServices";
+import { SERVICE_ICON, DEFAULT_SERVICE_ICON } from "@/constants/serviceIcons";
 
-/** Ícones para serviços da API (ids: service_reconstruction, service_glass, etc.) */
-const SERVICE_ICON: Record<string, string> = {
-  service_reconstruction: "🔧",
-  service_glass: "🪟",
-  service_parts: "📦",
-  service_battery: "🔋",
-  service_screen: "📱",
-  service_camera: "📷",
-  service_charging: "🔌",
-  service_software: "💻",
+/** Nomes corretos em PT-BR (evita mojibake se a API/DB ainda retornar encoding errado) */
+const SERVICE_NAME: Record<string, string> = {
+  service_reconstruction: "Reconstrução",
+  service_glass: "Troca de Vidro",
+  service_parts: "Peças Disponíveis",
+  service_battery: "Troca de Bateria",
+  service_screen: "Troca de Tela",
+  service_camera: "Reparo de Câmera",
+  service_charging: "Reparo de Carregamento",
+  service_software: "Atualização/Formatação",
 };
-const DEFAULT_SERVICE_ICON = "🔧";
 
 interface CatalogFiltersProps {
   selectedBrands: string[];
@@ -32,13 +32,21 @@ interface CatalogFiltersProps {
   selectedAvailability: string[];
   selectedPremium: boolean;
   selectedPopular: boolean;
+  selectedWithVideo?: boolean;
   onBrandChange: (brandId: string) => void;
   onServiceChange: (serviceId: string) => void;
   onAvailabilityChange: (availabilityId: string) => void;
   onPremiumChange: (v: boolean) => void;
   onPopularChange: (v: boolean) => void;
+  onWithVideoChange?: (v: boolean) => void;
   onClearFilters: () => void;
   totalFilters: number;
+  /** Contagem de modelos por marca (ex: { apple: 12 }) para exibir ao lado do nome. */
+  modelCountByBrand?: Record<string, number>;
+  /** Contagem por serviço (ex: { service_reconstruction: 8 }). */
+  modelCountByService?: Record<string, number>;
+  /** Contagem por disponibilidade (ex: { in_stock: 20 }). */
+  modelCountByAvailability?: Record<string, number>;
 }
 
 const CatalogFilters = ({
@@ -47,24 +55,30 @@ const CatalogFilters = ({
   selectedAvailability,
   selectedPremium,
   selectedPopular,
+  selectedWithVideo = false,
   onBrandChange,
   onServiceChange,
   onAvailabilityChange,
   onPremiumChange,
   onPopularChange,
+  onWithVideoChange,
   onClearFilters,
   totalFilters,
+  modelCountByBrand = {},
+  modelCountByService = {},
+  modelCountByAvailability = {},
 }: CatalogFiltersProps) => {
   const { brands: apiBrands } = useBrands();
   const { services: apiServices } = useServices(true);
   const brands = apiBrands.length > 0 ? apiBrands : staticBrands;
 
   // Lista de serviços: da API (dinâmicos) ou estáticos; formato { id, name, icon }
+  // SERVICE_NAME garante rótulos corretos mesmo se a API retornar mojibake (encoding errado)
   const serviceTypesForFilter =
     apiServices.length > 0
       ? apiServices.map((s) => ({
           id: s.id,
-          name: s.name,
+          name: SERVICE_NAME[s.id] ?? s.name,
           icon: SERVICE_ICON[s.id] ?? DEFAULT_SERVICE_ICON,
         }))
       : serviceTypes;
@@ -127,6 +141,9 @@ const CatalogFilters = ({
                       brand.icon && <span className="text-base">{brand.icon}</span>
                     )}
                     <span className="font-medium">{brand.name}</span>
+                    {modelCountByBrand[brand.id] != null && (
+                      <span className="text-muted-foreground text-xs">({modelCountByBrand[brand.id]})</span>
+                    )}
                   </Label>
                 </div>
               ))}
@@ -154,6 +171,9 @@ const CatalogFilters = ({
                   >
                     <span>{service.icon}</span>
                     {service.name}
+                    {modelCountByService[service.id] != null && (
+                      <span className="text-muted-foreground text-xs">({modelCountByService[service.id]})</span>
+                    )}
                   </Label>
                 </div>
               ))}
@@ -177,9 +197,12 @@ const CatalogFilters = ({
                   />
                   <Label
                     htmlFor={`availability-${option.id}`}
-                    className="text-sm cursor-pointer"
+                    className="text-sm cursor-pointer flex items-center gap-1"
                   >
                     {option.name}
+                    {modelCountByAvailability[option.id] != null && (
+                      <span className="text-muted-foreground text-xs">({modelCountByAvailability[option.id]})</span>
+                    )}
                   </Label>
                 </div>
               ))}
@@ -216,6 +239,19 @@ const CatalogFilters = ({
                   Popular
                 </Label>
               </div>
+              {onWithVideoChange && (
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="filter-with-video"
+                    checked={selectedWithVideo}
+                    onCheckedChange={(c) => onWithVideoChange(c === true)}
+                  />
+                  <Label htmlFor="filter-with-video" className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Film className="w-4 h-4 text-primary" />
+                    Com vídeo
+                  </Label>
+                </div>
+              )}
             </div>
           </AccordionContent>
         </AccordionItem>
@@ -285,6 +321,16 @@ const CatalogFilters = ({
                 onClick={() => onPopularChange(false)}
               >
                 Popular
+                <X className="w-3 h-3 ml-1" />
+              </Badge>
+            )}
+            {selectedWithVideo && onWithVideoChange && (
+              <Badge
+                variant="outline"
+                className="text-xs cursor-pointer hover:bg-destructive/10"
+                onClick={() => onWithVideoChange(false)}
+              >
+                Com vídeo
                 <X className="w-3 h-3 ml-1" />
               </Badge>
             )}

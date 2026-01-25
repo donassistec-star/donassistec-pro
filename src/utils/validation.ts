@@ -149,27 +149,28 @@ export const validation = {
   },
 
   /**
-   * Valida WhatsApp number
+   * Valida WhatsApp number. Aceita string ou number (ex.: valor da API).
    */
-  isValidWhatsAppNumber(number: string): boolean {
-    // Remove tudo exceto números
-    const cleanNumber = number.replace(/[^\d]/g, '');
+  isValidWhatsAppNumber(number: string | number | null | undefined): boolean {
+    const cleanNumber = this.cleanWhatsAppNumber(number);
     // Formato: código do país (1-3 dígitos) + DDD + número
     // Exemplo: 5511999999999 (55 = Brasil, 11 = DDD, 999999999 = número)
     return cleanNumber.length >= 10 && cleanNumber.length <= 15 && /^\d+$/.test(cleanNumber);
   },
 
   /**
-   * Limpa número do WhatsApp (remove caracteres especiais e espaços)
+   * Limpa número do WhatsApp (remove caracteres especiais e espaços).
+   * Aceita string, number, null ou undefined (ex.: valor vindo da API como número).
    */
-  cleanWhatsAppNumber(number: string): string {
-    return number.replace(/[^\d]/g, '');
+  cleanWhatsAppNumber(number: string | number | null | undefined): string {
+    if (number == null) return '';
+    return String(number).replace(/[^\d]/g, '');
   },
 
   /**
    * Gera URL do WhatsApp corretamente formatada
    */
-  generateWhatsAppUrl(number: string, message: string): string {
+  generateWhatsAppUrl(number: string | number | null | undefined, message: string): string {
     const cleanNumber = this.cleanWhatsAppNumber(number);
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${cleanNumber}?text=${encodedMessage}`;

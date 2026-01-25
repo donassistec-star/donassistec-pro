@@ -12,9 +12,17 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0",
     port: 8200,
     strictPort: true,
+    allowedHosts: true,
     hmr: {
       overlay: false,
+      // Ao acessar o dev server por IP (ex: http://177.67.32.204:8200), defina VITE_HMR_HOST=177.67.32.204
+      ...(process.env.VITE_HMR_HOST && {
+        host: process.env.VITE_HMR_HOST,
+        port: parseInt(process.env.VITE_HMR_PORT || "8200", 10),
+      }),
     },
+    // Em Docker/VM/remoto, se o file watching falhar: VITE_USE_POLLING=1
+    ...(process.env.VITE_USE_POLLING === "1" ? { watch: { usePolling: true } } : {}),
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

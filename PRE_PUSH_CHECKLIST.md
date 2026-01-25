@@ -58,6 +58,11 @@ Use este checklist antes de fazer push para o GitHub.
 - [ ] `backend/uploads/.gitkeep` existe
 - [ ] Sem arquivos de cache ou temporários
 
+### 🗄️ Migrations (se alterou o banco)
+
+- [ ] Novas migrations documentadas em `backend/README.md`
+- [ ] Em deploy/atualização: rodar `npm run migrate:pre-pedidos` e `migrate:pre-pedidos-contact` se aplicável (ver `DEPLOY.md`)
+
 ## 📊 Status do Projeto
 
 **Arquivos Modificados**: ~90  
@@ -86,4 +91,4 @@ Após verificar todos os itens:
 
 ---
 
-**Última atualização**: Janeiro 2025
+**Última atualização**: Janeiro 2026

@@ -1,8 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Monitor, Wrench, Package, MessageCircle, Star, ArrowRight, ShoppingCart, Play, Heart } from "lucide-react";
+import { Monitor, Wrench, Package, MessageCircle, Star, FileText, Play, Heart, Smartphone } from "lucide-react";
 import { PhoneModel, Brand, brands as defaultBrands } from "@/data/models";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
@@ -20,11 +21,14 @@ interface ModelCardProps {
 
 const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" }: ModelCardProps) => {
   const navigate = useNavigate();
-  const { addItem, getItemCount } = useCart();
+  const { getItemCount } = useCart();
   const { toggleFavorite, isFavorite } = useFavorites();
+  const [imageError, setImageError] = useState(false);
   const brand = brands.find((b) => b.id === model.brand);
   const itemCount = getItemCount(model.id);
   const favorite = isFavorite(model.id);
+
+  useEffect(() => setImageError(false), [model.id]);
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -40,12 +44,7 @@ const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" 
 
   const availability = availabilityConfig[model.availability];
 
-  const handleAddToCart = () => {
-    addItem(model, model.services);
-    toast.success(`${model.name} adicionado ao carrinho!`);
-  };
-
-  const handleViewDetails = () => {
+  const handleGoToModel = () => {
     navigate(`/modelo/${model.id}`);
   };
 
@@ -59,23 +58,32 @@ const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" 
   if (variant === "list") {
     return (
       <Card className="group overflow-hidden border-border hover:border-primary/50 hover:shadow-md transition-all duration-300 flex flex-row">
-        <div className="relative w-24 sm:w-28 shrink-0 aspect-square bg-muted/30 overflow-hidden">
-          <img
-            src={model.image}
-            alt={model.name}
-            loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-          {(model.videoUrl || (model.videos && model.videos.length > 0)) && (
-            <div className="absolute bottom-1 left-1">
+        <Link to={`/modelo/${model.id}`} className="relative w-24 sm:w-28 shrink-0 aspect-square bg-muted/30 overflow-hidden block">
+          {imageError ? (
+            <div className="flex flex-col items-center justify-center w-full h-full bg-muted/50 text-muted-foreground p-1">
+              <Smartphone className="w-6 h-6 mb-0.5" />
+              <span className="text-[10px] font-medium truncate w-full text-center">{model.name}</span>
+            </div>
+          ) : (
+            <img
+              src={model.image}
+              alt={model.name}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={() => setImageError(true)}
+            />
+          )}
+          {/* Vídeo de capa (principal) no catálogo */}
+          {(model.videoUrl || model.videos?.[0]?.url) && (
+            <div className="absolute bottom-1 left-1" onClick={(e) => e.stopPropagation()}>
               <VideoPlayer
                 videoUrl={model.videoUrl || model.videos![0].url}
-                title={`Tutorial ${model.name}`}
+                title={model.videos?.[0]?.title || `Vídeo ${model.name}`}
                 trigger={<Button size="icon" className="h-7 w-7 bg-primary/90 hover:bg-primary text-primary-foreground"><Play className="w-3 h-3 fill-current" /></Button>}
               />
             </div>
           )}
-        </div>
+        </Link>
         <CardContent className="p-3 sm:p-4 flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -84,7 +92,7 @@ const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" 
               {model.premium && <Badge className="text-[10px] py-0 h-4 bg-secondary text-secondary-foreground"><Star className="w-2.5 h-2.5 mr-0.5 fill-current" />Premium</Badge>}
               {model.popular && <Badge variant="outline" className="text-[10px] py-0 h-4">🔥</Badge>}
             </div>
-            <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">{model.name}</h3>
+            <Link to={`/modelo/${model.id}`} className="font-semibold text-foreground truncate block group-hover:text-primary transition-colors hover:underline underline-offset-2">{model.name}</Link>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               {servicesList.length > 0 ? servicesList.map((ms: any) => (
                 <span key={ms.service_id} className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded"><Wrench className="w-2.5 h-2.5 inline mr-0.5 text-primary" />{ms.service?.name || "Serviço"}</span>
@@ -99,15 +107,14 @@ const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" 
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <Badge className={`text-[10px] py-0 h-5 ${availability.className}`}>{availability.label}</Badge>
-            {itemCount > 0 && <Badge variant="outline" className="text-[10px] py-0 h-5 bg-primary/10 text-primary"><ShoppingCart className="w-3 h-3 mr-0.5" />{itemCount}</Badge>}
+            {itemCount > 0 && <Badge variant="outline" className="text-[10px] py-0 h-5 bg-primary/10 text-primary"><FileText className="w-3 h-3 mr-0.5" />{itemCount}</Badge>}
             <button onClick={handleToggleFavorite} className="p-1.5 rounded-full hover:bg-muted transition-colors" aria-label={favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
               <Heart className={`w-4 h-4 ${favorite ? "fill-red-500 text-red-500" : "text-muted-foreground hover:text-red-500"}`} />
             </button>
           </div>
           <div className="flex gap-1.5">
             <Button variant="outline" size="sm" onClick={() => onContact(model)}><MessageCircle className="w-3.5 h-3.5 mr-1" />Orçamento</Button>
-            <Button size="sm" variant="secondary" onClick={handleAddToCart} disabled={model.availability === "out_of_stock"}><ShoppingCart className="w-3.5 h-3.5 mr-1" />Adicionar</Button>
-            <Button size="sm" variant="ghost" onClick={handleViewDetails} className="px-2"><ArrowRight className="w-4 h-4" /></Button>
+            <Button size="sm" variant="secondary" onClick={handleGoToModel} disabled={model.availability === "out_of_stock"}><FileText className="w-3.5 h-3.5 mr-1" />Pré-orç.</Button>
           </div>
         </CardContent>
       </Card>
@@ -116,14 +123,22 @@ const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" 
 
   return (
     <Card className="group overflow-hidden border-border hover:border-primary/50 hover:shadow-lg transition-all duration-300">
-      {/* Image */}
-      <div className="relative aspect-square bg-muted/30 overflow-hidden group/image">
-        <img
-          src={model.image}
-          alt={model.name}
-          loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
+      {/* Image - clicável para detalhes */}
+      <Link to={`/modelo/${model.id}`} className="relative aspect-square bg-muted/30 overflow-hidden group/image block">
+        {imageError ? (
+          <div className="flex flex-col items-center justify-center w-full h-full bg-muted/50 text-muted-foreground p-4">
+            <Smartphone className="w-12 h-12 mb-2" />
+            <span className="text-sm font-medium text-center line-clamp-2">{model.name}</span>
+          </div>
+        ) : (
+          <img
+            src={model.image}
+            alt={model.name}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={() => setImageError(true)}
+          />
+        )}
         
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
@@ -160,12 +175,12 @@ const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" 
           </button>
         </div>
 
-        {/* Video Button Overlay */}
-        {(model.videoUrl || (model.videos && model.videos.length > 0)) && (
-          <div className="absolute bottom-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        {/* Vídeo de capa (principal) no catálogo */}
+        {(model.videoUrl || model.videos?.[0]?.url) && (
+          <div className="absolute bottom-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" onClick={(e) => e.stopPropagation()}>
             <VideoPlayer
               videoUrl={model.videoUrl || model.videos![0].url}
-              title={`Tutorial ${model.name}`}
+              title={model.videos?.[0]?.title || `Vídeo ${model.name}`}
               trigger={
                 <Button
                   size="sm"
@@ -178,10 +193,10 @@ const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" 
             />
           </div>
         )}
-      </div>
+      </Link>
 
       <CardContent className="p-4">
-          {/* Brand & Model Name */}
+          {/* Brand & Model Name - nome clicável para detalhes */}
           <div className="mb-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
               {brand?.logo ? (
@@ -199,9 +214,9 @@ const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" 
               )}
               <span className="font-medium">{brand?.name}</span>
             </div>
-            <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">
+            <Link to={`/modelo/${model.id}`} className="font-semibold text-lg text-foreground block group-hover:text-primary transition-colors hover:underline underline-offset-2">
               {model.name}
-            </h3>
+            </Link>
           </div>
 
         {/* Services Available */}
@@ -245,12 +260,12 @@ const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" 
           )}
         </div>
 
-        {/* Cart Badge */}
+        {/* Pré-orçamento Badge */}
         {itemCount > 0 && (
           <div className="mb-2">
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-              <ShoppingCart className="w-3 h-3 mr-1" />
-              {itemCount} no carrinho
+              <FileText className="w-3 h-3 mr-1" />
+              {itemCount} no pré-orçamento
             </Badge>
           </div>
         )}
@@ -269,19 +284,12 @@ const ModelCard = ({ model, onContact, brands = defaultBrands, variant = "grid" 
           <Button 
             size="sm" 
             variant="secondary"
-            onClick={handleAddToCart}
+            className="flex-1"
+            onClick={handleGoToModel}
             disabled={model.availability === "out_of_stock"}
           >
-            <ShoppingCart className="w-4 h-4 mr-1" />
-            Adicionar
-          </Button>
-          <Button 
-            size="sm" 
-            variant="ghost"
-            onClick={handleViewDetails}
-            className="px-3"
-          >
-            <ArrowRight className="w-4 h-4" />
+            <FileText className="w-4 h-4 mr-1" />
+            Pré-orç.
           </Button>
         </div>
       </CardContent>

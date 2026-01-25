@@ -30,6 +30,7 @@ import BrandsAdmin from "./pages/admin/BrandsAdmin";
 import BrandForm from "./pages/admin/BrandForm";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
+import AdminPrePedidos from "./pages/admin/AdminPrePedidos";
 import AdminRetailers from "./pages/admin/AdminRetailers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminReports from "./pages/admin/AdminReports";
@@ -48,6 +49,7 @@ import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedRouteAdmin from "./components/ProtectedRouteAdmin";
+import ProtectedRouteLojista from "./components/ProtectedRouteLojista";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Favicon from "./components/Favicon";
@@ -84,7 +86,7 @@ const App = () => (
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<Index />} />
-                  <Route path="/catalogo" element={<Catalog />} />
+                  <Route path="/catalogo" element={<ProtectedRouteLojista><Catalog /></ProtectedRouteLojista>} />
                   <Route path="/modelo/:id" element={<ModelDetail />} />
                   <Route path="/carrinho" element={<Cart />} />
                   <Route path="/checkout" element={<Checkout />} />
@@ -232,6 +234,14 @@ const App = () => (
                     element={
                       <ProtectedRouteAdmin>
                         <AdminOrderDetail />
+                      </ProtectedRouteAdmin>
+                    }
+                  />
+                  <Route
+                    path="/admin/pre-pedidos"
+                    element={
+                      <ProtectedRouteAdmin>
+                        <AdminPrePedidos />
                       </ProtectedRouteAdmin>
                     }
                   />

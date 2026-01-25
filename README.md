@@ -40,6 +40,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 - ✅ Gerenciamento de marcas e modelos de celulares
 - ✅ Gerenciamento de serviços dinâmicos
 - ✅ Gestão de pedidos e status
+- ✅ Pré-pedidos (lista, dados de contato, urgente, exportar CSV)
 - ✅ Gerenciamento de lojistas
 - ✅ Sistema de tickets e suporte
 - ✅ Relatórios e exportação (PDF, Excel, TXT)
@@ -57,6 +58,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 
 - ✅ Dashboard personalizado
 - ✅ Catálogo completo de produtos
+- ✅ Pré-orçamento com finalização por WhatsApp (contato, observações, urgente)
 - ✅ Favoritos e comparação de modelos
 - ✅ Sistema de pedidos
 - ✅ Acompanhamento de status
@@ -68,6 +70,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 ### Público Geral
 
 - ✅ Catálogo de produtos
+- ✅ Tabela de Valores (preços por modelo e serviço, filtro por marca, exportar Excel)
 - ✅ Detalhes de modelos com vídeos
 - ✅ Comparação de produtos
 - ✅ Busca avançada
@@ -183,10 +186,15 @@ SOCKET_IO_PORT=3001
 
 #### Frontend (.env)
 
-Crie um arquivo `.env` na raiz do projeto (opcional):
+Crie um arquivo `.env` na raiz do projeto (opcional). O frontend detecta `localhost`, `donassistec.com.br` e `177.67.32.204` e define a URL da API automaticamente.
 
 ```env
-VITE_API_URL=http://localhost:3001/api
+# Opcional; override da URL da API
+# VITE_API_URL=http://localhost:3001/api
+
+# Desenvolvimento: acesso por IP (ex.: 177.67.32.204:8200) – HMR
+# VITE_HMR_HOST=177.67.32.204
+# VITE_USE_POLLING=1
 ```
 
 ## ⚙️ Configuração
@@ -314,12 +322,14 @@ donassistec/
 - **Modelos**: `/api/models/*`
 - **Pedidos**: `/api/orders/*`
 - **Lojistas**: `/api/retailers/*`
-- **Configurações**: `/api/settings/*`
+- **Configurações**: `/api/settings/*` (GET `/api/settings/public` é **público**, sem login)
+- **Tabela de preços**: `/api/price-table` (público, `?brand=id` opcional)
 - **Upload**: `/api/upload/*`
 - **Serviços**: `/api/services/*`
 - **Visualizações**: `/api/product-views/*`
+- **Conteúdo da home**: `/api/home-content` (GET público)
 
-Para documentação completa da API, veja [BACKEND_API.md](./BACKEND_API.md)
+Para documentação completa da API, veja [BACKEND_API.md](./BACKEND_API.md) e [API_ROUTES.md](./API_ROUTES.md)
 
 ## 🚢 Deployment
 
@@ -327,20 +337,22 @@ Veja o guia completo de deployment em [DEPLOY.md](./DEPLOY.md)
 
 ### Resumo Rápido
 
-1. Configure as variáveis de ambiente em produção
+1. Configure as variáveis de ambiente em produção (incl. `CORS_ORIGIN` para o domínio)
 2. Build do frontend: `npm run build`
 3. Build do backend: `cd backend && npm run build`
-4. Use PM2 para gerenciar processos: `pm2 start ecosystem.config.cjs`
-5. Configure Nginx como proxy reverso
-6. Configure SSL/HTTPS
+4. Use PM2 para gerenciar processos: `pm2 start ecosystem.config.cjs` (ou `ecosystem.production.config.cjs`)
+5. Configure Nginx como proxy reverso (use `nginx-vps.conf` em VPS; porta 80 → frontend :8200, `/api` e `/uploads` → backend :3001)
+6. Libere portas 80 e 443 no firewall (firewalld/UFW)
+7. Configure SSL/HTTPS (recomendado em produção)
 
 ## 📚 Documentação Adicional
 
-- [BACKEND_API.md](./BACKEND_API.md) - Documentação completa da API
-- [DEPLOY.md](./DEPLOY.md) - Guia de deployment
+- [API_ROUTES.md](./API_ROUTES.md) - Rotas da API (incl. `/api/settings/public`, `/api/price-table`)
+- [BACKEND_API.md](./BACKEND_API.md) - Documentação da API (marcas, modelos, configurações, tabela de preços)
+- [DEPLOY.md](./DEPLOY.md) - Guia de deployment (Docker, VPS com Nginx `nginx-vps.conf`, firewall, domínio)
 - [ADMIN_GUIDE.md](./ADMIN_GUIDE.md) - Guia do administrador
 - [DOCKER_SETUP.md](./DOCKER_SETUP.md) - Configuração Docker
-- [PM2_SETUP.md](./PM2_SETUP.md) - Configuração PM2
+- [PM2_SETUP.md](./PM2_SETUP.md) - Configuração PM2 (rebuild do backend, CORS, Nginx)
 - [DATABASE_CONFIG.md](./DATABASE_CONFIG.md) - Configuração do banco
 
 ## 🤝 Contribuindo
@@ -368,4 +380,4 @@ Para suporte, entre em contato através:
 ---
 
 **Versão:** 1.0.0  
-**Última atualização:** Janeiro 2025
+**Última atualização:** Janeiro 2026

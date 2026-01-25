@@ -19,6 +19,7 @@ import {
   Save,
   Loader2,
   Smartphone,
+  Video,
 } from "lucide-react";
 import RetailerLayout from "@/components/retailer/RetailerLayout";
 import { modelsService, brandsService } from "@/services/modelsService";
@@ -242,13 +243,28 @@ const ModelForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="videoUrl">URL do Vídeo Principal</Label>
+                  <Label htmlFor="videoUrl">URL do Vídeo Principal (opcional)</Label>
                   <Input
                     id="videoUrl"
                     value={formData.videoUrl || ""}
                     onChange={(e) => handleChange("videoUrl", e.target.value)}
-                    placeholder="https://youtube.com/..."
+                    placeholder="https://youtube.com/embed/..."
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Para definir <strong>Vídeo de capa</strong> e <strong>Vídeo tutorial</strong> por ordem, use a tela de vídeos do modelo.
+                  </p>
+                  {isEditing && id && (
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 text-primary"
+                      onClick={() => navigate(`/lojista/modelos/${id}/videos`)}
+                    >
+                      <Video className="w-4 h-4 mr-1 inline" />
+                      Gerenciar vídeos (Capa e Tutorial)
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
