@@ -20,7 +20,7 @@ module.exports = {
         DB_USER: "donassistec_user",
         DB_PASSWORD: "donassistec_password",
         CORS_ORIGIN: "http://localhost:8200",
-        JWT_SECRET: "donassistec-secret-key-change-in-production",
+        // JWT_SECRET: Set via environment variable - NEVER hardcode!
         JWT_EXPIRES_IN: "7d",
       },
       error_file: "./logs/backend-error.log",

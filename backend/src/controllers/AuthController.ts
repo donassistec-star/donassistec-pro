@@ -3,7 +3,10 @@ import RetailerModel from "../models/RetailerModel";
 import { AuthResponse, RetailerRegisterData, RetailerLoginData } from "../types";
 import jwt, { SignOptions } from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "donassistec-secret-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("CRITICAL: JWT_SECRET environment variable is required.");
+}
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as string;
 
 class AuthController {

@@ -5,7 +5,7 @@ import { authenticateToken } from "../middleware/auth";
 const router = Router();
 
 // Pedidos criados pelo checkout (requer autenticação para aplicar cupons)
-router.post("/", OrderController.create);
+router.post("/", authenticateToken, OrderController.create);
 
 // Listagem e gestão de pedidos - apenas lojista autenticado
 router.get("/", authenticateToken, OrderController.getAll);
