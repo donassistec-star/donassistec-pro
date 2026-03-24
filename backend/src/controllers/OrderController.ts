@@ -150,10 +150,12 @@ class OrderController {
     }
   }
 
-  async delete(req: Request, res: Response) {
+  async delete(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
-      const retailerId = req.query.retailerId as string | undefined;
+      const retailerId = req.user?.role === 'admin'
+        ? (req.query.retailerId as string | undefined)
+        : req.user?.id;
       const deleted = await OrderModel.delete(id, retailerId);
 
       if (!deleted) {
