@@ -26,10 +26,12 @@ class OrderController {
     }
   }
 
-  async getById(req: Request, res: Response) {
+  async getById(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
-      const retailerId = req.query.retailerId as string | undefined;
+      const retailerId = req.user?.role === 'admin'
+        ? (req.query.retailerId as string | undefined)
+        : req.user?.id;
       const order = await OrderModel.findById(id, retailerId);
 
       if (!order) {
