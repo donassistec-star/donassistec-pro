@@ -5,9 +5,11 @@ import { ApiResponse, Order, OrderItem, OrderWithItems } from "../types";
 import { AuthRequest } from "../middleware/auth";
 
 class OrderController {
-  async getAll(req: Request, res: Response) {
+  async getAll(req: AuthRequest, res: Response) {
     try {
-      const retailerId = req.query.retailerId as string | undefined;
+      const retailerId = req.user?.role === 'admin'
+        ? (req.query.retailerId as string | undefined)
+        : req.user?.id;
       const orders = await OrderModel.findAll(retailerId);
       
       const response: ApiResponse<OrderWithItems[]> = {
