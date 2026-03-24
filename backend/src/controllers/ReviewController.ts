@@ -45,12 +45,21 @@ class ReviewController {
   async update(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
-      const updated = await ReviewModel.update(id, req.body);
 
-      if (!updated) {
+      // Ownership check: fetch review first
+      const existing = await ReviewModel.findById(id);
+      if (!existing) {
         const response: ApiResponse<null> = { success: false, error: "Avaliação não encontrada" };
         return res.status(404).json(response);
       }
+
+      // Only the review owner or an admin can update
+      if (existing.retailer_id !== req.user!.id && req.user!.role !== 'admin') {
+        const response: ApiResponse<null> = { success: false, error: "Acesso negado" };
+        return res.status(403).json(response);
+      }
+
+      const updated = await ReviewModel.update(id, req.body);
 
       const response: ApiResponse<any> = { success: true, data: updated, message: "Avaliação atualizada com sucesso" };
       res.json(response);
