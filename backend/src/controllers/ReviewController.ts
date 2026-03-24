@@ -90,12 +90,20 @@ class ReviewController {
   async delete(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
-      const deleted = await ReviewModel.delete(id);
 
-      if (!deleted) {
+      // Ownership check
+      const existing = await ReviewModel.findById(id);
+      if (!existing) {
         const response: ApiResponse<null> = { success: false, error: "Avaliação não encontrada" };
         return res.status(404).json(response);
       }
+
+      if (existing.retailer_id !== req.user!.id && req.user!.role !== 'admin') {
+        const response: ApiResponse<null> = { success: false, error: "Acesso negado" };
+        return res.status(403).json(response);
+      }
+
+      const deleted = await ReviewModel.delete(id);
 
       const response: ApiResponse<null> = { success: true, message: "Avaliação excluída com sucesso" };
       res.json(response);
