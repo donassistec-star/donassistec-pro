@@ -60,6 +60,9 @@ class OrderController {
     try {
       const { order, items, couponCode } = req.body as { order: Order; items: OrderItem[]; couponCode?: string };
       
+      // Enforce ownership from JWT — prevent spoofing retailer_id
+      order.retailer_id = req.user!.id;
+      
       if (!order || !items || items.length === 0) {
         const response: ApiResponse<null> = {
           success: false,
