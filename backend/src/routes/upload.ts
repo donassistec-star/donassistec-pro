@@ -2,7 +2,7 @@ import { Router } from "express";
 import { upload } from "../middleware/upload";
 import { authenticateToken } from "../middleware/auth";
 import { requireAdmin } from "../middleware/requireAdmin";
-import path from "path";
+
 
 const router = Router();
 
@@ -37,17 +37,7 @@ router.post("/image", authenticateToken, requireAdmin, upload.single("image"), (
   }
 });
 
-// Servir arquivos estáticos
-router.use("/files", (req, res, next) => {
-  const filePath = path.join(__dirname, "../../uploads", req.path);
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      res.status(404).json({
-        success: false,
-        error: "Arquivo não encontrado",
-      });
-    }
-  });
-});
+// Static files are served via express.static in index.ts (/uploads/*).
+// The custom /files handler was removed to prevent path traversal attacks.
 
 export default router;

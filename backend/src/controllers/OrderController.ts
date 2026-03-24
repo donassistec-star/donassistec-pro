@@ -1,13 +1,15 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import OrderModel from "../models/OrderModel";
 import CouponModel from "../models/CouponModel";
 import { ApiResponse, Order, OrderItem, OrderWithItems } from "../types";
 import { AuthRequest } from "../middleware/auth";
 
 class OrderController {
-  async getAll(req: Request, res: Response) {
+  async getAll(req: AuthRequest, res: Response) {
     try {
-      const retailerId = req.query.retailerId as string | undefined;
+      const retailerId = req.user?.role === 'admin'
+        ? (req.query.retailerId as string | undefined)
+        : req.user?.id;
       const orders = await OrderModel.findAll(retailerId);
       
       const response: ApiResponse<OrderWithItems[]> = {
@@ -24,10 +26,12 @@ class OrderController {
     }
   }
 
-  async getById(req: Request, res: Response) {
+  async getById(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
-      const retailerId = req.query.retailerId as string | undefined;
+      const retailerId = req.user?.role === 'admin'
+        ? (req.query.retailerId as string | undefined)
+        : req.user?.id;
       const order = await OrderModel.findById(id, retailerId);
 
       if (!order) {
@@ -55,6 +59,9 @@ class OrderController {
   async create(req: AuthRequest, res: Response) {
     try {
       const { order, items, couponCode } = req.body as { order: Order; items: OrderItem[]; couponCode?: string };
+      
+      // Enforce ownership from JWT — prevent spoofing retailer_id
+      order.retailer_id = req.user!.id;
       
       if (!order || !items || items.length === 0) {
         const response: ApiResponse<null> = {
@@ -102,11 +109,13 @@ class OrderController {
     }
   }
 
-  async updateStatus(req: Request, res: Response) {
+  async updateStatus(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      const retailerId = req.query.retailerId as string | undefined;
+      const retailerId = req.user?.role === 'admin'
+        ? (req.query.retailerId as string | undefined)
+        : req.user?.id;
 
       if (!["pending", "processing", "completed", "cancelled"].includes(status)) {
         const response: ApiResponse<null> = {
@@ -141,10 +150,12 @@ class OrderController {
     }
   }
 
-  async delete(req: Request, res: Response) {
+  async delete(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
-      const retailerId = req.query.retailerId as string | undefined;
+      const retailerId = req.user?.role === 'admin'
+        ? (req.query.retailerId as string | undefined)
+        : req.user?.id;
       const deleted = await OrderModel.delete(id, retailerId);
 
       if (!deleted) {
