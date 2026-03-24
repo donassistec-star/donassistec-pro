@@ -109,11 +109,13 @@ class OrderController {
     }
   }
 
-  async updateStatus(req: Request, res: Response) {
+  async updateStatus(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      const retailerId = req.query.retailerId as string | undefined;
+      const retailerId = req.user?.role === 'admin'
+        ? (req.query.retailerId as string | undefined)
+        : req.user?.id;
 
       if (!["pending", "processing", "completed", "cancelled"].includes(status)) {
         const response: ApiResponse<null> = {
