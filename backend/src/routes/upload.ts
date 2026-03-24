@@ -2,7 +2,7 @@ import { Router } from "express";
 import { upload } from "../middleware/upload";
 import { authenticateToken } from "../middleware/auth";
 import { requireAdmin } from "../middleware/requireAdmin";
-import path from "path";
+
 
 const router = Router();
 
