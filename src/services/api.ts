@@ -58,31 +58,30 @@ api.interceptors.response.use(
       // Tratamento de erro 401 (não autorizado)
       if (status === 401) {
         const errorMessage = data?.error || "Token inválido ou expirado";
+        const isLoginRequest = String(error.config?.url || "").includes("auth/login");
         console.error("Erro 401:", errorMessage, "URL:", error.config?.url);
-        
-        // Token expirado ou inválido
+
+        // Em 401 no login/registro: não mostrar "Sessão expirada" (o componente já trata); não redirecionar
+        if (isLoginRequest) {
+          return Promise.reject(error);
+        }
+
+        // Token expirado ou inválido em outras requisições
         localStorage.removeItem("donassistec_token");
         localStorage.removeItem("donassistec_auth");
-        
-        // Redirecionar para login apropriado baseado na rota atual
+
         const currentPath = window.location.pathname;
-        
-        // Se já estiver em uma página de login, não redirecionar
         if (currentPath.includes("/admin/login") || currentPath.includes("/lojista/login")) {
           toast.error("Sessão expirada. Faça login novamente.");
           return Promise.reject(error);
         }
-        
-        // Verificar se está em uma rota admin ou lojista
         if (currentPath.startsWith("/admin")) {
           window.location.href = "/admin/login";
         } else if (currentPath.startsWith("/lojista")) {
           window.location.href = "/lojista/login";
         } else {
-          // Default: redirecionar para login de lojista (página pública)
           window.location.href = "/lojista/login";
         }
-        
         toast.error("Sessão expirada. Faça login novamente.");
         return Promise.reject(error);
       }

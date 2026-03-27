@@ -213,12 +213,75 @@ GET /api/settings
 Authorization: Bearer <token>
 ```
 
-### 📊 Tabela de preços
+### 📊 Tabela de preços pública
 
 ```http
 GET /api/price-table?brand=apple
 ```
-**Público.** Retorna `{ services, models }` com preços por modelo e serviço. Query `brand` opcional.
+
+Tabela pública usada na vitrine geral, com filtro opcional por marca.
+
+### 🧾 Tabelas de preços para lojistas
+
+Módulo exclusivo para lojistas autenticados e administradores. Suporta múltiplas tabelas, destaque, ordenação manual, importação via texto bruto/`.txt`, preview estruturado e exportação.
+
+#### Listar tabelas visíveis para lojistas
+```http
+GET /api/retailer-price-tables/retailer
+Authorization: Bearer <token>
+```
+
+#### Buscar uma tabela visível por slug
+```http
+GET /api/retailer-price-tables/retailer/:slug
+Authorization: Bearer <token>
+```
+
+#### Listar tabelas no admin
+```http
+GET /api/retailer-price-tables/admin
+Authorization: Bearer <token>
+```
+
+#### Buscar tabela no admin por slug
+```http
+GET /api/retailer-price-tables/admin/:slug
+Authorization: Bearer <token>
+```
+
+#### Salvar ou atualizar tabela no admin
+```http
+PUT /api/retailer-price-tables/admin/:slug
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Tabela dos Vidros",
+  "effectiveDate": "13/11/25",
+  "visibleToRetailers": true,
+  "featuredToRetailers": false,
+  "rawText": "TABELA DOS VIDROS: 13/11/25\n..."
+}
+```
+
+#### Reordenar tabelas no admin
+```http
+POST /api/retailer-price-tables/admin/reorder
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "slugs": ["tabela-vidros", "tabela-traseiros", "apple-watch"]
+}
+```
+
+#### Remover tabela no admin
+```http
+DELETE /api/retailer-price-tables/admin/:slug
+Authorization: Bearer <token>
+```
+
+**Resposta pública legada (`/api/price-table`)**: retorna `{ services, models }` com preços por modelo e serviço. Query `brand` opcional.
 
 ## 📦 Estrutura da Resposta
 

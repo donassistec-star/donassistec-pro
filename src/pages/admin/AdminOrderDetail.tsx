@@ -11,7 +11,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatCurrency } from "@/utils/format";
+import { formatCurrency, formatPedidoNumero, formatPrePedidoNumero } from "@/utils/format";
 import { toast } from "sonner";
 
 const AdminOrderDetail = () => {
@@ -121,10 +121,10 @@ const AdminOrderDetail = () => {
     );
   }
 
-  const total = order.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+  const total = typeof order.total === "number" ? order.total : order.items?.reduce(
+    (sum: number, item: { price?: number; quantity?: number }) => sum + (item?.price ?? 0) * (item?.quantity ?? 1),
     0
-  );
+  ) ?? 0;
 
   return (
     <AdminLayout>
@@ -139,11 +139,16 @@ const AdminOrderDetail = () => {
               </Button>
             </Link>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-foreground">Pedido #{order.id}</h1>
+              <h1 className="text-3xl font-bold text-foreground" title={order.id}>
+                {order.numero != null ? formatPedidoNumero(order.numero) : `Pedido #${order.id}`}
+              </h1>
               {getStatusBadge(order.status)}
             </div>
             <p className="text-muted-foreground mt-2">
-              Criado em {format(new Date(order.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+              Criado em {format(new Date(order.created_at || 0), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+              {order.pre_pedido_id && (
+                <span className="ml-2"> · Origem: <Link to={`/admin/pre-pedidos/${order.pre_pedido_id}`} className="text-primary hover:underline">{order.pre_pedido_numero != null ? formatPrePedidoNumero(order.pre_pedido_numero) : "Pré-pedido"}</Link></span>
+              )}
             </p>
           </div>
         </div>
@@ -160,32 +165,32 @@ const AdminOrderDetail = () => {
             <CardContent className="space-y-3">
               <div>
                 <p className="text-sm font-medium">Nome</p>
-                <p className="text-sm text-muted-foreground">{order.customer_name}</p>
+                <p className="text-sm text-muted-foreground">{order.contact_name || order.company_name}</p>
               </div>
               <div>
                 <p className="text-sm font-medium flex items-center gap-2">
                   <Mail className="w-4 h-4" />
                   Email
                 </p>
-                <p className="text-sm text-muted-foreground">{order.customer_email}</p>
+                <p className="text-sm text-muted-foreground">{order.email}</p>
               </div>
-              {order.customer_phone && (
+              {order.phone && (
                 <div>
                   <p className="text-sm font-medium flex items-center gap-2">
                     <Phone className="w-4 h-4" />
                     Telefone
                   </p>
-                  <p className="text-sm text-muted-foreground">{order.customer_phone}</p>
+                  <p className="text-sm text-muted-foreground">{order.phone}</p>
                 </div>
               )}
-              {order.shipping_address && (
+              {(order.address || (order.city && order.state)) && (
                 <div>
                   <p className="text-sm font-medium flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
-                    Endereço de Entrega
+                    Endereço
                   </p>
                   <p className="text-sm text-muted-foreground whitespace-pre-line">
-                    {order.shipping_address}
+                    {[order.address, order.city, order.state, order.zip_code].filter(Boolean).join(", ")}
                   </p>
                 </div>
               )}
@@ -270,25 +275,26 @@ const AdminOrderDetail = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {order.items.map((item, index) => (
+              {order.items?.map((item: { model_id?: string; model_name?: string; quantity?: number; price?: number; notes?: string }, index: number) => (
                 <div
-                  key={index}
+                  key={item.model_id ?? `item-${index}`}
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
                   <div className="flex-1">
-                    <p className="font-medium">{item.name}</p>
+                    <p className="font-medium">{item.model_name || "Item"}</p>
                     <p className="text-sm text-muted-foreground">
-                      Quantidade: {item.quantity} x {formatPrice(item.price)}
+                      Quantidade: {item.quantity ?? 1}
+                      {(item as { price?: number }).price != null && ` x ${formatPrice((item as { price: number }).price)}`}
                     </p>
-                    {item.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {item.description}
-                      </p>
+                    {item.notes && (
+                      <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>
                     )}
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-lg">
-                      {formatPrice(item.price * item.quantity)}
+                      {(item as { price?: number }).price != null && (item.quantity ?? 1)
+                        ? formatPrice((item as { price: number }).price! * (item.quantity ?? 1))
+                        : "—"}
                     </p>
                   </div>
                 </div>

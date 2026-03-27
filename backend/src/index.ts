@@ -19,6 +19,7 @@ import couponsRoutes from "./routes/coupons";
 import servicesRoutes from "./routes/services";
 import productViewsRoutes from "./routes/productViews";
 import prePedidosRoutes from "./routes/prePedidos";
+import adminTeamRoutes from "./routes/adminTeam";
 import pool from "./config/database";
 import path from "path";
 
@@ -114,6 +115,7 @@ app.use("/api/coupons", couponsRoutes);
 app.use("/api/services", servicesRoutes);
 app.use("/api/product-views", productViewsRoutes);
 app.use("/api/pre-pedidos", prePedidosRoutes);
+app.use("/api/admin-team", adminTeamRoutes);
 // 404 Handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({

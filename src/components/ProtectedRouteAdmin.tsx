@@ -20,8 +20,8 @@ const ProtectedRouteAdmin = ({ children }: ProtectedRouteAdminProps) => {
     return <Navigate to="/admin/login" replace />;
   }
 
-  if (user?.role !== "admin") {
-    return <Navigate to="/lojista/dashboard" replace />;
+  if (user?.source !== "admin_team") {
+    return <Navigate to="/admin/login" replace />;
   }
 
   return children;

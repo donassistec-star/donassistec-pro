@@ -57,6 +57,12 @@ export interface Order {
   total: number;
   created_at?: string;
   updated_at?: string;
+  /** Vínculo com o pré-pedido de origem (quando o pedido é gerado a partir de um pré-pedido). */
+  pre_pedido_id?: string | null;
+  /** Número do pré-pedido de origem (para exibir "Pré-pedido PRE-0001") – preenchido pelo backend quando pre_pedido_id existe. */
+  pre_pedido_numero?: number | null;
+  /** Número sequencial do pedido (PED-0001, PED-0002, ...) – gerado no backend. */
+  numero?: number;
 }
 
 export interface OrderItem {

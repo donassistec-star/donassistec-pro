@@ -179,9 +179,21 @@ npm run migrate:pre-pedidos
 
 # 2. Campos de contato e observações (contact_name, contact_company, contact_phone, contact_email, notes, is_urgent, retailer_id)
 npm run migrate:pre-pedidos-contact
+
+# 3. need_by em pre_pedidos
+npm run migrate:pre-pedidos-need-by
+
+# 4. numero em pre_pedidos (PRE-0001, …)
+npm run migrate:pre-pedidos-numero
+
+# 5. numero e pre_pedido_id em orders (PED-0001, …)
+npm run migrate:orders-numero
+
+# 6. Tabela order_items (se não existir)
+npm run migrate:order-items
 ```
 
-Ou execute o conteúdo de `23_pre_pedidos.sql` e em seguida `24_pre_pedidos_contact.sql` no seu cliente MySQL.
+Ou execute o conteúdo dos arquivos em `database/migrations/` no seu cliente MySQL.
 
 ## 📝 Exemplos de Uso
 

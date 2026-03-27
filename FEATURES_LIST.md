@@ -55,6 +55,13 @@ Lista detalhada de todas as funcionalidades implementadas no sistema DonAssistec
 - ✅ Top produtos mais visualizados
 - ✅ Estatísticas de engajamento
 
+### 📲 App Android e página de download
+- ✅ Build do frontend como APK (Capacitor)
+- ✅ Página **/apk** para download do app (https://donassistec.com.br/apk)
+- ✅ Botão de download apontando para `/DonAssistec.apk` (arquivo em `public/DonAssistec.apk`)
+- ✅ Nginx com fallback SPA para rotas como `/apk` (evita 404 ao acessar direto)
+- ✅ Documentação em `docs/APK.md` (gerar APK, publicar na página, nginx)
+
 ### 📱 Catálogo de Produtos
 - ✅ CRUD completo de marcas
 - ✅ CRUD completo de modelos

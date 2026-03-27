@@ -1,15 +1,18 @@
 import { useEffect, useState, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileText, ChevronDown, ChevronUp, Calendar, Search, Download, User, Building2, Phone, Mail, AlertCircle } from "lucide-react";
+import { FileText, ChevronDown, ChevronUp, Calendar, Search, Download, User, Building2, Phone, Mail, AlertCircle, Package } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prePedidosService, PrePedidoRecord } from "@/services/prePedidosService";
+import { ordersService } from "@/services/ordersService";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatCurrency } from "@/utils/format";
+import { formatCurrency, formatPrePedidoNumero, formatPedidoNumero } from "@/utils/format";
+import { toast } from "sonner";
 
 const escapeCsv = (v: string) => {
   const s = String(v ?? "").replace(/"/g, '""');
@@ -17,10 +20,12 @@ const escapeCsv = (v: string) => {
 };
 
 const AdminPrePedidos = () => {
+  const navigate = useNavigate();
   const [list, setList] = useState<PrePedidoRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [convertingId, setConvertingId] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -33,6 +38,8 @@ const AdminPrePedidos = () => {
       setList(data);
     } catch (e) {
       console.error("Erro ao carregar pré-pedidos:", e);
+      setList([]);
+      toast.error("Erro ao carregar pré-pedidos. Verifique a conexão e tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -41,18 +48,35 @@ const AdminPrePedidos = () => {
   const filteredList = useMemo(() => {
     if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase().trim();
+    const preNum = (n: number) => formatPrePedidoNumero(n).toLowerCase();
     return list.filter(
       (r) =>
         r.id.toLowerCase().includes(q) ||
+        (r.numero != null && preNum(r.numero).includes(q)) ||
         (r.session_id || "").toLowerCase().includes(q) ||
         (r.contact_name || "").toLowerCase().includes(q) ||
         (r.contact_company || "").toLowerCase().includes(q) ||
-        (r.contact_email || "").toLowerCase().includes(q)
+        (r.contact_email || "").toLowerCase().includes(q) ||
+        (r.need_by || "").toLowerCase().includes(q)
     );
   }, [list, searchQuery]);
 
+  const handleConvertToOrder = async (rec: PrePedidoRecord) => {
+    try {
+      setConvertingId(rec.id);
+      const order = await ordersService.createFromPrePedido(rec.id);
+      const num = order?.numero != null ? formatPedidoNumero(order.numero) : order?.id;
+      toast.success(`Pedido ${num} criado a partir do pré-pedido.`);
+      navigate(`/admin/pedidos/${order.id}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao converter em pedido");
+    } finally {
+      setConvertingId(null);
+    }
+  };
+
   const handleExportCsv = () => {
-    const headers = ["ID", "Data", "Sessão", "Contato", "Empresa", "Telefone", "E-mail", "Urgente", "Observações", "Qtd itens", "Resumo itens"];
+    const headers = ["Número", "ID", "Data", "Sessão", "Contato", "Empresa", "Telefone", "E-mail", "Preciso até", "Urgente", "Convertido em", "Observações", "Qtd itens", "Resumo itens"];
     const rows = filteredList.map((r) => {
       const itens = (r.items_json || [])
         .map(
@@ -61,6 +85,7 @@ const AdminPrePedidos = () => {
         )
         .join("; ");
       return [
+        r.numero != null ? formatPrePedidoNumero(r.numero) : "",
         r.id,
         format(new Date(r.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR }),
         r.session_id || "",
@@ -68,7 +93,9 @@ const AdminPrePedidos = () => {
         r.contact_company || "",
         r.contact_phone || "",
         r.contact_email || "",
+        r.need_by || "",
         r.is_urgent ? "Sim" : "",
+        r.order_numero != null ? formatPedidoNumero(r.order_numero) : "",
         (r.notes || "").replace(/\s+/g, " ").trim(),
         String((r.items_json || []).length),
         itens,
@@ -107,13 +134,13 @@ const AdminPrePedidos = () => {
           <Card>
             <CardHeader>
               <CardTitle>Filtros</CardTitle>
-              <CardDescription>Buscar por ID, sessão, nome, empresa ou e-mail</CardDescription>
+              <CardDescription>Buscar por número (PRE-0001), ID, sessão, nome, empresa ou e-mail</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por ID, nome, empresa, e-mail..."
+                  placeholder="Buscar por número (ex: PRE-0001), ID, nome, empresa, e-mail..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -150,8 +177,10 @@ const AdminPrePedidos = () => {
                   <CardHeader>
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-1">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {rec.id}
+                        <CardTitle className="text-lg flex items-center gap-2" title={rec.id}>
+                          <Link to={`/admin/pre-pedidos/${rec.id}`} className="hover:underline">
+                            {rec.numero != null ? formatPrePedidoNumero(rec.numero) : rec.id}
+                          </Link>
                           {rec.is_urgent ? (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-700 dark:text-amber-400">
                               <AlertCircle className="w-3 h-3" />
@@ -177,10 +206,29 @@ const AdminPrePedidos = () => {
                           )}
                         </CardDescription>
                       </div>
-                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm text-muted-foreground">
                           {items.length} {items.length === 1 ? "item" : "itens"}
                         </span>
+                        {rec.order_id ? (
+                          <Link to={`/admin/pedidos/${rec.order_id}`}>
+                            <Button variant="secondary" size="sm" title="Ver pedido">
+                              <Package className="w-4 h-4 mr-1" />
+                              Convertido em {rec.order_numero != null ? formatPedidoNumero(rec.order_numero) : "pedido"}
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleConvertToOrder(rec)}
+                            disabled={!!convertingId}
+                            title="Criar pedido a partir deste pré-pedido"
+                          >
+                            <Package className="w-4 h-4 mr-1" />
+                            {convertingId === rec.id ? "Convertendo…" : "Converter em pedido"}
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -194,7 +242,7 @@ const AdminPrePedidos = () => {
                   </CardHeader>
                   {isExpanded && (
                     <CardContent className="pt-0">
-                      {(rec.contact_name || rec.contact_company || rec.contact_phone || rec.contact_email || rec.notes) && (
+                      {(rec.contact_name || rec.contact_company || rec.contact_phone || rec.contact_email || rec.notes || rec.need_by) && (
                         <div className="mb-4 p-4 border rounded-lg bg-muted/30 space-y-2">
                           <p className="text-sm font-medium flex items-center gap-2">
                             <User className="w-4 h-4" />
@@ -212,6 +260,9 @@ const AdminPrePedidos = () => {
                             )}
                             {rec.contact_email && (
                               <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {rec.contact_email}</span>
+                            )}
+                            {rec.need_by && (
+                              <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Preciso até: {rec.need_by}</span>
                             )}
                           </div>
                           {rec.notes && (

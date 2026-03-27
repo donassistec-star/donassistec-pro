@@ -32,8 +32,7 @@ const RetailerReports = () => {
   useEffect(() => {
     const loadOrders = async () => {
       try {
-        const retailerId = user?.email;
-        const data = await ordersService.getAll(retailerId);
+        const data = await ordersService.getAll();
         setOrders(data);
       } finally {
         setLoadingOrders(false);

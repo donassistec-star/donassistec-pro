@@ -29,14 +29,13 @@ module.exports = {
     {
       name: "donassistec-frontend",
       script: "npm",
-      args: "run dev",
+      args: ["run", "start:prod"],
       cwd: "/home/DonAssistec",
       instances: 1,
       exec_mode: "fork",
       env: {
-        NODE_ENV: "development",
+        NODE_ENV: "production",
         PORT: 8200,
-        // VITE_API_URL removido - o código detecta automaticamente
       },
       error_file: "./logs/frontend-error.log",
       out_file: "./logs/frontend-out.log",

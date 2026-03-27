@@ -5,6 +5,70 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.5.0] - 2026-03-27
+
+### ✨ Adicionado
+
+- **Módulo de tabelas de preços para lojistas**: admin em `/admin/tabela-precos` e área do lojista em `/lojista/tabela-precos`
+- **Múltiplas tabelas por slug**: criação, edição, remoção e seleção de várias tabelas de preços
+- **Importação e edição**: texto bruto, `.txt`, preview estruturado, edição manual de categorias/itens e exportação `.txt`
+- **Curadoria de exibição**: visibilidade por tabela, destaque único para lojistas e ordenação manual
+- **Experiência do lojista**: troca entre tabelas, busca por item, navegação por categorias, categorias recolhíveis e exportação PDF
+- **Operação no admin**: duplicar tabela, filtros por status, busca, resumo por card e barra fixa de salvar
+
+### 🔧 Melhorado
+
+- **Fluxo de exclusão no admin**: confirmação para excluir tabela, categoria e item
+- **Salvamento da edição**: CTA fixo de salvar durante a edição da tabela
+- **Banco de dados**: suporte a `utf8mb4`, `featured_to_retailers` e `sort_order` na estrutura das tabelas de preços para lojistas
+
+### 📚 Documentação
+
+- **README.md**: novas funcionalidades do módulo de tabelas de preços para lojistas
+- **BACKEND_API.md**: endpoints de `/api/retailer-price-tables/*`
+
+## [1.4.0] - 2026-02-03
+
+### ✨ Adicionado
+
+- **Página de download do APK**: rota **/apk** (https://donassistec.com.br/apk) com título, botão "Baixar APK para Android", requisitos e links para Termos/Privacidade
+- **Build Android (Capacitor)**: `capacitor.config.ts`, projeto `android/`, scripts `build:android`, `cap:open:android`, `android:apk`; documentação em `docs/APK.md`
+- **Nginx fallback SPA**: em `nginx-vps.conf`, `proxy_intercept_errors on` e `error_page 404 = @spa`; location `@spa` devolve index.html quando o frontend retorna 404, para rotas como /apk funcionarem ao acessar direto
+
+### 📚 Documentação
+
+- **docs/APK.md**: como gerar o APK, publicar na página /apk (copiar para `public/DonAssistec.apk`), fallback SPA no nginx, troubleshooting
+- **DEPLOY.md**: menção ao fallback SPA no nginx e à página /apk
+- **README.md** e **FEATURES_LIST.md**: funcionalidade "Página de download do app Android (/apk)" e seção "App Android e página de download"
+
+---
+
+## [1.3.0] - 2026-01-25
+
+### ✨ Adicionado
+
+- **Pré-pedidos na área do lojista**: página `/lojista/pre-pedidos` com lista e detalhe; lojista vê apenas os seus (filtro por `retailer_id` = id ou email)
+- **Detalhe do pré-pedido**: páginas `/admin/pre-pedidos/:id` e `/lojista/pre-pedidos/:id` com contato, itens, e ações de conversão
+- **Conversão de pré-pedido em pedido**: botão "Converter em pedido" em Admin e Lojista; rota `POST /api/orders/from-pre-pedido` com validação de dono e bloqueio de reconversão
+- **Indicador "Já convertido"**: na lista e no detalhe; link "Convertido em PED-0001" quando existir pedido originado; coluna "Convertido em" na exportação CSV de pré-pedidos
+- **Link "Origem" no detalhe do pedido**: texto "Origem: PRE-0001" como link para o detalhe do pré-pedido (admin ou lojista)
+- **API `GET /api/pre-pedidos/:id`**: detalhe de pré-pedido com `authenticateToken`; admin vê qualquer, lojista só os seus
+
+### 🔧 Melhorado
+
+- **Pedidos e pré-pedidos por lojista**: `OrderModel.findAll(retailerIds?)` e `PrePedidoModel.findAll(retailerIds?)` com `WHERE retailer_id IN (?,?)`; `OrderModel.findById` e `OrderController.getById` aceitam `retailerIds` para lojista
+- **updateStatus e delete de pedidos**: `OrderController.updateStatus` e `delete` passam a usar `AuthRequest`; admin sem filtro, lojista restrito a `retailer_id IN (id, email)`. `OrderModel.updateStatus` e `delete` aceitam `retailerIds?: string[]`; frontend `ordersService.updateStatus(id, status)` e `delete(id)` sem parâmetro `retailerId`
+- **Cart e Checkout**: `retailer_id` enviado como `user?.id || user?.email` (ou email do formulário no checkout) ao criar pré-pedido e pedido
+- **Cache e atualização**: `Cache-Control: no-store, no-cache, must-revalidate` em `GET /api/orders` e `GET /api/pre-pedidos`; frontend com `?_=${Date.now()}` para evitar 304
+- **Tratamento de erros**: toasts ao falhar carregamento de lista em Admin e Lojista para pedidos e pré-pedidos; `setList([])` no `catch`
+- **Navegação**: título do card na lista de pré-pedidos como link para o detalhe; `PrePedidoModel` retorna `order_id` e `order_numero` via `LEFT JOIN` em `orders` (fallback se `pre_pedido_id` ausente)
+
+### 📚 Documentação
+
+- **API_ROUTES.md**: `GET /api/pre-pedidos`, `GET /api/pre-pedidos/:id`, `POST /api/orders/from-pre-pedido`, `GET /api/orders`; script `check-retailer-data.ts` para diagnóstico por lojista
+
+---
+
 ## [1.2.0] - 2026-01-25
 
 ### ✨ Adicionado
@@ -182,5 +246,7 @@ Tipos:
 
 ---
 
+[1.3.0]: https://github.com/seu-usuario/donassistec/releases/tag/v1.3.0
+[1.2.0]: https://github.com/seu-usuario/donassistec/releases/tag/v1.2.0
 [1.1.0]: https://github.com/seu-usuario/donassistec/releases/tag/v1.1.0
 [1.0.0]: https://github.com/seu-usuario/donassistec/releases/tag/v1.0.0

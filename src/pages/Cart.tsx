@@ -14,7 +14,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { useBrands } from "@/hooks/useBrands";
 import { brands } from "@/data/models";
 import { toast } from "sonner";
-import { formatCurrency } from "@/utils/format";
+import { formatCurrency, formatPrePedidoNumero } from "@/utils/format";
 import { validation } from "@/utils/validation";
 import { buildPreOrcamentoMessageList, buildPrePedidoMessageList } from "@/utils/whatsappOrcamento";
 import { useNotifications } from "@/contexts/NotificationsContext";
@@ -50,8 +50,10 @@ const Cart = () => {
     contactPhone: "",
     contactEmail: "",
     notes: "",
+    needBy: "",
     isUrgent: false,
   });
+  const [obsOrcamento, setObsOrcamento] = useState("");
 
   const allBrands = apiBrands?.length ? apiBrands : brands;
   const totalItems = getTotalItems();
@@ -75,7 +77,7 @@ const Cart = () => {
       quantity: item.quantity,
       selectedServices: item.selectedServices,
     }));
-    const msg = buildPreOrcamentoMessageList(list);
+    const msg = buildPreOrcamentoMessageList(list, obsOrcamento.trim() || undefined);
     const w = window.open(validation.generateWhatsAppUrl(wa, msg), "_blank");
     if (!w) {
       toast.error("Permita pop-ups para abrir o WhatsApp e tente novamente.");
@@ -90,6 +92,7 @@ const Cart = () => {
       contactPhone: user?.phone ?? "",
       contactEmail: user?.email ?? "",
       notes: "",
+      needBy: "",
       isUrgent: false,
     });
     setShowFinalizarConfirm(true);
@@ -106,18 +109,13 @@ const Cart = () => {
       contactName: formData.contactName || undefined,
       contactCompany: formData.contactCompany || undefined,
       notes: formData.notes || undefined,
+      needBy: formData.needBy || undefined,
       isUrgent: formData.isUrgent,
     };
-    const msg = buildPrePedidoMessageList(list, contact);
-    const w = window.open(validation.generateWhatsAppUrl(wa, msg), "_blank");
-    if (!w) {
-      toast.error("Permita pop-ups para abrir o WhatsApp e tente novamente.");
-      setShowFinalizarConfirm(false);
-      return;
-    }
     setIsFinalizando(true);
+    let numeroPrePedido: string | undefined;
     try {
-      await prePedidosService.create({
+      const created = await prePedidosService.create({
         items: list.map((item) => ({
           model_id: item.model.id,
           model_name: item.model.name,
@@ -136,11 +134,21 @@ const Cart = () => {
         contact_phone: formData.contactPhone || undefined,
         contact_email: formData.contactEmail || undefined,
         notes: formData.notes || undefined,
+        need_by: formData.needBy.trim() || undefined,
         is_urgent: formData.isUrgent,
-        retailer_id: user?.id,
+        retailer_id: user?.id || user?.email || undefined,
       });
+      numeroPrePedido = created?.numero != null ? formatPrePedidoNumero(created.numero) : undefined;
     } catch {
-      // Ignorar: fluxo segue mesmo se o registro falhar
+      // Fluxo segue: mensagem sem número
+    }
+    const msg = buildPrePedidoMessageList(list, contact, numeroPrePedido);
+    const w = window.open(validation.generateWhatsAppUrl(wa, msg), "_blank");
+    if (!w) {
+      toast.error("Permita pop-ups para abrir o WhatsApp e tente novamente.");
+      setShowFinalizarConfirm(false);
+      setIsFinalizando(false);
+      return;
     }
     clearCart();
     setImageErrors({});
@@ -455,6 +463,7 @@ const Cart = () => {
                           </div>
                           <Separator />
                           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                            <p className="text-xs font-medium text-primary">📋 Orçamento válido por 7 dias.</p>
                             <p className="text-sm text-muted-foreground">
                               💡 {totalKnown > 0 ? "Valores parciais dos itens com preço. " : ""}Os demais preços serão informados no orçamento personalizado.
                             </p>
@@ -536,8 +545,17 @@ const Cart = () => {
                                   id="finalizar-notes"
                                   value={formData.notes}
                                   onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
-                                  placeholder="Observações gerais sobre o pedido, prazo desejado, etc."
+                                  placeholder="Observações gerais sobre o pedido, etc."
                                   rows={3}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="finalizar-needBy">Preciso até (opcional)</Label>
+                                <Input
+                                  id="finalizar-needBy"
+                                  value={formData.needBy}
+                                  onChange={(e) => setFormData((p) => ({ ...p, needBy: e.target.value }))}
+                                  placeholder="Ex: 15/02/2025 ou Urgente"
                                 />
                               </div>
                               <div className="flex items-center gap-2">
@@ -563,6 +581,16 @@ const Cart = () => {
                       <p className="text-xs text-muted-foreground">
                         Envia o pré-pedido por WhatsApp, finaliza o carrinho e nossa equipe entra em contato.
                       </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="obs-orcamento" className="text-xs text-muted-foreground">Observação para o orçamento (opcional)</Label>
+                        <Input
+                          id="obs-orcamento"
+                          value={obsOrcamento}
+                          onChange={(e) => setObsOrcamento(e.target.value)}
+                          placeholder="Ex: Preciso até sexta"
+                          className="text-sm"
+                        />
+                      </div>
                       <Button
                         variant="outline"
                         size="lg"
@@ -573,7 +601,7 @@ const Cart = () => {
                         Orçamento (WhatsApp)
                       </Button>
                       <p className="text-xs text-muted-foreground">
-                        Só envia por WhatsApp; o carrinho permanece.
+                        Só envia por WhatsApp; o carrinho permanece. A observação acima será incluída na mensagem.
                       </p>
                       <Button
                         variant="outline"

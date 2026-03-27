@@ -19,6 +19,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { brands } from "@/data/models";
 import { ordersService, OrderWithItems } from "@/services/ordersService";
+import { formatPrePedidoNumero } from "@/utils/format";
 import { Loading } from "@/components/ui/loading";
 import RetailerLayout from "@/components/retailer/RetailerLayout";
 import { toast } from "sonner";
@@ -147,6 +148,9 @@ const RetailerOrderDetail = () => {
             </h1>
             <p className="text-muted-foreground">
               Detalhes completos do pedido
+              {order.pre_pedido_id && (
+                <span className="ml-2"> · Origem: <Link to={`/lojista/pre-pedidos/${order.pre_pedido_id}`} className="text-primary hover:underline">{order.pre_pedido_numero != null ? formatPrePedidoNumero(order.pre_pedido_numero) : "Pré-pedido"}</Link></span>
+              )}
             </p>
           </div>
           <div className="flex gap-2">

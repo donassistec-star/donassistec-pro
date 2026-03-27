@@ -4,7 +4,11 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
+// Para APK (Capacitor): use base relativo para assets no WebView
+const base = process.env.VITE_CAPACITOR === "true" ? "./" : undefined;
+
 export default defineConfig(({ mode }) => ({
+  base,
   optimizeDeps: {
     include: ["exceljs"],
   },

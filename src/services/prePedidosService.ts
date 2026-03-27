@@ -10,6 +10,7 @@ export interface PrePedidoItemRequest {
 
 export interface PrePedidoRecord {
   id: string;
+  numero: number;
   session_id: string | null;
   items_json: PrePedidoItemRequest[];
   created_at: string;
@@ -18,8 +19,12 @@ export interface PrePedidoRecord {
   contact_phone?: string | null;
   contact_email?: string | null;
   notes?: string | null;
+  need_by?: string | null;
   is_urgent?: number;
   retailer_id?: string | null;
+  /** ID do pedido quando já convertido */
+  order_id?: string | null;
+  order_numero?: number | null;
 }
 
 interface ApiResponse<T> {
@@ -29,8 +34,13 @@ interface ApiResponse<T> {
 }
 
 export const prePedidosService = {
+  async getById(id: string): Promise<PrePedidoRecord | null> {
+    const res = await api.get<ApiResponse<PrePedidoRecord>>(`pre-pedidos/${id}`);
+    return res.data?.success && res.data?.data ? res.data.data : null;
+  },
+
   async getAll(): Promise<PrePedidoRecord[]> {
-    const res = await api.get<ApiResponse<PrePedidoRecord[]>>("/pre-pedidos");
+    const res = await api.get<ApiResponse<PrePedidoRecord[]>>(`pre-pedidos?_=${Date.now()}`);
     return res.data?.data ?? [];
   },
 
@@ -42,9 +52,12 @@ export const prePedidosService = {
     contact_phone?: string;
     contact_email?: string;
     notes?: string;
+    need_by?: string;
     is_urgent?: boolean;
     retailer_id?: string;
-  }): Promise<void> {
-    await api.post("/pre-pedidos", data);
+  }): Promise<PrePedidoRecord> {
+    const res = await api.post<ApiResponse<PrePedidoRecord>>("pre-pedidos", data);
+    if (!res.data?.success || !res.data?.data) throw new Error(res.data?.error || "Erro ao registrar pré-pedido");
+    return res.data.data;
   },
 };

@@ -20,6 +20,8 @@ import RetailerProfile from "./pages/retailer/RetailerProfile";
 import RetailerSupport from "./pages/retailer/RetailerSupport";
 import RetailerOrderDetail from "./pages/retailer/RetailerOrderDetail";
 import RetailerReports from "./pages/retailer/RetailerReports";
+import RetailerPrePedidos from "./pages/retailer/RetailerPrePedidos";
+import RetailerPrePedidoDetail from "./pages/retailer/RetailerPrePedidoDetail";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import HomeContentAdmin from "./pages/admin/HomeContentAdmin";
@@ -31,6 +33,7 @@ import BrandForm from "./pages/admin/BrandForm";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
 import AdminPrePedidos from "./pages/admin/AdminPrePedidos";
+import AdminPrePedidoDetail from "./pages/admin/AdminPrePedidoDetail";
 import AdminRetailers from "./pages/admin/AdminRetailers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminReports from "./pages/admin/AdminReports";
@@ -41,11 +44,13 @@ import AdminDynamicPricing from "./pages/admin/AdminDynamicPricing";
 import AdminTickets from "./pages/admin/AdminTickets";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminEquipe from "./pages/admin/AdminEquipe";
 import Favorites from "./pages/Favorites";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Help from "./pages/Help";
+import ApkDownload from "./pages/ApkDownload";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedRouteAdmin from "./components/ProtectedRouteAdmin";
@@ -93,6 +98,7 @@ const App = () => (
                   <Route path="/favoritos" element={<Favorites />} />
                   <Route path="/sobre" element={<About />} />
                   <Route path="/ajuda" element={<Help />} />
+                  <Route path="/apk" element={<ApkDownload />} />
                   <Route path="/privacidade" element={<Privacy />} />
                   <Route path="/termos" element={<Terms />} />
                   
@@ -111,6 +117,22 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <RetailerOrders />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/lojista/pre-pedidos"
+                    element={
+                      <ProtectedRoute>
+                        <RetailerPrePedidos />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/lojista/pre-pedidos/:id"
+                    element={
+                      <ProtectedRoute>
+                        <RetailerPrePedidoDetail />
                       </ProtectedRoute>
                     }
                   />
@@ -246,6 +268,14 @@ const App = () => (
                     }
                   />
                   <Route
+                    path="/admin/pre-pedidos/:id"
+                    element={
+                      <ProtectedRouteAdmin>
+                        <AdminPrePedidoDetail />
+                      </ProtectedRouteAdmin>
+                    }
+                  />
+                  <Route
                     path="/admin/lojistas"
                     element={
                       <ProtectedRouteAdmin>
@@ -322,6 +352,14 @@ const App = () => (
                     element={
                       <ProtectedRouteAdmin>
                         <ServicesAdmin />
+                      </ProtectedRouteAdmin>
+                    }
+                  />
+                  <Route
+                    path="/admin/equipe"
+                    element={
+                      <ProtectedRouteAdmin>
+                        <AdminEquipe />
                       </ProtectedRouteAdmin>
                     }
                   />

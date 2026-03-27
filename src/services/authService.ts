@@ -32,7 +32,35 @@ export interface AuthResponse {
   message?: string;
 }
 
+export interface BootstrapAvailableResponse {
+  success: boolean;
+  available?: boolean;
+  tableExists?: boolean;
+  error?: string;
+}
+
 export const authService = {
+  async bootstrapAvailable(): Promise<BootstrapAvailableResponse> {
+    try {
+      const response = await api.get<BootstrapAvailableResponse>("/auth/bootstrap-available");
+      return response.data;
+    } catch (error: any) {
+      return { success: false, available: false, error: error.response?.data?.error || "Erro ao verificar" };
+    }
+  },
+
+  async bootstrapAdmin(data: { email: string; password: string; name: string }): Promise<AuthResponse> {
+    try {
+      const response = await api.post<AuthResponse>("/auth/bootstrap-admin", data);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || "Erro ao criar administrador",
+      };
+    }
+  },
+
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
       const response = await api.post<AuthResponse>("/auth/register", data);

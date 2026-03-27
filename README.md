@@ -53,6 +53,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 - ✅ Gestão de conteúdo da home
 - ✅ Controle de estoque
 - ✅ Métricas de visualização de produtos
+- ✅ Tabelas de preços exclusivas para lojistas com múltiplas tabelas, destaque, ordem, importação `.txt`, duplicação e preview estruturado
 
 ### Para Lojistas
 
@@ -66,6 +67,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 - ✅ Histórico de pedidos
 - ✅ Suporte e tickets
 - ✅ Relatórios básicos
+- ✅ Tabelas de preços exclusivas com busca, navegação por categorias, PDF e troca entre múltiplas tabelas
 
 ### Público Geral
 
@@ -76,6 +78,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 - ✅ Busca avançada
 - ✅ Recomendações personalizadas
 - ✅ Sistema de favoritos
+- ✅ Página de download do app Android (**/apk**) com link para o APK
 
 ## 🛠 Tecnologias
 
@@ -323,7 +326,8 @@ donassistec/
 - **Pedidos**: `/api/orders/*`
 - **Lojistas**: `/api/retailers/*`
 - **Configurações**: `/api/settings/*` (GET `/api/settings/public` é **público**, sem login)
-- **Tabela de preços**: `/api/price-table` (público, `?brand=id` opcional)
+- **Tabela de preços pública**: `/api/price-table` (público, `?brand=id` opcional)
+- **Tabelas de preços para lojistas**: `/api/retailer-price-tables/*` (autenticado)
 - **Upload**: `/api/upload/*`
 - **Serviços**: `/api/services/*`
 - **Visualizações**: `/api/product-views/*`

@@ -90,3 +90,11 @@ export const formatName = (name: string): string => {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 };
+
+/** Formata o número do pré-pedido (ex: 1 → "PRE-0001"). */
+export const formatPrePedidoNumero = (n: number): string =>
+  `PRE-${String(n).padStart(4, "0")}`;
+
+/** Formata o número do pedido (ex: 1 → "PED-0001"). */
+export const formatPedidoNumero = (n: number): string =>
+  `PED-${String(n).padStart(4, "0")}`;

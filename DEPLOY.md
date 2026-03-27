@@ -144,6 +144,7 @@ Na raiz do projeto existe `nginx-vps.conf` para deploy em VPS:
 - **`/api`** → proxy para o backend em `127.0.0.1:3001`
 - **`/uploads`** e **`/health`** → backend
 - **server_name**: `177.67.32.204`, `donassistec.com.br`, `www.donassistec.com.br`
+- **Fallback SPA**: quando o frontend retorna 404 (ex.: rota `/apk`), o nginx devolve o `index.html` (location `@spa`), para o React Router tratar rotas como `/apk`, `/sobre`, etc.
 
 **Comandos no servidor:**
 
@@ -153,6 +154,8 @@ sudo ln -sf /etc/nginx/sites-available/donassistec /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 ```
+
+**Página de download do APK:** a rota **https://donassistec.com.br/apk** exibe a página para baixar o app Android. Para o link funcionar, o build do frontend deve incluir a página `/apk` e, em produção, o nginx deve estar com o fallback SPA (acima). Para o botão de download servir o arquivo, coloque o APK em `public/DonAssistec.apk` no frontend antes do deploy (veja `docs/APK.md`).
 
 **Firewall (firewalld):** libere 80 e 443:
 
@@ -277,8 +280,12 @@ Após atualizar o código, se houver novas migrations em `backend/database/migra
 
 ```bash
 cd backend
-npm run migrate:pre-pedidos       # 23: tabela pre_pedidos
-npm run migrate:pre-pedidos-contact   # 24: campos de contato
+npm run migrate:pre-pedidos         # 23: tabela pre_pedidos
+npm run migrate:pre-pedidos-contact # 24: campos de contato
+npm run migrate:pre-pedidos-need-by # 25: need_by
+npm run migrate:pre-pedidos-numero  # 26: numero (PRE-0001)
+npm run migrate:orders-numero      # 27: numero, pre_pedido_id em orders
+npm run migrate:order-items        # 28: order_items (se não existir)
 ```
 
 **VPS com PM2** (backend fora do Docker): use o mesmo `backend/.env` e rode os scripts acima antes de `pm2 restart donassistec-backend`.
@@ -344,4 +351,4 @@ Em caso de problemas:
 
 ---
 
-**Última atualização**: Janeiro 2026
+**Última atualização**: Fevereiro 2026
