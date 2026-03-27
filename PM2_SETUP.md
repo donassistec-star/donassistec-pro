@@ -5,7 +5,7 @@
 O DonAssistec está configurado para rodar localmente via PM2:
 
 - **Backend**: `donassistec-backend` (porta 3001)
-- **Frontend**: `donassistec-frontend` (porta 8200)
+- **Frontend**: `donassistec-frontend` (porta 8200) — em **produção** roda `serve -s dist -l 8200` (build estático), não Vite dev
 - **MySQL**: Docker container (porta 3307)
 - **phpMyAdmin**: Docker container (porta 8081)
 
@@ -96,7 +96,8 @@ O arquivo `ecosystem.config.cjs` contém a configuração completa dos processos
 
 **Frontend** (`donassistec-frontend`):
 - `PORT`: 8200
-- `VITE_API_URL`: opcional; o frontend detecta `donassistec.com.br` e `177.67.32.204` e usa `/api` no mesmo host quando atrás de Nginx.
+- Em produção o ecosystem usa `npm run start:prod` (`serve -s dist -l 8200`). Não usa Vite dev (evita ENOSPC por file watchers).
+- O frontend detecta `donassistec.com.br` e `177.67.32.204` e usa `/api` no mesmo host quando atrás de Nginx.
 
 ## 📊 Estrutura de Logs
 
@@ -116,7 +117,7 @@ cd backend
 npm run build
 pm2 restart donassistec-backend
 
-# 2. Rebuild do frontend (se necessário)
+# 2. Rebuild do frontend (obrigatório se alterou o código do frontend)
 cd ..
 npm run build
 pm2 restart donassistec-frontend
@@ -126,12 +127,16 @@ pm2 restart donassistec-frontend
 
 ### Migrations
 
-Se houver **novas migrations** (ex.: pré-pedidos 23 e 24), execute-as **antes** do restart:
+Se houver **novas migrations**, execute-as **antes** do restart:
 
 ```bash
 cd backend
 npm run migrate:pre-pedidos         # 23: tabela pre_pedidos
 npm run migrate:pre-pedidos-contact # 24: campos de contato
+npm run migrate:pre-pedidos-need-by # 25: need_by
+npm run migrate:pre-pedidos-numero  # 26: numero (PRE-0001)
+npm run migrate:orders-numero      # 27: numero, pre_pedido_id em orders
+npm run migrate:order-items        # 28: order_items (se não existir)
 npm run build
 pm2 restart donassistec-backend
 ```
@@ -182,6 +187,18 @@ pm2 logs donassistec-backend --lines 100
 
 # Verificar uso de memória
 pm2 monit
+```
+
+### ENOSPC: "System limit for number of file watchers reached"
+
+Se o **frontend** (Vite em modo dev) crashar com `ENOSPC` ao observar arquivos, o limite de inotify do Linux foi atingido. Em produção o DonAssistec usa `serve` (build estático), que **não** usa file watchers.
+
+Se em outro ambiente você rodar `npm run dev` (Vite) e tiver esse erro:
+
+```bash
+# Aumentar limite de file watchers (Linux)
+echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
 ```
 
 ### MySQL não conecta

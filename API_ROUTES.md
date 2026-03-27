@@ -128,6 +128,10 @@ Detalhes de um pedido (autenticado).
 ### POST `/api/orders`
 Criar novo pedido (lojista).
 
+### POST `/api/orders/from-pre-pedido`
+Converte um pré-pedido em pedido. **Requer autenticação.** Admin: qualquer pré-pedido; lojista: apenas os seus.  
+**Body:** `{ "pre_pedido_id": "id-do-pre-pedido" }`. Retorna o pedido criado com `pre_pedido_id` e `numero` (PED-0001…). Se o pré-pedido já foi convertido, retorna 400.
+
 ### PUT `/api/orders/:id/status`
 Atualizar status do pedido (admin).
 
@@ -138,7 +142,10 @@ Atualizar status do pedido (admin).
 Registros de pré-pedidos enviados pelo fluxo "Finalizar e enviar pré-pedido" no pré-orçamento.
 
 ### GET `/api/pre-pedidos`
-Lista todos os pré-pedidos (admin).
+Lista pré-pedidos. **Requer autenticação.** Admin: todos; lojista: apenas os seus (`retailer_id` = id ou email).
+
+### GET `/api/pre-pedidos/:id`
+Detalhes de um pré-pedido. **Requer autenticação.** Admin: qualquer; lojista: apenas os seus. Inclui `order_id` e `order_numero` quando já convertido em pedido.
 
 ### POST `/api/pre-pedidos`
 Registra um pré-pedido (público). Chamado pelo frontend ao finalizar o pré-orçamento (formulário de contato + itens).

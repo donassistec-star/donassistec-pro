@@ -1,11 +1,12 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  LayoutDashboard, 
-  Package, 
-  User, 
-  LogOut, 
-  Menu, 
+  LayoutDashboard,
+  Package,
+  User,
+  Users,
+  LogOut,
+  Menu,
   X,
   FileText,
   Settings,
@@ -20,7 +21,7 @@ import {
   PackageCheck,
   Ticket,
   Wrench,
-  ClipboardList
+  ClipboardList,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
@@ -46,88 +47,37 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     navigate("/admin/login");
   };
 
-  const navItems = [
-    {
-      label: "Dashboard",
-      href: "/admin/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      label: "Conteúdo da Home",
-      href: "/admin/home-content",
-      icon: Home,
-    },
-    {
-      label: "Modelos",
-      href: "/admin/modelos",
-      icon: Smartphone,
-    },
-    {
-      label: "Marcas",
-      href: "/admin/marcas",
-      icon: Tag,
-    },
-    {
-      label: "Serviços",
-      href: "/admin/servicos",
-      icon: Wrench,
-    },
-    {
-      label: "Pedidos",
-      href: "/admin/pedidos",
-      icon: Package,
-    },
-    {
-      label: "Pré-pedidos",
-      href: "/admin/pre-pedidos",
-      icon: ClipboardList,
-    },
-    {
-      label: "Tickets de Suporte",
-      href: "/admin/tickets",
-      icon: MessageSquare,
-    },
-    {
-      label: "Estoque",
-      href: "/admin/estoque",
-      icon: PackageCheck,
-    },
-    {
-      label: "Cupons",
-      href: "/admin/cupons",
-      icon: Ticket,
-    },
-    {
-      label: "Lojistas",
-      href: "/admin/lojistas",
-      icon: User,
-    },
-    {
-      label: "Relatórios",
-      href: "/admin/relatorios",
-      icon: BarChart3,
-    },
-    {
-      label: "Avaliações",
-      href: "/admin/avaliacoes",
-      icon: Star,
-    },
-    {
-      label: "Preços Dinâmicos",
-      href: "/admin/precos-dinamicos",
-      icon: DollarSign,
-    },
-    {
-      label: "Logs de Auditoria",
-      href: "/admin/logs",
-      icon: FileText,
-    },
-    {
-      label: "Configurações",
-      href: "/admin/configuracoes",
-      icon: Settings,
-    },
+  const allNavItems = [
+    { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, moduleKey: "dashboard" },
+    { label: "Conteúdo da Home", href: "/admin/home-content", icon: Home, moduleKey: "home-content" },
+    { label: "Modelos", href: "/admin/modelos", icon: Smartphone, moduleKey: "modelos" },
+    { label: "Marcas", href: "/admin/marcas", icon: Tag, moduleKey: "marcas" },
+    { label: "Serviços", href: "/admin/servicos", icon: Wrench, moduleKey: "servicos" },
+    { label: "Pedidos", href: "/admin/pedidos", icon: Package, moduleKey: "pedidos" },
+    { label: "Pré-pedidos", href: "/admin/pre-pedidos", icon: ClipboardList, moduleKey: "pre-pedidos" },
+    { label: "Tickets de Suporte", href: "/admin/tickets", icon: MessageSquare, moduleKey: "tickets" },
+    { label: "Estoque", href: "/admin/estoque", icon: PackageCheck, moduleKey: "estoque" },
+    { label: "Cupons", href: "/admin/cupons", icon: Ticket, moduleKey: "cupons" },
+    { label: "Lojistas", href: "/admin/lojistas", icon: User, moduleKey: "lojistas" },
+    { label: "Relatórios", href: "/admin/relatorios", icon: BarChart3, moduleKey: "relatorios" },
+    { label: "Avaliações", href: "/admin/avaliacoes", icon: Star, moduleKey: "avaliacoes" },
+    { label: "Preços Dinâmicos", href: "/admin/precos-dinamicos", icon: DollarSign, moduleKey: "precos-dinamicos" },
+    { label: "Logs de Auditoria", href: "/admin/logs", icon: FileText, moduleKey: "logs" },
+    { label: "Configurações", href: "/admin/configuracoes", icon: Settings, moduleKey: "configuracoes" },
+    { label: "Equipe", href: "/admin/equipe", icon: Users, moduleKey: "equipe" },
   ];
+
+  const canSeeEquipe =
+    user?.source === "admin_team" && (user?.role === "admin" || user?.role === "gerente");
+  const navItems =
+    user?.modules && user.modules.length > 0
+      ? allNavItems.filter((item) => {
+          if (item.moduleKey === "equipe") return canSeeEquipe;
+          return user.modules!.includes(item.moduleKey);
+        })
+      : allNavItems.filter(
+          (item) => item.moduleKey !== "equipe" || canSeeEquipe
+        );
 
   return (
     <div className="min-h-screen bg-background">

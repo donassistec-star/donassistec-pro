@@ -8,6 +8,8 @@ export interface AuthRequest extends Request {
     id: string;
     email: string;
     role: string;
+    /** admin_team = usuário da equipe; retailer = lojista (ou ausente para tokens antigos) */
+    source?: "admin_team" | "retailer";
   };
 }
 
@@ -27,7 +29,7 @@ export const authenticateToken = (
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string; source?: "admin_team" | "retailer" };
     req.user = decoded;
     next();
   } catch (error) {

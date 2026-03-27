@@ -35,11 +35,10 @@ const RetailerOrders = () => {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const retailerId = user?.email || undefined;
-      const ordersData = await ordersService.getAll(retailerId);
+      const ordersData = await ordersService.getAll();
       setOrders(ordersData);
     } catch (error) {
-      toast.error("Erro ao carregar pedidos");
+      toast.error("Erro ao carregar pedidos. Verifique a conexão e tente novamente.");
       console.error(error);
     } finally {
       setLoading(false);

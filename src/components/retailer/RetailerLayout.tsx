@@ -9,9 +9,7 @@ import {
   X,
   ShoppingCart,
   FileText,
-  Settings,
-  Smartphone,
-  Tag,
+  ClipboardList,
   BarChart3
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,6 +43,11 @@ const RetailerLayout = ({ children }: RetailerLayoutProps) => {
       label: "Pedidos",
       href: "/lojista/pedidos",
       icon: Package,
+    },
+    {
+      label: "Pré-pedidos",
+      href: "/lojista/pre-pedidos",
+      icon: ClipboardList,
     },
     {
       label: "Perfil",

@@ -17,6 +17,12 @@ export interface Order {
   total: number;
   created_at?: string;
   updated_at?: string;
+  /** Número sequencial (PED-0001, PED-0002, ...) */
+  numero?: number;
+  /** ID do pré-pedido de origem */
+  pre_pedido_id?: string | null;
+  /** Número do pré-pedido de origem (para exibir "Pré-pedido PRE-0001") */
+  pre_pedido_numero?: number | null;
 }
 
 export interface OrderItem {
@@ -45,10 +51,9 @@ interface ApiResponse<T> {
 }
 
 export const ordersService = {
-  async getAll(retailerId?: string): Promise<OrderWithItems[]> {
+  async getAll(): Promise<OrderWithItems[]> {
     try {
-      const params = retailerId ? `?retailerId=${encodeURIComponent(retailerId)}` : "";
-      const response = await api.get<ApiResponse<OrderWithItems[]>>(`/orders${params}`);
+      const response = await api.get<ApiResponse<OrderWithItems[]>>(`orders?_=${Date.now()}`);
 
       if (response.data.success && response.data.data) {
         return response.data.data;
@@ -64,7 +69,7 @@ export const ordersService = {
   async getById(id: string, retailerId?: string): Promise<OrderWithItems | null> {
     try {
       const params = retailerId ? `?retailerId=${encodeURIComponent(retailerId)}` : "";
-      const response = await api.get<ApiResponse<OrderWithItems>>(`/orders/${id}${params}`);
+      const response = await api.get<ApiResponse<OrderWithItems>>(`orders/${id}${params}`);
 
       if (response.data.success && response.data.data) {
         return response.data.data;
@@ -77,9 +82,19 @@ export const ordersService = {
     }
   },
 
+  async createFromPrePedido(prePedidoId: string): Promise<OrderWithItems> {
+    const res = await api.post<ApiResponse<OrderWithItems>>("orders/from-pre-pedido", {
+      pre_pedido_id: prePedidoId,
+    });
+    if (!res.data?.success || !res.data?.data) {
+      throw new Error(res.data?.error || "Erro ao converter pré-pedido em pedido");
+    }
+    return res.data.data;
+  },
+
   async create(order: Order, items: OrderItem[], couponCode?: string): Promise<OrderWithItems | null> {
     try {
-      const response = await api.post<ApiResponse<OrderWithItems>>("/orders", { 
+      const response = await api.post<ApiResponse<OrderWithItems>>("orders", { 
         order, 
         items,
         couponCode 
@@ -96,17 +111,9 @@ export const ordersService = {
     }
   },
 
-  async updateStatus(
-    id: string,
-    status: Order["status"],
-    retailerId?: string
-  ): Promise<OrderWithItems | null> {
+  async updateStatus(id: string, status: Order["status"]): Promise<OrderWithItems | null> {
     try {
-      const params = retailerId ? `?retailerId=${encodeURIComponent(retailerId)}` : "";
-      const response = await api.put<ApiResponse<OrderWithItems>>(
-        `/orders/${id}/status${params}`,
-        { status }
-      );
+      const response = await api.put<ApiResponse<OrderWithItems>>(`orders/${id}/status`, { status });
 
       if (response.data.success && response.data.data) {
         return response.data.data;
@@ -119,10 +126,9 @@ export const ordersService = {
     }
   },
 
-  async delete(id: string, retailerId?: string): Promise<boolean> {
+  async delete(id: string): Promise<boolean> {
     try {
-      const params = retailerId ? `?retailerId=${encodeURIComponent(retailerId)}` : "";
-      const response = await api.delete<ApiResponse<null>>(`/orders/${id}${params}`);
+      const response = await api.delete<ApiResponse<null>>(`orders/${id}`);
 
       return response.data.success || false;
     } catch (error: any) {

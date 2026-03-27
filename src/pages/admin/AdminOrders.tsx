@@ -17,7 +17,8 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatCurrency } from "@/utils/format";
+import { formatCurrency, formatPedidoNumero, formatPrePedidoNumero } from "@/utils/format";
+import { toast } from "sonner";
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
@@ -32,11 +33,12 @@ const AdminOrders = () => {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      // Admin vê todos os pedidos (sem filtrar por lojista)
       const data = await ordersService.getAll();
       setOrders(data);
     } catch (error) {
       console.error("Erro ao carregar pedidos:", error);
+      setOrders([]);
+      toast.error("Erro ao carregar pedidos. Verifique a conexão e tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -62,11 +64,16 @@ const AdminOrders = () => {
   };
 
   const filteredOrders = orders.filter((order) => {
+    const q = searchQuery.toLowerCase();
+    const byNumero = order.numero != null && formatPedidoNumero(order.numero).toLowerCase().includes(q);
+    const byPreNumero = order.pre_pedido_numero != null && formatPrePedidoNumero(order.pre_pedido_numero).toLowerCase().includes(q);
     const matchesSearch =
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.retailer_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer_email?.toLowerCase().includes(searchQuery.toLowerCase());
+      order.id.toLowerCase().includes(q) ||
+      order.retailer_id?.toLowerCase().includes(q) ||
+      order.contact_name?.toLowerCase().includes(q) ||
+      order.email?.toLowerCase().includes(q) ||
+      byNumero ||
+      byPreNumero;
 
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
 
@@ -142,10 +149,10 @@ const AdminOrders = () => {
         ) : (
           <div className="space-y-4">
             {filteredOrders.map((order) => {
-              const total = order.items.reduce(
-                (sum, item) => sum + item.price * item.quantity,
+              const total = typeof order.total === "number" ? order.total : order.items?.reduce(
+                (sum: number, item: { price?: number; quantity?: number }) => sum + (item?.price ?? 0) * (item?.quantity ?? 0),
                 0
-              );
+              ) ?? 0;
 
               return (
                 <Card key={order.id} className="hover:bg-muted/50 transition-colors">
@@ -153,23 +160,28 @@ const AdminOrders = () => {
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
-                          <CardTitle className="text-lg">Pedido #{order.id}</CardTitle>
+                          <CardTitle className="text-lg" title={order.id}>
+                            {order.numero != null ? formatPedidoNumero(order.numero) : `#${order.id}`}
+                          </CardTitle>
                           {getStatusBadge(order.status)}
                         </div>
                         <CardDescription>
                           <div className="flex flex-wrap gap-4 mt-2">
                             <span className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
-                              {format(new Date(order.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              {format(new Date(order.created_at || 0), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                             </span>
                             <span>Lojista: {order.retailer_id || "N/A"}</span>
+                            {order.pre_pedido_numero != null && (
+                              <span className="text-primary">Origem: {formatPrePedidoNumero(order.pre_pedido_numero)}</span>
+                            )}
                           </div>
                         </CardDescription>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold">{formatPrice(total)}</div>
                         <div className="text-sm text-muted-foreground">
-                          {order.items.length} item{order.items.length !== 1 ? "s" : ""}
+                          {order.items?.length ?? 0} item{(order.items?.length ?? 0) !== 1 ? "s" : ""}
                         </div>
                       </div>
                     </div>
@@ -179,11 +191,11 @@ const AdminOrders = () => {
                       <div>
                         <p className="text-sm font-medium">Cliente:</p>
                         <p className="text-sm text-muted-foreground">
-                          {order.customer_name} ({order.customer_email})
+                          {order.contact_name || order.company_name} ({order.email})
                         </p>
-                        {order.customer_phone && (
+                        {order.phone && (
                           <p className="text-sm text-muted-foreground">
-                            Telefone: {order.customer_phone}
+                            Telefone: {order.phone}
                           </p>
                         )}
                       </div>
@@ -229,17 +241,7 @@ const AdminOrders = () => {
                 </div>
                 <div>
                   <div className="text-2xl font-bold">
-                    {formatPrice(
-                      orders.reduce(
-                        (sum, order) =>
-                          sum +
-                          order.items.reduce(
-                            (itemSum, item) => itemSum + item.price * item.quantity,
-                            0
-                          ),
-                        0
-                      )
-                    )}
+                    {formatPrice(orders.reduce((sum, o) => sum + (Number(o.total) ?? 0), 0))}
                   </div>
                   <div className="text-sm text-muted-foreground">Valor Total</div>
                 </div>

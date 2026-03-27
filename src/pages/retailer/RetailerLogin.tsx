@@ -54,6 +54,17 @@ const RetailerLogin = () => {
     try {
       const success = await login(loginData.email, loginData.password);
       if (success) {
+        const stored = localStorage.getItem("donassistec_auth");
+        if (stored) {
+          try {
+            const u = JSON.parse(stored);
+            if (u?.source === "admin_team") {
+              toast.error("Use a área de administrador para acessar.");
+              navigate("/admin/login");
+              return;
+            }
+          } catch { /* ignore */ }
+        }
         toast.success("Login realizado com sucesso!");
         navigate("/lojista/dashboard");
       } else {

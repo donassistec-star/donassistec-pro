@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import RetailerModel from "../models/RetailerModel";
+import AdminTeamModel from "../models/AdminTeamModel";
+import { AuthRequest } from "../middleware/auth";
 import { AuthResponse, RetailerRegisterData, RetailerLoginData } from "../types";
-import jwt, { SignOptions } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "donassistec-secret-key-change-in-production";
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as string;
@@ -31,11 +33,11 @@ class AuthController {
       // Criar usuário
       const retailer = await RetailerModel.create(data);
 
-      // Gerar token JWT
+      // Gerar token JWT (source: retailer para lojistas)
       const token = jwt.sign(
-        { id: retailer.id, email: retailer.email, role: retailer.role },
+        { id: retailer.id, email: retailer.email, role: retailer.role, source: "retailer" },
         JWT_SECRET,
-        { expiresIn: "7d" }
+        { expiresIn: JWT_EXPIRES_IN }
       );
 
       const response: AuthResponse = {
@@ -49,6 +51,7 @@ class AuthController {
           phone: retailer.phone,
           cnpj: retailer.cnpj,
           role: retailer.role,
+          source: "retailer",
         },
         message: "Cadastro realizado com sucesso",
       };
@@ -60,6 +63,87 @@ class AuthController {
         error: error.message || "Erro ao criar conta",
       };
       res.status(500).json(response);
+    }
+  }
+
+  /** GET: indica se pode criar o primeiro admin (admin_team vazia). Só para exibir o botão no front. */
+  async bootstrapAvailable(_req: Request, res: Response) {
+    try {
+      const count = await AdminTeamModel.getCount();
+      return res.json({ success: true, available: count === 0, tableExists: true });
+    } catch (e: any) {
+      if (e.code === "ER_NO_SUCH_TABLE") {
+        return res.json({ success: true, available: false, tableExists: false });
+      }
+      return res.status(500).json({ success: false, error: e.message });
+    }
+  }
+
+  /** POST: cria o primeiro admin quando admin_team está vazia. Retorna token e user como no login. */
+  async bootstrapAdmin(req: Request, res: Response) {
+    try {
+      const { email, password, name } = req.body;
+      if (!email || !password || !name) {
+        return res.status(400).json({ success: false, error: "E-mail, senha e nome são obrigatórios" });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({ success: false, error: "A senha deve ter no mínimo 6 caracteres" });
+      }
+
+      let count: number;
+      try {
+        count = await AdminTeamModel.getCount();
+      } catch (e: any) {
+        if (e.code === "ER_NO_SUCH_TABLE") {
+          return res.status(400).json({
+            success: false,
+            error: "Tabela admin_team não existe. No servidor, rode: npm run migrate:admin-team",
+          });
+        }
+        throw e;
+      }
+
+      if (count > 0) {
+        return res.status(403).json({
+          success: false,
+          error: "Já existe administrador. Use o login normal ou os scripts no servidor.",
+        });
+      }
+
+      const created = await AdminTeamModel.create({
+        email: String(email).trim(),
+        password,
+        name: String(name).trim(),
+        role: "admin",
+      });
+      const modules = await AdminTeamModel.getModulesForUser(created.id, "admin");
+
+      const token = jwt.sign(
+        { id: created.id, email: created.email, role: created.role, source: "admin_team" },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+      );
+
+      const response: AuthResponse = {
+        success: true,
+        token,
+        user: {
+          id: created.id,
+          email: created.email,
+          company_name: "",
+          contact_name: created.name,
+          phone: "",
+          cnpj: "",
+          role: created.role,
+          source: "admin_team",
+          modules,
+        },
+        message: "Primeiro administrador criado. Faça login com esse e-mail e senha.",
+      };
+
+      return res.status(201).json(response);
+    } catch (e: any) {
+      return res.status(400).json({ success: false, error: e.message || "Erro ao criar administrador" });
     }
   }
 
@@ -75,9 +159,36 @@ class AuthController {
         return res.status(400).json(response);
       }
 
-      // Verificar credenciais
-      const retailer = await RetailerModel.verifyPassword(data.email, data.password);
+      // 1) Tentar usuário da equipe (admin_team)
+      const adminTeam = await AdminTeamModel.verifyPassword(data.email, data.password);
+      if (adminTeam) {
+        const modules = await AdminTeamModel.getModulesForUser(adminTeam.id, adminTeam.role);
+        const token = jwt.sign(
+          { id: adminTeam.id, email: adminTeam.email, role: adminTeam.role, source: "admin_team" },
+          JWT_SECRET,
+          { expiresIn: JWT_EXPIRES_IN }
+        );
+        const response: AuthResponse = {
+          success: true,
+          token,
+          user: {
+            id: adminTeam.id,
+            email: adminTeam.email,
+            company_name: "",
+            contact_name: adminTeam.name,
+            phone: "",
+            cnpj: "",
+            role: adminTeam.role,
+            source: "admin_team",
+            modules,
+          },
+          message: "Login realizado com sucesso",
+        };
+        return res.json(response);
+      }
 
+      // 2) Tentar lojista (retailers)
+      const retailer = await RetailerModel.verifyPassword(data.email, data.password);
       if (!retailer) {
         const response: AuthResponse = {
           success: false,
@@ -86,11 +197,10 @@ class AuthController {
         return res.status(401).json(response);
       }
 
-      // Gerar token JWT
       const token = jwt.sign(
-        { id: retailer.id, email: retailer.email, role: retailer.role },
+        { id: retailer.id, email: retailer.email, role: retailer.role, source: "retailer" },
         JWT_SECRET,
-        { expiresIn: "7d" }
+        { expiresIn: JWT_EXPIRES_IN }
       );
 
       const response: AuthResponse = {
@@ -104,6 +214,7 @@ class AuthController {
           phone: retailer.phone,
           cnpj: retailer.cnpj,
           role: retailer.role,
+          source: "retailer",
         },
         message: "Login realizado com sucesso",
       };
@@ -120,28 +231,41 @@ class AuthController {
 
   async me(req: Request, res: Response) {
     try {
-      // O middleware de autenticação deve adicionar req.user
-      const userId = (req as any).user?.id;
-
-      if (!userId) {
-        const response: AuthResponse = {
-          success: false,
-          error: "Token inválido ou expirado",
-        };
-        return res.status(401).json(response);
+      const u = (req as AuthRequest).user;
+      if (!u?.id) {
+        return res.status(401).json({ success: false, error: "Token inválido ou expirado" });
       }
 
-      const retailer = await RetailerModel.findById(userId);
+      const source = u.source || "retailer";
 
+      if (source === "admin_team") {
+        const at = await AdminTeamModel.findById(u.id);
+        if (!at) {
+          return res.status(404).json({ success: false, error: "Usuário não encontrado" });
+        }
+        const modules = await AdminTeamModel.getModulesForUser(at.id, at.role);
+        return res.json({
+          success: true,
+          user: {
+            id: at.id,
+            email: at.email,
+            company_name: "",
+            contact_name: at.name,
+            phone: "",
+            cnpj: "",
+            role: at.role,
+            source: "admin_team",
+            modules,
+          },
+        });
+      }
+
+      const retailer = await RetailerModel.findById(u.id);
       if (!retailer) {
-        const response: AuthResponse = {
-          success: false,
-          error: "Usuário não encontrado",
-        };
-        return res.status(404).json(response);
+        return res.status(404).json({ success: false, error: "Usuário não encontrado" });
       }
 
-      const response: AuthResponse = {
+      return res.json({
         success: true,
         user: {
           id: retailer.id,
@@ -151,49 +275,47 @@ class AuthController {
           phone: retailer.phone,
           cnpj: retailer.cnpj,
           role: retailer.role,
+          source: "retailer",
         },
-      };
-
-      res.json(response);
+      });
     } catch (error: any) {
-      const response: AuthResponse = {
-        success: false,
-        error: error.message || "Erro ao buscar dados do usuário",
-      };
-      res.status(500).json(response);
+      return res.status(500).json({ success: false, error: error.message || "Erro ao buscar dados do usuário" });
     }
   }
 
   async updateProfile(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id;
+      const u = (req as AuthRequest).user;
+      if (!u?.id) {
+        return res.status(401).json({ success: false, error: "Token inválido ou expirado" });
+      }
 
-      if (!userId) {
-        const response: AuthResponse = {
-          success: false,
-          error: "Token inválido ou expirado",
-        };
-        return res.status(401).json(response);
+      if (u.source === "admin_team") {
+        const { name } = req.body;
+        const at = await AdminTeamModel.update(u.id, { name });
+        if (!at) return res.status(404).json({ success: false, error: "Usuário não encontrado" });
+        return res.json({
+          success: true,
+          user: {
+            id: at.id,
+            email: at.email,
+            company_name: "",
+            contact_name: at.name,
+            phone: "",
+            cnpj: "",
+            role: at.role,
+            source: "admin_team",
+          },
+          message: "Perfil atualizado com sucesso",
+        });
       }
 
       const { company_name, contact_name, phone, cnpj } = req.body;
-
-      const retailer = await RetailerModel.update(userId, {
-        company_name,
-        contact_name,
-        phone,
-        cnpj,
-      });
-
+      const retailer = await RetailerModel.update(u.id, { company_name, contact_name, phone, cnpj });
       if (!retailer) {
-        const response: AuthResponse = {
-          success: false,
-          error: "Usuário não encontrado",
-        };
-        return res.status(404).json(response);
+        return res.status(404).json({ success: false, error: "Usuário não encontrado" });
       }
-
-      const response: AuthResponse = {
+      return res.json({
         success: true,
         user: {
           id: retailer.id,
@@ -203,72 +325,41 @@ class AuthController {
           phone: retailer.phone,
           cnpj: retailer.cnpj,
           role: retailer.role,
+          source: "retailer",
         },
         message: "Perfil atualizado com sucesso",
-      };
-
-      res.json(response);
+      });
     } catch (error: any) {
-      const response: AuthResponse = {
-        success: false,
-        error: error.message || "Erro ao atualizar perfil",
-      };
-      res.status(500).json(response);
+      return res.status(500).json({ success: false, error: error.message || "Erro ao atualizar perfil" });
     }
   }
 
   async changePassword(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id;
-
-      if (!userId) {
-        const response: AuthResponse = {
-          success: false,
-          error: "Token inválido ou expirado",
-        };
-        return res.status(401).json(response);
+      const u = (req as AuthRequest).user;
+      if (!u?.id) {
+        return res.status(401).json({ success: false, error: "Token inválido ou expirado" });
       }
 
       const { currentPassword, newPassword } = req.body;
-
       if (!currentPassword || !newPassword) {
-        const response: AuthResponse = {
-          success: false,
-          error: "Senha atual e nova senha são obrigatórias",
-        };
-        return res.status(400).json(response);
+        return res.status(400).json({ success: false, error: "Senha atual e nova senha são obrigatórias" });
       }
-
       if (newPassword.length < 6) {
-        const response: AuthResponse = {
-          success: false,
-          error: "A nova senha deve ter no mínimo 6 caracteres",
-        };
-        return res.status(400).json(response);
+        return res.status(400).json({ success: false, error: "A nova senha deve ter no mínimo 6 caracteres" });
       }
 
-      const success = await RetailerModel.updatePassword(userId, currentPassword, newPassword);
+      const success =
+        u.source === "admin_team"
+          ? await AdminTeamModel.updatePassword(u.id, currentPassword, newPassword)
+          : await RetailerModel.updatePassword(u.id, currentPassword, newPassword);
 
       if (!success) {
-        const response: AuthResponse = {
-          success: false,
-          error: "Senha atual incorreta",
-        };
-        return res.status(401).json(response);
+        return res.status(401).json({ success: false, error: "Senha atual incorreta" });
       }
-
-      const response: AuthResponse = {
-        success: true,
-        message: "Senha alterada com sucesso",
-      };
-
-      res.json(response);
+      return res.json({ success: true, message: "Senha alterada com sucesso" });
     } catch (error: any) {
-      const response: AuthResponse = {
-        success: false,
-        error: error.message || "Erro ao alterar senha",
-      };
-      res.status(500).json(response);
+      return res.status(500).json({ success: false, error: error.message || "Erro ao alterar senha" });
     }
   }
 }

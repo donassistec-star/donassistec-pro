@@ -40,6 +40,8 @@ backend/uploads/*
 dist/
 backend/dist/
 build/
+# APK na pasta public (gerado no deploy; não versionar)
+public/DonAssistec.apk
 *.tsbuildinfo
 
 # PM2

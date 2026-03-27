@@ -69,7 +69,8 @@ git add .
 git status
 
 # Fazer commit inicial
-git commit -m "Initial commit: DonAssistec - Sistema B2B completo"
+
+
 ```
 
 ### 6. Conectar com Repositório Remoto

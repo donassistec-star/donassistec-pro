@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Menu, X, Phone, Smartphone, FileText, Heart } from "lucide-react";
+import { Menu, X, Phone, Smartphone, FileText, Heart, Shield } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useSettings } from "@/hooks/useSettings";
@@ -108,6 +108,14 @@ const Header = () => {
                 </a>
               )
             ))}
+            <Link
+              to="/admin"
+              className="text-muted-foreground hover:text-primary transition-colors"
+              title="Admin"
+              aria-label="Admin"
+            >
+              <Shield className="w-5 h-5" />
+            </Link>
           </nav>
 
           {/* Desktop CTA */}
@@ -194,6 +202,15 @@ const Header = () => {
                 </a>
               )
             ))}
+            <Link
+              to="/admin"
+              className="text-base font-medium text-foreground hover:text-primary transition-colors py-2 inline-flex items-center"
+              onClick={() => setIsMenuOpen(false)}
+              title="Admin"
+              aria-label="Admin"
+            >
+              <Shield className="w-5 h-5" />
+            </Link>
             <div className="flex items-center gap-2 mt-2">
               <Notifications
                 notifications={notifications}
@@ -237,7 +254,11 @@ const Header = () => {
             </Button>
             <Button 
               variant="secondary"
-              onClick={() => navigate("/lojista/dashboard")}
+              className="mt-2"
+              onClick={() => {
+                navigate("/lojista/dashboard");
+                setIsMenuOpen(false);
+              }}
             >
               Área do Lojista
             </Button>

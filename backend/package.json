@@ -9,7 +9,15 @@
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "migrate:pre-pedidos": "tsx scripts/run-migration-23.ts",
-    "migrate:pre-pedidos-contact": "tsx scripts/run-migration-24.ts"
+    "migrate:pre-pedidos-contact": "tsx scripts/run-migration-24.ts",
+    "migrate:pre-pedidos-need-by": "tsx scripts/run-migration-25.ts",
+    "migrate:pre-pedidos-numero": "tsx scripts/run-migration-26.ts",
+    "migrate:orders-numero": "tsx scripts/run-migration-27.ts",
+    "migrate:order-items": "tsx scripts/run-migration-28.ts",
+    "migrate:admin-team": "tsx scripts/run-migration-29.ts",
+    "migrate:retailer-price-tables": "tsx scripts/run-migration-30.ts",
+    "migrate:retailer-price-tables-utf8mb4": "tsx scripts/run-migration-31.ts",
+    "migrate:retailer-price-tables-display": "tsx scripts/run-migration-32.ts"
   },
   "keywords": [
     "donassistec",

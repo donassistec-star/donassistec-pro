@@ -100,8 +100,8 @@ const Checkout = () => {
       // Gerar ID único para o pedido
       const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
       
-      // Preparar dados do pedido
-      const retailerId = user?.email || formData.email;
+      // Preparar dados do pedido (id quando logado, para bater com a listagem do lojista)
+      const retailerId = user?.id || user?.email || formData.email;
       
       const order: Order = {
         id: orderId,
