@@ -23,7 +23,7 @@ const Header = () => {
   const showAdminAccessButton = settings?.showAdminAccessButton !== false;
   const showHeaderPhone = settings?.showHeaderPhone !== false;
   const showRetailerAreaButton = settings?.showRetailerAreaButton !== false;
-  const showCompanyTradeName = settings?.showCompanyTradeName !== false;
+  const showCompanyTradeName = (settings?.showCompanyTradeNameHeader ?? settings?.showCompanyTradeName) !== false;
 
   const navLinks = [
     { label: "Home", href: "/", visible: settings?.showNavHome !== false },

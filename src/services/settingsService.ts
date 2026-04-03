@@ -104,6 +104,8 @@ export interface SystemSettings {
   companyLegalName?: string;
   companyTradeName?: string;
   showCompanyTradeName?: boolean;
+  showCompanyTradeNameHeader?: boolean;
+  showCompanyTradeNameFooter?: boolean;
   companyCnpj?: string;
   companyIe?: string;
   companyIm?: string;
