@@ -115,6 +115,11 @@ const AdminSettings = () => {
     (settings.showCompanyTradeNameHeader ?? settings.showCompanyTradeName) !== false;
   const footerTradeNameVisible =
     (settings.showCompanyTradeNameFooter ?? settings.showCompanyTradeName) !== false;
+  const brandingLogoPreview = settings.brandingLogoUrl?.trim() || "";
+  const companyDescriptionPreview =
+    settings.companyDescription?.trim() ||
+    "Laboratório premium de reconstrução de telas e revenda de peças para lojistas e assistências técnicas.";
+  const companySloganPreview = settings.companySlogan?.trim() || "";
 
   useEffect(() => {
     loadSettings();
@@ -793,9 +798,17 @@ const AdminSettings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="rounded-lg border border-border bg-background overflow-hidden">
                       <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
-                          D
-                        </div>
+                        {brandingLogoPreview ? (
+                          <img
+                            src={brandingLogoPreview}
+                            alt="Logo preview"
+                            className="h-10 w-auto max-w-[96px] object-contain"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                            D
+                          </div>
+                        )}
                         <div className="min-h-6 flex items-center">
                           {headerTradeNameVisible ? (
                             <span className="text-base font-semibold text-foreground">{tradeName}</span>
@@ -809,17 +822,35 @@ const AdminSettings = () => {
                       </div>
                     </div>
                     <div className="rounded-lg border border-border bg-foreground overflow-hidden">
-                      <div className="px-4 py-3 flex items-center gap-3 border-b border-white/10">
-                        <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
-                          D
-                        </div>
-                        <div className="min-h-6 flex items-center">
-                          {footerTradeNameVisible ? (
-                            <span className="text-base font-semibold text-card">{tradeName}</span>
+                      <div className="px-4 py-4 border-b border-white/10 space-y-3">
+                        <div className="flex items-center gap-3">
+                          {brandingLogoPreview ? (
+                            <img
+                              src={brandingLogoPreview}
+                              alt="Logo preview"
+                              className="h-10 w-auto max-w-[96px] object-contain"
+                            />
                           ) : (
-                            <span className="text-sm text-card/60">Nome fantasia oculto no rodapé</span>
+                            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                              D
+                            </div>
                           )}
+                          <div className="min-h-6 flex items-center">
+                            {footerTradeNameVisible ? (
+                              <span className="text-base font-semibold text-card">{tradeName}</span>
+                            ) : (
+                              <span className="text-sm text-card/60">Nome fantasia oculto no rodapé</span>
+                            )}
+                          </div>
                         </div>
+                        <p className="text-xs text-card/70">
+                          {companyDescriptionPreview}
+                        </p>
+                        {companySloganPreview ? (
+                          <p className="text-xs font-semibold text-primary">
+                            {companySloganPreview}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="px-4 py-3 text-xs text-card/60">
                         Preview do rodapé público
