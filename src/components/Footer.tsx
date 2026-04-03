@@ -20,6 +20,10 @@ const Footer = () => {
   const contactAddress = settings?.contactAddress || "São Paulo - SP";
   const showCompanyTradeName = (settings?.showCompanyTradeNameFooter ?? settings?.showCompanyTradeName) !== false;
   const showCompanySlogan = settings?.showCompanySloganFooter !== false;
+  const brandingLogoSrc =
+    !showCompanyTradeName && settings?.brandingLogoFavicon
+      ? settings.brandingLogoFavicon
+      : settings?.brandingLogoUrl;
 
   return (
     <footer className="bg-foreground pt-16 pb-8">
@@ -28,9 +32,9 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              {settings?.brandingLogoUrl ? (
+              {brandingLogoSrc ? (
                 <img
-                  src={settings.brandingLogoUrl}
+                  src={brandingLogoSrc}
                   alt={settings.companyTradeName || settings.siteName || "Logo"}
                   className="h-10 w-auto object-contain"
                   onError={(e) => {
