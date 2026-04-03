@@ -110,6 +110,12 @@ const AdminSettings = () => {
     { key: "showRetailerAreaButton", label: "Área do Lojista", description: "Exibe o botão Área do Lojista no cabeçalho." },
   ];
 
+  const tradeName = settings.companyTradeName?.trim() || "DonAssistec";
+  const headerTradeNameVisible =
+    (settings.showCompanyTradeNameHeader ?? settings.showCompanyTradeName) !== false;
+  const footerTradeNameVisible =
+    (settings.showCompanyTradeNameFooter ?? settings.showCompanyTradeName) !== false;
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -771,6 +777,53 @@ const AdminSettings = () => {
                           setSettings({ ...settings, showCompanyTradeNameFooter: checked as boolean })
                         }
                       />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border p-4 space-y-4 bg-muted/20">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-foreground">
+                      Preview visual
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Pré-visualização de como o nome fantasia aparece nas áreas públicas.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="rounded-lg border border-border bg-background overflow-hidden">
+                      <div className="px-4 py-3 border-b border-border flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                          D
+                        </div>
+                        <div className="min-h-6 flex items-center">
+                          {headerTradeNameVisible ? (
+                            <span className="text-base font-semibold text-foreground">{tradeName}</span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Nome fantasia oculto no cabeçalho</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="px-4 py-3 text-xs text-muted-foreground">
+                        Preview do cabeçalho público
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-border bg-foreground overflow-hidden">
+                      <div className="px-4 py-3 flex items-center gap-3 border-b border-white/10">
+                        <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                          D
+                        </div>
+                        <div className="min-h-6 flex items-center">
+                          {footerTradeNameVisible ? (
+                            <span className="text-base font-semibold text-card">{tradeName}</span>
+                          ) : (
+                            <span className="text-sm text-card/60">Nome fantasia oculto no rodapé</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="px-4 py-3 text-xs text-card/60">
+                        Preview do rodapé público
+                      </div>
                     </div>
                   </div>
                 </div>
