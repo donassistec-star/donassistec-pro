@@ -47,6 +47,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 - ✅ Configurações completas do sistema
 - ✅ Branding e identidade visual (logo, favicon, cores)
 - ✅ Controle de exibição do nome fantasia no cabeçalho e rodapé da home
+- ✅ Controle de exibição do slogan no rodapé da home
 - ✅ Gerenciamento de contato e mídias sociais
 - ✅ Sistema de cupons e preços dinâmicos
 - ✅ Avaliações e reviews
@@ -227,8 +228,9 @@ Em `Admin > Configurações > Branding > Informações da Empresa`, é possível
 - editar o `Nome Fantasia`
 - ocultar ou exibir o nome fantasia no cabeçalho
 - ocultar ou exibir o nome fantasia no rodapé
+- ocultar ou exibir o slogan no rodapé
 
-Quando essas opções são desativadas, o site mantém o logo, mas remove o nome fantasia apenas da área pública escolhida.
+Quando essas opções são desativadas, o site mantém o logo, mas remove apenas o nome fantasia ou slogan da área pública escolhida.
 
 ### 1. Executar Migrations do Banco de Dados
 

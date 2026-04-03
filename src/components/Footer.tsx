@@ -19,6 +19,7 @@ const Footer = () => {
   const contactEmail = settings?.contactEmail || "contato@donassistec.com.br";
   const contactAddress = settings?.contactAddress || "São Paulo - SP";
   const showCompanyTradeName = (settings?.showCompanyTradeNameFooter ?? settings?.showCompanyTradeName) !== false;
+  const showCompanySlogan = settings?.showCompanySloganFooter !== false;
 
   return (
     <footer className="bg-foreground pt-16 pb-8">
@@ -70,7 +71,7 @@ const Footer = () => {
               {settings?.companyDescription || 
                 "Laboratório premium de reconstrução de telas e revenda de peças para lojistas e assistências técnicas."}
             </p>
-            {settings?.companySlogan && (
+            {showCompanySlogan && settings?.companySlogan && (
               <p className="text-sm font-semibold text-primary mb-4">
                 {settings.companySlogan}
               </p>
