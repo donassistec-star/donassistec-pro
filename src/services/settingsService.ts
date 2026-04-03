@@ -106,6 +106,7 @@ export interface SystemSettings {
   showCompanyTradeName?: boolean;
   showCompanyTradeNameHeader?: boolean;
   showCompanyTradeNameFooter?: boolean;
+  showCompanySloganFooter?: boolean;
   companyCnpj?: string;
   companyIe?: string;
   companyIm?: string;

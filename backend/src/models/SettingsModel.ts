@@ -29,6 +29,7 @@ const SETTING_DESCRIPTIONS: Record<string, string> = {
   showCompanyTradeName: "Exibir nome fantasia no cabeçalho e rodapé público",
   showCompanyTradeNameHeader: "Exibir nome fantasia no cabeçalho público",
   showCompanyTradeNameFooter: "Exibir nome fantasia no rodapé público",
+  showCompanySloganFooter: "Exibir slogan no rodapé público",
 };
 
 class SettingsModel {
@@ -146,7 +147,7 @@ class SettingsModel {
     "brandingLogoUrl", "brandingLogoFavicon", "brandingPrimaryColor", "brandingSecondaryColor",
     "companyTradeName", "companyDescription", "companySlogan", "companyLegalName", "companyWebsite",
     "showCompanyTradeName",
-    "showCompanyTradeNameHeader", "showCompanyTradeNameFooter",
+    "showCompanyTradeNameHeader", "showCompanyTradeNameFooter", "showCompanySloganFooter",
     "siteName", "siteDescription", "supportPhone", "supportEmail",
     "socialInstagram", "socialFacebook", "socialYoutube", "socialLinkedin", "socialTwitter", "socialTikTok",
     "seoTitle", "seoDescription", "seoOgImage", "seoKeywords",

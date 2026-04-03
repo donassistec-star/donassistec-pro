@@ -91,6 +91,7 @@ const AdminSettings = () => {
     showCompanyTradeName: true,
     showCompanyTradeNameHeader: true,
     showCompanyTradeNameFooter: true,
+    showCompanySloganFooter: true,
   });
 
   const publicNavigationItems: Array<{ key: keyof SystemSettings; label: string; description: string }> = [
@@ -115,6 +116,7 @@ const AdminSettings = () => {
     (settings.showCompanyTradeNameHeader ?? settings.showCompanyTradeName) !== false;
   const footerTradeNameVisible =
     (settings.showCompanyTradeNameFooter ?? settings.showCompanyTradeName) !== false;
+  const footerSloganVisible = settings.showCompanySloganFooter !== false;
   const brandingLogoPreview = settings.brandingLogoUrl?.trim() || "";
   const companyDescriptionPreview =
     settings.companyDescription?.trim() ||
@@ -750,7 +752,7 @@ const AdminSettings = () => {
                       Controle separadamente onde o nome fantasia aparece ao lado do logo.
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
                       <div className="space-y-1">
                         <Label className="text-sm font-medium text-foreground">
@@ -780,6 +782,22 @@ const AdminSettings = () => {
                         checked={(settings.showCompanyTradeNameFooter ?? settings.showCompanyTradeName) !== false}
                         onCheckedChange={(checked) =>
                           setSettings({ ...settings, showCompanyTradeNameFooter: checked as boolean })
+                        }
+                      />
+                    </div>
+                    <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-medium text-foreground">
+                          Exibir slogan no rodapé
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Mostra o slogan abaixo da descrição no footer público.
+                        </p>
+                      </div>
+                      <Checkbox
+                        checked={settings.showCompanySloganFooter !== false}
+                        onCheckedChange={(checked) =>
+                          setSettings({ ...settings, showCompanySloganFooter: checked as boolean })
                         }
                       />
                     </div>
@@ -846,10 +864,12 @@ const AdminSettings = () => {
                         <p className="text-xs text-card/70">
                           {companyDescriptionPreview}
                         </p>
-                        {companySloganPreview ? (
+                        {footerSloganVisible && companySloganPreview ? (
                           <p className="text-xs font-semibold text-primary">
                             {companySloganPreview}
                           </p>
+                        ) : companySloganPreview ? (
+                          <p className="text-xs text-card/60">Slogan oculto no rodapé</p>
                         ) : null}
                       </div>
                       <div className="px-4 py-3 text-xs text-card/60">
@@ -959,6 +979,7 @@ const AdminSettings = () => {
                   showCompanyTradeName: settings.showCompanyTradeName,
                   showCompanyTradeNameHeader: settings.showCompanyTradeNameHeader,
                   showCompanyTradeNameFooter: settings.showCompanyTradeNameFooter,
+                  showCompanySloganFooter: settings.showCompanySloganFooter,
                   companyCnpj: settings.companyCnpj,
                   companyIe: settings.companyIe,
                   companyIm: settings.companyIm,
