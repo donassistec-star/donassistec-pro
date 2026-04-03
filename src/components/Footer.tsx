@@ -18,7 +18,7 @@ const Footer = () => {
   const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
   const contactEmail = settings?.contactEmail || "contato@donassistec.com.br";
   const contactAddress = settings?.contactAddress || "São Paulo - SP";
-  const showCompanyTradeName = settings?.showCompanyTradeName !== false;
+  const showCompanyTradeName = (settings?.showCompanyTradeNameFooter ?? settings?.showCompanyTradeName) !== false;
 
   return (
     <footer className="bg-foreground pt-16 pb-8">

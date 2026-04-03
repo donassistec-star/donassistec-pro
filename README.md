@@ -225,9 +225,10 @@ Os links dos botões são persistidos no conteúdo da home e usados diretamente 
 Em `Admin > Configurações > Branding > Informações da Empresa`, é possível:
 
 - editar o `Nome Fantasia`
-- ocultar ou exibir o nome fantasia na home
+- ocultar ou exibir o nome fantasia no cabeçalho
+- ocultar ou exibir o nome fantasia no rodapé
 
-Quando essa opção é desativada, o site mantém o logo, mas remove o nome fantasia do cabeçalho e do rodapé públicos.
+Quando essas opções são desativadas, o site mantém o logo, mas remove o nome fantasia apenas da área pública escolhida.
 
 ### 1. Executar Migrations do Banco de Dados
 

@@ -89,6 +89,8 @@ const AdminSettings = () => {
     showHeaderPhone: true,
     showRetailerAreaButton: true,
     showCompanyTradeName: true,
+    showCompanyTradeNameHeader: true,
+    showCompanyTradeNameFooter: true,
   });
 
   const publicNavigationItems: Array<{ key: keyof SystemSettings; label: string; description: string }> = [
@@ -728,22 +730,48 @@ const AdminSettings = () => {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-border p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1">
-                      <Label className="text-sm font-medium text-foreground">
-                        Exibir nome fantasia na home
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Mostra ou oculta o nome fantasia ao lado do logo no cabeçalho e no rodapé público.
-                      </p>
+                <div className="rounded-lg border border-border p-4 space-y-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-foreground">
+                      Exibição do nome fantasia
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Controle separadamente onde o nome fantasia aparece ao lado do logo.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-medium text-foreground">
+                          Exibir no cabeçalho
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Mostra o nome fantasia no header público.
+                        </p>
+                      </div>
+                      <Checkbox
+                        checked={(settings.showCompanyTradeNameHeader ?? settings.showCompanyTradeName) !== false}
+                        onCheckedChange={(checked) =>
+                          setSettings({ ...settings, showCompanyTradeNameHeader: checked as boolean })
+                        }
+                      />
                     </div>
-                    <Checkbox
-                      checked={settings.showCompanyTradeName !== false}
-                      onCheckedChange={(checked) =>
-                        setSettings({ ...settings, showCompanyTradeName: checked as boolean })
-                      }
-                    />
+                    <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-medium text-foreground">
+                          Exibir no rodapé
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Mostra o nome fantasia no footer público.
+                        </p>
+                      </div>
+                      <Checkbox
+                        checked={(settings.showCompanyTradeNameFooter ?? settings.showCompanyTradeName) !== false}
+                        onCheckedChange={(checked) =>
+                          setSettings({ ...settings, showCompanyTradeNameFooter: checked as boolean })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
                 
@@ -845,6 +873,8 @@ const AdminSettings = () => {
                   companyLegalName: settings.companyLegalName,
                   companyTradeName: settings.companyTradeName,
                   showCompanyTradeName: settings.showCompanyTradeName,
+                  showCompanyTradeNameHeader: settings.showCompanyTradeNameHeader,
+                  showCompanyTradeNameFooter: settings.showCompanyTradeNameFooter,
                   companyCnpj: settings.companyCnpj,
                   companyIe: settings.companyIe,
                   companyIm: settings.companyIm,
