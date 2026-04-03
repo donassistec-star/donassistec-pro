@@ -103,6 +103,7 @@ export interface SystemSettings {
   // Informações da Empresa
   companyLegalName?: string;
   companyTradeName?: string;
+  showCompanyTradeName?: boolean;
   companyCnpj?: string;
   companyIe?: string;
   companyIm?: string;
@@ -111,6 +112,19 @@ export interface SystemSettings {
   companyDescription?: string;
   companySlogan?: string;
   companyYearFounded?: string;
+
+  // Navegação
+  showNavHome?: boolean;
+  showNavCatalog?: boolean;
+  showNavFavorites?: boolean;
+  showNavAbout?: boolean;
+  showNavHelp?: boolean;
+  showNavServices?: boolean;
+  showNavBrands?: boolean;
+  showNavContact?: boolean;
+  showAdminAccessButton?: boolean;
+  showHeaderPhone?: boolean;
+  showRetailerAreaButton?: boolean;
 }
 
 interface ApiResponse<T> {

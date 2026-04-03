@@ -14,6 +14,21 @@ interface SettingsMap {
   [key: string]: string | boolean | number;
 }
 
+const SETTING_DESCRIPTIONS: Record<string, string> = {
+  showNavHome: "Exibir link Home no menu principal",
+  showNavCatalog: "Exibir link Catálogo no menu principal",
+  showNavFavorites: "Exibir link Favoritos no menu principal",
+  showNavAbout: "Exibir link Sobre no menu principal",
+  showNavHelp: "Exibir link Ajuda no menu principal",
+  showNavServices: "Exibir link Serviços no menu principal",
+  showNavBrands: "Exibir link Marcas no menu principal",
+  showNavContact: "Exibir link Contato no menu principal",
+  showAdminAccessButton: "Exibir ícone Admin no cabeçalho",
+  showHeaderPhone: "Exibir telefone no cabeçalho",
+  showRetailerAreaButton: "Exibir botão Área do Lojista no cabeçalho",
+  showCompanyTradeName: "Exibir nome fantasia no cabeçalho e rodapé público",
+};
+
 class SettingsModel {
   async getAll(): Promise<SettingsMap> {
     const [rows] = await pool.execute<mysql2.RowDataPacket[]>(
@@ -69,6 +84,10 @@ class SettingsModel {
       try {
         for (const [key, value] of Object.entries(settings)) {
           const stringValue = String(value);
+          const settingId = key
+            .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+            .replace(/[\s_]+/g, "-")
+            .toLowerCase();
           
           // Buscar valor antigo antes de atualizar
           const [oldRows] = await connection.execute<mysql2.RowDataPacket[]>(
@@ -78,11 +97,19 @@ class SettingsModel {
           
           const oldValue = oldRows.length > 0 ? oldRows[0].setting_value : null;
           
-          // Atualizar configuração
-          await connection.execute(
-            "UPDATE system_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE setting_key = ?",
-            [stringValue, key]
-          );
+          // Atualizar configuração existente ou criar a nova chave
+          if (oldRows.length > 0) {
+            await connection.execute(
+              "UPDATE system_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE setting_key = ?",
+              [stringValue, key]
+            );
+          } else {
+            await connection.execute(
+              `INSERT INTO system_settings (id, setting_key, setting_value, description)
+               VALUES (?, ?, ?, ?)`,
+              [settingId, key, stringValue, SETTING_DESCRIPTIONS[key] || key]
+            );
+          }
           
           // Registrar histórico se valor mudou e se temos userId
           if (oldValue !== stringValue && userId) {
@@ -116,10 +143,14 @@ class SettingsModel {
     "contactCep", "contactCity", "contactState", "whatsappContactMessage",
     "brandingLogoUrl", "brandingLogoFavicon", "brandingPrimaryColor", "brandingSecondaryColor",
     "companyTradeName", "companyDescription", "companySlogan", "companyLegalName", "companyWebsite",
+    "showCompanyTradeName",
     "siteName", "siteDescription", "supportPhone", "supportEmail",
     "socialInstagram", "socialFacebook", "socialYoutube", "socialLinkedin", "socialTwitter", "socialTikTok",
     "seoTitle", "seoDescription", "seoOgImage", "seoKeywords",
     "googleAnalyticsId", "facebookPixelId", "whatsappEnabled", "whatsappNumber",
+    "showNavHome", "showNavCatalog", "showNavFavorites", "showNavAbout", "showNavHelp",
+    "showNavServices", "showNavBrands", "showNavContact", "showAdminAccessButton",
+    "showHeaderPhone", "showRetailerAreaButton",
   ];
 
   async getPublic(): Promise<SettingsMap> {

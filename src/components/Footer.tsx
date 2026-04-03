@@ -18,6 +18,7 @@ const Footer = () => {
   const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
   const contactEmail = settings?.contactEmail || "contato@donassistec.com.br";
   const contactAddress = settings?.contactAddress || "São Paulo - SP";
+  const showCompanyTradeName = settings?.showCompanyTradeName !== false;
 
   return (
     <footer className="bg-foreground pt-16 pb-8">
@@ -48,20 +49,22 @@ const Footer = () => {
                   <Smartphone className="w-6 h-6 text-primary-foreground" />
                 </div>
               )}
-              <div>
-                {(() => {
-                  const name = settings?.companyTradeName || 'Don Assistec';
-                  const words = name.split(' ').filter(Boolean);
-                  const first = words[0] || 'Don';
-                  const rest = words.slice(1).join(' ');
-                  return (
-                    <>
-                      <span className="text-xl font-bold text-card">{first}</span>
-                      {rest ? <span className="text-xl font-bold text-primary"> {rest}</span> : null}
-                    </>
-                  );
-                })()}
-              </div>
+              {showCompanyTradeName ? (
+                <div>
+                  {(() => {
+                    const name = settings?.companyTradeName || 'Don Assistec';
+                    const words = name.split(' ').filter(Boolean);
+                    const first = words[0] || 'Don';
+                    const rest = words.slice(1).join(' ');
+                    return (
+                      <>
+                        <span className="text-xl font-bold text-card">{first}</span>
+                        {rest ? <span className="text-xl font-bold text-primary"> {rest}</span> : null}
+                      </>
+                    );
+                  })()}
+                </div>
+              ) : null}
             </div>
             <p className="text-card/70 mb-4">
               {settings?.companyDescription || 
