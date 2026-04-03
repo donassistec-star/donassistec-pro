@@ -20,14 +20,20 @@ import servicesRoutes from "./routes/services";
 import productViewsRoutes from "./routes/productViews";
 import prePedidosRoutes from "./routes/prePedidos";
 import adminTeamRoutes from "./routes/adminTeam";
+import retailerPriceTablesRoutes from "./routes/retailerPriceTables";
 import pool from "./config/database";
 import path from "path";
+import { isAdminBootstrapEnabled } from "./config/security";
 
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
 const PORT = parseInt(process.env.PORT || "3001", 10);
+
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET?.trim()) {
+  throw new Error("JWT_SECRET é obrigatório para iniciar o backend em produção.");
+}
 
 // Inicializar Socket.IO
 initializeSocket(httpServer);
@@ -116,6 +122,7 @@ app.use("/api/services", servicesRoutes);
 app.use("/api/product-views", productViewsRoutes);
 app.use("/api/pre-pedidos", prePedidosRoutes);
 app.use("/api/admin-team", adminTeamRoutes);
+app.use("/api/retailer-price-tables", retailerPriceTablesRoutes);
 // 404 Handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({
@@ -150,4 +157,7 @@ httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`   - PUT /api/home-content - Atualizar conteúdo da home`);
   console.log(`   - GET /api/orders - Listar pedidos`);
   console.log(`   - POST /api/orders - Criar pedido`);
+  console.log(
+    `🔐 Bootstrap admin: ${isAdminBootstrapEnabled() ? "habilitado" : "desabilitado"}`
+  );
 });

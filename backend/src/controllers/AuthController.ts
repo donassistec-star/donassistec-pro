@@ -4,14 +4,62 @@ import AdminTeamModel from "../models/AdminTeamModel";
 import { AuthRequest } from "../middleware/auth";
 import { AuthResponse, RetailerRegisterData, RetailerLoginData } from "../types";
 import jwt from "jsonwebtoken";
+import { getJwtSecret, isAdminBootstrapEnabled } from "../config/security";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("CRITICAL: JWT_SECRET environment variable is required.");
-}
-const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as string;
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as jwt.SignOptions["expiresIn"];
 
 class AuthController {
+  async adminLogin(req: Request, res: Response) {
+    try {
+      const data: RetailerLoginData = req.body;
+
+      if (!data.email || !data.password) {
+        const response: AuthResponse = {
+          success: false,
+          error: "Email e senha são obrigatórios",
+        };
+        return res.status(400).json(response);
+      }
+
+      const adminTeam = await AdminTeamModel.verifyPassword(data.email, data.password);
+      if (!adminTeam) {
+        return res.status(401).json({
+          success: false,
+          error: "Email ou senha inválidos",
+        });
+      }
+
+      const modules = await AdminTeamModel.getModulesForUser(adminTeam.id, adminTeam.role);
+      const token = jwt.sign(
+        { id: adminTeam.id, email: adminTeam.email, role: adminTeam.role, source: "admin_team" },
+        getJwtSecret(),
+        { expiresIn: JWT_EXPIRES_IN }
+      );
+
+      return res.json({
+        success: true,
+        token,
+        user: {
+          id: adminTeam.id,
+          email: adminTeam.email,
+          company_name: "",
+          contact_name: adminTeam.name,
+          phone: "",
+          cnpj: "",
+          role: adminTeam.role,
+          source: "admin_team",
+          modules,
+        },
+        message: "Login realizado com sucesso",
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Erro ao fazer login administrativo",
+      });
+    }
+  }
+
   async register(req: Request, res: Response) {
     try {
       const data: RetailerRegisterData = req.body;
@@ -39,7 +87,7 @@ class AuthController {
       // Gerar token JWT (source: retailer para lojistas)
       const token = jwt.sign(
         { id: retailer.id, email: retailer.email, role: retailer.role, source: "retailer" },
-        JWT_SECRET,
+        getJwtSecret(),
         { expiresIn: JWT_EXPIRES_IN }
       );
 
@@ -71,6 +119,15 @@ class AuthController {
 
   /** GET: indica se pode criar o primeiro admin (admin_team vazia). Só para exibir o botão no front. */
   async bootstrapAvailable(_req: Request, res: Response) {
+    if (!isAdminBootstrapEnabled()) {
+      return res.json({
+        success: true,
+        available: false,
+        tableExists: true,
+        message: "Bootstrap administrativo desabilitado neste ambiente.",
+      });
+    }
+
     try {
       const count = await AdminTeamModel.getCount();
       return res.json({ success: true, available: count === 0, tableExists: true });
@@ -84,6 +141,13 @@ class AuthController {
 
   /** POST: cria o primeiro admin quando admin_team está vazia. Retorna token e user como no login. */
   async bootstrapAdmin(req: Request, res: Response) {
+    if (!isAdminBootstrapEnabled()) {
+      return res.status(403).json({
+        success: false,
+        error: "Bootstrap administrativo desabilitado. Use os scripts do servidor.",
+      });
+    }
+
     try {
       const { email, password, name } = req.body;
       if (!email || !password || !name) {
@@ -123,7 +187,7 @@ class AuthController {
 
       const token = jwt.sign(
         { id: created.id, email: created.email, role: created.role, source: "admin_team" },
-        JWT_SECRET,
+        getJwtSecret(),
         { expiresIn: JWT_EXPIRES_IN }
       );
 
@@ -168,7 +232,7 @@ class AuthController {
         const modules = await AdminTeamModel.getModulesForUser(adminTeam.id, adminTeam.role);
         const token = jwt.sign(
           { id: adminTeam.id, email: adminTeam.email, role: adminTeam.role, source: "admin_team" },
-          JWT_SECRET,
+          getJwtSecret(),
           { expiresIn: JWT_EXPIRES_IN }
         );
         const response: AuthResponse = {
@@ -202,7 +266,7 @@ class AuthController {
 
       const token = jwt.sign(
         { id: retailer.id, email: retailer.email, role: retailer.role, source: "retailer" },
-        JWT_SECRET,
+        getJwtSecret(),
         { expiresIn: JWT_EXPIRES_IN }
       );
 

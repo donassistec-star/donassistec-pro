@@ -51,6 +51,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 - ✅ Avaliações e reviews
 - ✅ Logs de auditoria
 - ✅ Gestão de conteúdo da home
+- ✅ Hero da home com botões configuráveis (texto, link, ocultar/exibir e teste de destino)
 - ✅ Controle de estoque
 - ✅ Métricas de visualização de produtos
 - ✅ Tabelas de preços exclusivas para lojistas com múltiplas tabelas, destaque, ordem, importação `.txt`, duplicação e preview estruturado
@@ -68,6 +69,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 - ✅ Suporte e tickets
 - ✅ Relatórios básicos
 - ✅ Tabelas de preços exclusivas com busca, navegação por categorias, PDF e troca entre múltiplas tabelas
+- ✅ Edição do Hero da home com controle dos CTAs principais e secundários
 
 ### Público Geral
 
@@ -179,6 +181,8 @@ DB_NAME=donassistec_db
 
 # JWT Secret
 JWT_SECRET=seu_jwt_secret_super_seguro_aqui
+JWT_EXPIRES_IN=7d
+ENABLE_ADMIN_BOOTSTRAP=false
 
 # CORS
 CORS_ORIGIN=http://localhost:8200
@@ -201,6 +205,19 @@ Crie um arquivo `.env` na raiz do projeto (opcional). O frontend detecta `localh
 ```
 
 ## ⚙️ Configuração
+
+### CMS da Home
+
+Na área administrativa da home, o bloco `Hero` permite:
+
+- editar badge, título, subtítulo e imagem
+- ocultar ou exibir cada botão separadamente
+- definir texto e link do botão principal
+- definir texto e link do botão secundário
+- validar visualmente se o link é interno (`/rota`) ou externo (`https://...`)
+- testar o destino do botão antes de publicar
+
+Os links dos botões são persistidos no conteúdo da home e usados diretamente pelo frontend.
 
 ### 1. Executar Migrations do Banco de Dados
 

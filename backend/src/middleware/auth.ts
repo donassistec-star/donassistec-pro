@@ -1,10 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("CRITICAL: JWT_SECRET environment variable is required. Server cannot start without it.");
-}
+import { getJwtSecret } from "../config/security";
 
 export interface AuthRequest extends Request {
   user?: {
@@ -15,6 +11,10 @@ export interface AuthRequest extends Request {
     source?: "admin_team" | "retailer";
   };
 }
+
+export const isAdminTeamUser = (user?: AuthRequest["user"]): boolean => {
+  return user?.source === "admin_team";
+};
 
 export const authenticateToken = (
   req: AuthRequest,
@@ -32,7 +32,7 @@ export const authenticateToken = (
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string; source?: "admin_team" | "retailer" };
+    const decoded = jwt.verify(token, getJwtSecret()) as { id: string; email: string; role: string; source?: "admin_team" | "retailer" };
     req.user = decoded;
     next();
   } catch (error) {
