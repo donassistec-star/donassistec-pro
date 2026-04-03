@@ -20,14 +20,49 @@ export interface HomeStep {
   href?: string | null;
 }
 
+export interface HomeServiceCard {
+  id: string;
+  title: string;
+  description: string;
+  badge: string;
+  features: string[];
+}
+
+export interface HomeServiceHighlight {
+  id: string;
+  label: string;
+  value: string;
+}
+
 export interface HomeContent {
+  showHero?: boolean;
+  showBrands?: boolean;
+  homeBrandIds?: string[];
+  showServices?: boolean;
+  showFeatures?: boolean;
+  showStats?: boolean;
+  showProcess?: boolean;
+  showTestimonials?: boolean;
+  showDifferentials?: boolean;
+  showCta?: boolean;
   heroBadge?: string;
   heroTitle: string;
   heroSubtitle: string;
   heroImage?: string;
+  showHeroPrimaryCta?: boolean;
+  showHeroSecondaryCta?: boolean;
   heroCtaLabel: string;
   heroCtaLink?: string;
   heroSecondaryCtaLabel: string;
+  heroSecondaryCtaLink?: string;
+  servicesBadge: string;
+  servicesTitle: string;
+  servicesSubtitle: string;
+  servicesImage?: string;
+  servicesImageTitle: string;
+  servicesImageDescription: string;
+  servicesCards: HomeServiceCard[];
+  servicesHighlights: HomeServiceHighlight[];
   featuresTitle: string;
   featuresSubtitle: string;
   features: HomeFeature[];
@@ -40,14 +75,66 @@ export interface HomeContent {
 }
 
 export const defaultHomeContent: HomeContent = {
+  showHero: true,
+  showBrands: true,
+  homeBrandIds: [],
+  showServices: true,
+  showFeatures: true,
+  showStats: true,
+  showProcess: true,
+  showTestimonials: true,
+  showDifferentials: true,
+  showCta: true,
   heroBadge: "Laboratório Premium B2B",
   heroTitle: "Reconstrução de Telas e Peças Premium para Lojistas",
   heroSubtitle:
     "A DonAssistec conecta sua loja a um catálogo completo de modelos, peças e serviços de reconstrução com qualidade de fábrica.",
   heroImage: undefined,
+  showHeroPrimaryCta: true,
+  showHeroSecondaryCta: true,
   heroCtaLabel: "Explorar Catálogo",
   heroCtaLink: "/catalogo",
   heroSecondaryCtaLabel: "Área do Lojista",
+  heroSecondaryCtaLink: "/lojista/login",
+  servicesBadge: "Nossos Serviços",
+  servicesTitle: "Laboratório de Alta Precisão",
+  servicesSubtitle:
+    "Infraestrutura completa para reconstrução de telas e revenda de peças premium para lojistas e assistências técnicas.",
+  servicesImage: undefined,
+  servicesImageTitle: "Tecnologia de Ponta",
+  servicesImageDescription:
+    "Máquinas de reconstrução mais sofisticadas do mercado brasileiro, garantindo qualidade original nas telas reconstruídas.",
+  servicesCards: [
+    {
+      id: "screen-repair",
+      title: "Reconstrução de Telas",
+      description:
+        "Processo industrial com máquinas de última geração. Tela original reconstruída com vidro novo e garantia completa.",
+      badge: "Premium",
+      features: ["Vidro OCA Premium", "Máquina Laminar", "Touch Original"],
+    },
+    {
+      id: "glass-replacement",
+      title: "Troca de Vidro",
+      description:
+        "Substituição apenas do vidro frontal, mantendo display e touch originais. Economia para seu cliente.",
+      badge: "Rápido",
+      features: ["Vidro Gorilla Glass", "Selagem a Vácuo", "24h Entrega"],
+    },
+    {
+      id: "parts-resale",
+      title: "Revenda de Peças",
+      description:
+        "Catálogo completo de peças originais e compatíveis premium para assistências técnicas parceiras.",
+      badge: "B2B",
+      features: ["Estoque Local", "Preços B2B", "Garantia 90 dias"],
+    },
+  ],
+  servicesHighlights: [
+    { id: "machines", label: "Máquinas Industriais", value: "Equipamentos de Ponta" },
+    { id: "delivery-time", label: "Tempo de Entrega", value: "24-48 horas" },
+    { id: "warranty", label: "Garantia Completa", value: "90 dias" },
+  ],
   featuresTitle: "Por Que Escolher a DonAssistec?",
   featuresSubtitle:
     "Oferecemos os melhores produtos e serviços com os maiores diferenciais do mercado.",
@@ -135,4 +222,3 @@ export const defaultHomeContent: HomeContent = {
     },
   ],
 };
-

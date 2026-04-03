@@ -241,7 +241,7 @@ const AdminOrders = () => {
                 </div>
                 <div>
                   <div className="text-2xl font-bold">
-                    {formatPrice(orders.reduce((sum, o) => sum + (Number(o.total) ?? 0), 0))}
+                    {formatPrice(orders.reduce((sum, o) => sum + Number(o.total ?? 0), 0))}
                   </div>
                   <div className="text-sm text-muted-foreground">Valor Total</div>
                 </div>

@@ -49,7 +49,7 @@ const categoryLineRegex =
 const normalizeWhitespace = (value: string) => value.replace(/\s+/g, " ").trim();
 
 const normalizeCategoryName = (line: string) =>
-  normalizeWhitespace(line.replace(/[>📱]/g, "").replace(/\s{2,}/g, " "));
+  normalizeWhitespace(line.replace(/[>\p{Extended_Pictographic}]/gu, "").replace(/\s{2,}/g, " "));
 
 const parseRetailerPriceTablePreview = (input: string) => {
   const lines = input

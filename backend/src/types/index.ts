@@ -120,7 +120,9 @@ export interface AuthResponse {
     contact_name: string;
     phone?: string;
     cnpj?: string;
-    role: "retailer" | "admin";
+    role: "retailer" | "admin" | "gerente" | "tecnico" | "user";
+    source?: "admin_team" | "retailer";
+    modules?: string[];
   };
   error?: string;
   message?: string;
@@ -134,10 +136,44 @@ export interface ApiResponse<T> {
 }
 
 export interface HomeContent {
+  showHero?: boolean;
+  showBrands?: boolean;
+  homeBrandIds?: string[];
+  showServices?: boolean;
+  showFeatures?: boolean;
+  showStats?: boolean;
+  showProcess?: boolean;
+  showTestimonials?: boolean;
+  showDifferentials?: boolean;
+  showCta?: boolean;
+  heroBadge?: string;
+  heroImage?: string;
+  showHeroPrimaryCta?: boolean;
+  showHeroSecondaryCta?: boolean;
   heroTitle: string;
   heroSubtitle: string;
   heroCtaLabel: string;
+  heroCtaLink?: string;
   heroSecondaryCtaLabel: string;
+  heroSecondaryCtaLink?: string;
+  servicesBadge: string;
+  servicesTitle: string;
+  servicesSubtitle: string;
+  servicesImage?: string;
+  servicesImageTitle: string;
+  servicesImageDescription: string;
+  servicesCards: Array<{
+    id: string;
+    title: string;
+    description: string;
+    badge: string;
+    features: string[];
+  }>;
+  servicesHighlights: Array<{
+    id: string;
+    label: string;
+    value: string;
+  }>;
   featuresTitle: string;
   featuresSubtitle: string;
   features: Array<{
