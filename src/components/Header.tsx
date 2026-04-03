@@ -2,41 +2,39 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Menu, X, Phone, Smartphone, FileText, Heart, Shield } from "lucide-react";
-import { useCart } from "@/contexts/CartContext";
+import { Menu, X, Phone, Smartphone, Heart, Shield } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNotifications } from "@/contexts/NotificationsContext";
-import Notifications from "@/components/Notifications";
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { getTotalItems } = useCart();
   const { favorites } = useFavorites();
   const { settings } = useSettings();
   const { user } = useAuth();
-  const { notifications, markAsRead, removeNotification, markAllAsRead, unreadCount } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const preOrcamentoCount = getTotalItems();
   const favoritesCount = favorites.length;
-  const isHome = location.pathname === "/";
   const isLojista = user?.role === "retailer";
 
   const contactPhone = settings?.contactPhone || "(11) 99999-9999";
   const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
+  const showFavorites = settings?.showNavFavorites !== false;
+  const showAdminAccessButton = settings?.showAdminAccessButton !== false;
+  const showHeaderPhone = settings?.showHeaderPhone !== false;
+  const showRetailerAreaButton = settings?.showRetailerAreaButton !== false;
+  const showCompanyTradeName = settings?.showCompanyTradeName !== false;
 
   const navLinks = [
-    { label: "Home", href: "/" },
-    ...(isLojista ? [{ label: "Catálogo", href: "/catalogo" }] : []),
-    { label: "Favoritos", href: "/favoritos" },
-    { label: "Sobre", href: "/sobre" },
-    { label: "Ajuda", href: "/ajuda" },
-    { label: "Serviços", href: "/#servicos" },
-    { label: "Marcas", href: "/#marcas" },
-    { label: "Contato", href: "/#contato" },
-  ];
+    { label: "Home", href: "/", visible: settings?.showNavHome !== false },
+    { label: "Catálogo", href: "/catalogo", visible: isLojista && settings?.showNavCatalog !== false },
+    { label: "Favoritos", href: "/favoritos", visible: settings?.showNavFavorites !== false },
+    { label: "Sobre", href: "/sobre", visible: settings?.showNavAbout !== false },
+    { label: "Ajuda", href: "/ajuda", visible: settings?.showNavHelp !== false },
+    { label: "Serviços", href: "/#servicos", visible: settings?.showNavServices !== false },
+    { label: "Marcas", href: "/#marcas", visible: settings?.showNavBrands !== false },
+    { label: "Contato", href: "/#contato", visible: settings?.showNavContact !== false },
+  ].filter((link) => link.visible);
 
   return (
     <>
@@ -71,20 +69,22 @@ const Header = () => {
                 <Smartphone className="w-6 h-6 text-primary-foreground" />
               </div>
             )}
-            <div>
-              {(() => {
-                const name = settings?.companyTradeName || 'Don Assistec';
-                const words = name.split(' ').filter(Boolean);
-                const first = words[0] || 'Don';
-                const rest = words.slice(1).join(' ');
-                return (
-                  <>
-                    <span className="text-xl font-bold text-foreground">{first}</span>
-                    {rest ? <span className="text-xl font-bold text-primary"> {rest}</span> : null}
-                  </>
-                );
-              })()}
-            </div>
+            {showCompanyTradeName ? (
+              <div>
+                {(() => {
+                  const name = settings?.companyTradeName || 'Don Assistec';
+                  const words = name.split(' ').filter(Boolean);
+                  const first = words[0] || 'Don';
+                  const rest = words.slice(1).join(' ');
+                  return (
+                    <>
+                      <span className="text-xl font-bold text-foreground">{first}</span>
+                      {rest ? <span className="text-xl font-bold text-primary"> {rest}</span> : null}
+                    </>
+                  );
+                })()}
+              </div>
+            ) : null}
           </Link>
 
           {/* Desktop Navigation */}
@@ -108,63 +108,50 @@ const Header = () => {
                 </a>
               )
             ))}
-            <Link
-              to="/admin"
-              className="text-muted-foreground hover:text-primary transition-colors"
-              title="Admin"
-              aria-label="Admin"
-            >
-              <Shield className="w-5 h-5" />
-            </Link>
+            {showAdminAccessButton && (
+              <Link
+                to="/admin"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                title="Admin"
+                aria-label="Admin"
+              >
+                <Shield className="w-5 h-5" />
+              </Link>
+            )}
           </nav>
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center gap-4">
-            <a href={`tel:${contactPhoneRaw}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-              <Phone className="w-4 h-4" />
-              {contactPhone}
-            </a>
-            <Notifications
-              notifications={notifications}
-              onMarkAsRead={markAsRead}
-              onRemove={removeNotification}
-              onMarkAllAsRead={markAllAsRead}
-              unreadCount={unreadCount}
-            />
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="relative"
-              onClick={() => navigate("/favoritos")}
-              title="Favoritos"
-            >
-              <Heart className="w-5 h-5" />
-              {favoritesCount > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
-                  {favoritesCount}
-                </Badge>
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="relative"
-              onClick={() => navigate("/carrinho")}
-              title="Pré-orçamento"
-            >
-              <FileText className="w-5 h-5" />
-              {preOrcamentoCount > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-primary text-primary-foreground text-xs">
-                  {preOrcamentoCount}
-                </Badge>
-              )}
-            </Button>
-            <Button 
-              variant="secondary"
-              onClick={() => navigate("/lojista/dashboard")}
-            >
-              Área do Lojista
-            </Button>
+            {showHeaderPhone && (
+              <a href={`tel:${contactPhoneRaw}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Phone className="w-4 h-4" />
+                {contactPhone}
+              </a>
+            )}
+            {showFavorites && (
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="relative"
+                onClick={() => navigate("/favoritos")}
+                title="Favoritos"
+              >
+                <Heart className="w-5 h-5" />
+                {favoritesCount > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
+                    {favoritesCount}
+                  </Badge>
+                )}
+              </Button>
+            )}
+            {showRetailerAreaButton && (
+              <Button 
+                variant="secondary"
+                onClick={() => navigate("/lojista/dashboard")}
+              >
+                Área do Lojista
+              </Button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -202,66 +189,47 @@ const Header = () => {
                 </a>
               )
             ))}
-            <Link
-              to="/admin"
-              className="text-base font-medium text-foreground hover:text-primary transition-colors py-2 inline-flex items-center"
-              onClick={() => setIsMenuOpen(false)}
-              title="Admin"
-              aria-label="Admin"
-            >
-              <Shield className="w-5 h-5" />
-            </Link>
-            <div className="flex items-center gap-2 mt-2">
-              <Notifications
-                notifications={notifications}
-                onMarkAsRead={markAsRead}
-                onRemove={removeNotification}
-                onMarkAllAsRead={markAllAsRead}
-                unreadCount={unreadCount}
-              />
-            </div>
-            <Button 
-              variant="outline" 
-              className="mt-2 relative justify-start"
-              onClick={() => {
-                navigate("/favoritos");
-                setIsMenuOpen(false);
-              }}
-            >
-              <Heart className="w-4 h-4 mr-2" />
-              Favoritos
-              {favoritesCount > 0 && (
-                <Badge className="ml-auto bg-red-500 text-white">
-                  {favoritesCount}
-                </Badge>
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              className="mt-2 relative justify-start"
-              onClick={() => {
-                navigate("/carrinho");
-                setIsMenuOpen(false);
-              }}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Pré-orçamento
-              {preOrcamentoCount > 0 && (
-                <Badge className="ml-auto bg-primary text-primary-foreground">
-                  {preOrcamentoCount}
-                </Badge>
-              )}
-            </Button>
-            <Button 
-              variant="secondary"
-              className="mt-2"
-              onClick={() => {
-                navigate("/lojista/dashboard");
-                setIsMenuOpen(false);
-              }}
-            >
-              Área do Lojista
-            </Button>
+            {showAdminAccessButton && (
+              <Link
+                to="/admin"
+                className="text-base font-medium text-foreground hover:text-primary transition-colors py-2 inline-flex items-center"
+                onClick={() => setIsMenuOpen(false)}
+                title="Admin"
+                aria-label="Admin"
+              >
+                <Shield className="w-5 h-5" />
+              </Link>
+            )}
+            {showFavorites && (
+              <Button 
+                variant="outline" 
+                className="mt-2 relative justify-start"
+                onClick={() => {
+                  navigate("/favoritos");
+                  setIsMenuOpen(false);
+                }}
+              >
+                <Heart className="w-4 h-4 mr-2" />
+                Favoritos
+                {favoritesCount > 0 && (
+                  <Badge className="ml-auto bg-red-500 text-white">
+                    {favoritesCount}
+                  </Badge>
+                )}
+              </Button>
+            )}
+            {showRetailerAreaButton && (
+              <Button 
+                variant="secondary"
+                className="mt-2"
+                onClick={() => {
+                  navigate("/lojista/dashboard");
+                  setIsMenuOpen(false);
+                }}
+              >
+                Área do Lojista
+              </Button>
+            )}
           </nav>
         </div>
       )}

@@ -18,6 +18,8 @@ const Footer = () => {
   const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
   const contactEmail = settings?.contactEmail || "contato@donassistec.com.br";
   const contactAddress = settings?.contactAddress || "São Paulo - SP";
+  const showCompanyTradeName = settings?.showCompanyTradeName !== false;
+
   return (
     <footer className="bg-foreground pt-16 pb-8">
       <div className="container mx-auto px-4">
@@ -32,13 +34,12 @@ const Footer = () => {
                   className="h-10 w-auto object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.style.display = "none";
+                    target.style.display = 'none';
                     const parent = target.parentElement;
-                    if (parent && !parent.querySelector(".logo-fallback")) {
-                      const fallback = document.createElement("div");
-                      fallback.className = "logo-fallback w-10 h-10 rounded-lg bg-primary flex items-center justify-center";
-                      fallback.innerHTML =
-                        '<svg class="w-6 h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>';
+                    if (parent && !parent.querySelector('.logo-fallback')) {
+                      const fallback = document.createElement('div');
+                      fallback.className = 'logo-fallback w-10 h-10 rounded-lg bg-primary flex items-center justify-center';
+                      fallback.innerHTML = '<svg class="w-6 h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>';
                       parent.insertBefore(fallback, target);
                     }
                   }}
@@ -48,76 +49,55 @@ const Footer = () => {
                   <Smartphone className="w-6 h-6 text-primary-foreground" />
                 </div>
               )}
-              <div>
-                {(() => {
-                  const name = settings?.companyTradeName || "Don Assistec";
-                  const words = name.split(" ").filter(Boolean);
-                  const first = words[0] || "Don";
-                  const rest = words.slice(1).join(" ");
-                  return (
-                    <>
-                      <span className="text-xl font-bold text-card">{first}</span>
-                      {rest ? <span className="text-xl font-bold text-primary"> {rest}</span> : null}
-                    </>
-                  );
-                })()}
-              </div>
+              {showCompanyTradeName ? (
+                <div>
+                  {(() => {
+                    const name = settings?.companyTradeName || 'Don Assistec';
+                    const words = name.split(' ').filter(Boolean);
+                    const first = words[0] || 'Don';
+                    const rest = words.slice(1).join(' ');
+                    return (
+                      <>
+                        <span className="text-xl font-bold text-card">{first}</span>
+                        {rest ? <span className="text-xl font-bold text-primary"> {rest}</span> : null}
+                      </>
+                    );
+                  })()}
+                </div>
+              ) : null}
             </div>
             <p className="text-card/70 mb-4">
-              {settings?.companyDescription ||
+              {settings?.companyDescription || 
                 "Laboratório premium de reconstrução de telas e revenda de peças para lojistas e assistências técnicas."}
             </p>
             {settings?.companySlogan && (
-              <p className="text-sm font-semibold text-primary mb-4">{settings.companySlogan}</p>
+              <p className="text-sm font-semibold text-primary mb-4">
+                {settings.companySlogan}
+              </p>
             )}
             <div className="flex gap-3">
               {settings?.socialInstagram && (
-                <a
-                  href={settings.socialInstagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
+                <a href={settings.socialInstagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors">
                   <Instagram className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialFacebook && (
-                <a
-                  href={settings.socialFacebook}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
+                <a href={settings.socialFacebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors">
                   <Facebook className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialYoutube && (
-                <a
-                  href={settings.socialYoutube}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
+                <a href={settings.socialYoutube} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors">
                   <Youtube className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialLinkedin && (
-                <a
-                  href={settings.socialLinkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
+                <a href={settings.socialLinkedin} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors">
                   <Linkedin className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialTwitter && (
-                <a
-                  href={settings.socialTwitter}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
+                <a href={settings.socialTwitter} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors">
                   <Twitter className="w-5 h-5" />
                 </a>
               )}
@@ -176,9 +156,12 @@ const Footer = () => {
           </div>
         </div>
 
+        {/* Bottom Bar */}
         <div className="pt-8 border-t border-card/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-card/50 text-sm">© 2025 DonAssistec. Todos os direitos reservados.</p>
+            <p className="text-card/50 text-sm">
+              © 2025 DonAssistec. Todos os direitos reservados.
+            </p>
             <div className="flex gap-6 text-sm">
               <Link to="/privacidade" className="text-card/50 hover:text-primary transition-colors">Política de Privacidade</Link>
               <Link to="/termos" className="text-card/50 hover:text-primary transition-colors">Termos de Uso</Link>

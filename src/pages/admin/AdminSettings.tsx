@@ -77,7 +77,36 @@ const AdminSettings = () => {
     maxOrdersPerDay: 100,
     emailNotifications: true,
     smsNotifications: false,
+    showNavHome: true,
+    showNavCatalog: true,
+    showNavFavorites: true,
+    showNavAbout: true,
+    showNavHelp: true,
+    showNavServices: true,
+    showNavBrands: true,
+    showNavContact: true,
+    showAdminAccessButton: true,
+    showHeaderPhone: true,
+    showRetailerAreaButton: true,
+    showCompanyTradeName: true,
   });
+
+  const publicNavigationItems: Array<{ key: keyof SystemSettings; label: string; description: string }> = [
+    { key: "showNavHome", label: "Home", description: "Exibe o link Home no menu principal." },
+    { key: "showNavCatalog", label: "Catálogo", description: "Exibe o link Catálogo para lojistas logados." },
+    { key: "showNavFavorites", label: "Favoritos", description: "Exibe o link Favoritos no menu principal." },
+    { key: "showNavAbout", label: "Sobre", description: "Exibe o link Sobre no menu principal." },
+    { key: "showNavHelp", label: "Ajuda", description: "Exibe o link Ajuda no menu principal." },
+    { key: "showNavServices", label: "Serviços", description: "Exibe o link Serviços no menu principal." },
+    { key: "showNavBrands", label: "Marcas", description: "Exibe o link Marcas no menu principal." },
+    { key: "showNavContact", label: "Contato", description: "Exibe o link Contato no menu principal." },
+  ];
+
+  const headerExtraItems: Array<{ key: keyof SystemSettings; label: string; description: string }> = [
+    { key: "showAdminAccessButton", label: "Ícone Admin", description: "Exibe o atalho Admin no cabeçalho público." },
+    { key: "showHeaderPhone", label: "Telefone", description: "Exibe o telefone no topo do site." },
+    { key: "showRetailerAreaButton", label: "Área do Lojista", description: "Exibe o botão Área do Lojista no cabeçalho." },
+  ];
 
   useEffect(() => {
     loadSettings();
@@ -88,7 +117,7 @@ const AdminSettings = () => {
       setLoading(true);
       const data = await settingsService.getAll();
       if (data) {
-        setSettings(data);
+        setSettings((prev) => ({ ...prev, ...data }));
       }
     } catch (error) {
       console.error("Erro ao carregar configurações:", error);
@@ -465,6 +494,90 @@ const AdminSettings = () => {
                 </Button>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="w-5 h-5" />
+                  Menu de Navegação
+                </CardTitle>
+                <CardDescription>
+                  Escolha o que aparece no cabeçalho do site para os visitantes e lojistas.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {publicNavigationItems.map((item) => (
+                    <div key={String(item.key)} className="flex items-start justify-between gap-4 p-4 border rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label htmlFor={String(item.key)}>{item.label}</Label>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                      </div>
+                      <Checkbox
+                        id={String(item.key)}
+                        checked={settings[item.key] !== false}
+                        onCheckedChange={(checked) =>
+                          setSettings({ ...settings, [item.key]: checked as boolean })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="w-5 h-5" />
+                  Itens Extras do Cabeçalho
+                </CardTitle>
+                <CardDescription>
+                  Controle os elementos auxiliares exibidos ao lado do menu.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {headerExtraItems.map((item) => (
+                    <div key={String(item.key)} className="flex items-start justify-between gap-4 p-4 border rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label htmlFor={String(item.key)}>{item.label}</Label>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                      </div>
+                      <Checkbox
+                        id={String(item.key)}
+                        checked={settings[item.key] !== false}
+                        onCheckedChange={(checked) =>
+                          setSettings({ ...settings, [item.key]: checked as boolean })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={() =>
+                    handleSave("navigation", {
+                      showNavHome: settings.showNavHome,
+                      showNavCatalog: settings.showNavCatalog,
+                      showNavFavorites: settings.showNavFavorites,
+                      showNavAbout: settings.showNavAbout,
+                      showNavHelp: settings.showNavHelp,
+                      showNavServices: settings.showNavServices,
+                      showNavBrands: settings.showNavBrands,
+                      showNavContact: settings.showNavContact,
+                      showAdminAccessButton: settings.showAdminAccessButton,
+                      showHeaderPhone: settings.showHeaderPhone,
+                      showRetailerAreaButton: settings.showRetailerAreaButton,
+                    })
+                  }
+                  disabled={saving}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? "Salvando..." : "Salvar Menu de Navegação"}
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Aba Branding */}
@@ -614,6 +727,25 @@ const AdminSettings = () => {
                     />
                   </div>
                 </div>
+
+                <div className="rounded-lg border border-border p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-sm font-medium text-foreground">
+                        Exibir nome fantasia na home
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Mostra ou oculta o nome fantasia ao lado do logo no cabeçalho e no rodapé público.
+                      </p>
+                    </div>
+                    <Checkbox
+                      checked={settings.showCompanyTradeName !== false}
+                      onCheckedChange={(checked) =>
+                        setSettings({ ...settings, showCompanyTradeName: checked as boolean })
+                      }
+                    />
+                  </div>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
@@ -712,6 +844,7 @@ const AdminSettings = () => {
                 <Button onClick={() => handleSave("company", {
                   companyLegalName: settings.companyLegalName,
                   companyTradeName: settings.companyTradeName,
+                  showCompanyTradeName: settings.showCompanyTradeName,
                   companyCnpj: settings.companyCnpj,
                   companyIe: settings.companyIe,
                   companyIm: settings.companyIm,
