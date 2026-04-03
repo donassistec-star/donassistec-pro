@@ -24,6 +24,10 @@ const Header = () => {
   const showHeaderPhone = settings?.showHeaderPhone !== false;
   const showRetailerAreaButton = settings?.showRetailerAreaButton !== false;
   const showCompanyTradeName = (settings?.showCompanyTradeNameHeader ?? settings?.showCompanyTradeName) !== false;
+  const brandingLogoSrc =
+    !showCompanyTradeName && settings?.brandingLogoFavicon
+      ? settings.brandingLogoFavicon
+      : settings?.brandingLogoUrl;
 
   const navLinks = [
     { label: "Home", href: "/", visible: settings?.showNavHome !== false },
@@ -46,9 +50,9 @@ const Header = () => {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            {settings?.brandingLogoUrl ? (
+            {brandingLogoSrc ? (
               <img
-                src={settings.brandingLogoUrl}
+                src={brandingLogoSrc}
                 alt={settings.companyTradeName || settings.siteName || "Logo"}
                 className="h-10 w-auto object-contain"
                 onError={(e) => {

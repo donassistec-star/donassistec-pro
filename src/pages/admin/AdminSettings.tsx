@@ -118,6 +118,15 @@ const AdminSettings = () => {
     (settings.showCompanyTradeNameFooter ?? settings.showCompanyTradeName) !== false;
   const footerSloganVisible = settings.showCompanySloganFooter !== false;
   const brandingLogoPreview = settings.brandingLogoUrl?.trim() || "";
+  const brandingLogoFaviconPreview = settings.brandingLogoFavicon?.trim() || "";
+  const headerLogoPreview =
+    !headerTradeNameVisible && brandingLogoFaviconPreview
+      ? brandingLogoFaviconPreview
+      : brandingLogoPreview;
+  const footerLogoPreview =
+    !footerTradeNameVisible && brandingLogoFaviconPreview
+      ? brandingLogoFaviconPreview
+      : brandingLogoPreview;
   const companyDescriptionPreview =
     settings.companyDescription?.trim() ||
     "Laboratório premium de reconstrução de telas e revenda de peças para lojistas e assistências técnicas.";
@@ -810,15 +819,15 @@ const AdminSettings = () => {
                       Preview visual
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Pré-visualização de como o nome fantasia aparece nas áreas públicas.
+                      Pré-visualização de como o nome fantasia aparece nas áreas públicas. Ao ocultar o nome, o sistema usa o favicon se ele estiver configurado.
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="rounded-lg border border-border bg-background overflow-hidden">
                       <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                        {brandingLogoPreview ? (
+                        {headerLogoPreview ? (
                           <img
-                            src={brandingLogoPreview}
+                            src={headerLogoPreview}
                             alt="Logo preview"
                             className="h-10 w-auto max-w-[96px] object-contain"
                           />
@@ -842,9 +851,9 @@ const AdminSettings = () => {
                     <div className="rounded-lg border border-border bg-foreground overflow-hidden">
                       <div className="px-4 py-4 border-b border-white/10 space-y-3">
                         <div className="flex items-center gap-3">
-                          {brandingLogoPreview ? (
+                          {footerLogoPreview ? (
                             <img
-                              src={brandingLogoPreview}
+                              src={footerLogoPreview}
                               alt="Logo preview"
                               className="h-10 w-auto max-w-[96px] object-contain"
                             />
