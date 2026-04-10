@@ -218,6 +218,17 @@ const normalizeSlug = (value: string) =>
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+const getCategoryUiKey = (categoryIndex: number) => `category-${categoryIndex}`;
+
+const getDeviceUiKey = (categoryIndex: number, deviceIndex: number) =>
+  `device-${categoryIndex}-${deviceIndex}`;
+
+const getServiceUiKey = (
+  categoryIndex: number,
+  deviceIndex: number,
+  serviceIndex: number
+) => `service-${categoryIndex}-${deviceIndex}-${serviceIndex}`;
+
 const buildDuplicateSlug = (sourceSlug: string, existingSlugs: string[]) => {
   const baseSlug = normalizeSlug(`${sourceSlug}-copia`) || "nova-tabela-copia";
   let nextSlug = baseSlug;
@@ -610,7 +621,7 @@ const AdminRetailerPriceTables = () => {
 
     setCollapsedCategories((current) => ({
       ...current,
-      [`${categoryIndex}-${category.name}`]: false,
+      [getCategoryUiKey(categoryIndex)]: false,
     }));
 
     if (deviceIndex === undefined) return;
@@ -620,7 +631,7 @@ const AdminRetailerPriceTables = () => {
 
     setCollapsedDevices((current) => ({
       ...current,
-      [`${categoryIndex}-${deviceIndex}-${device.name}`]: false,
+      [getDeviceUiKey(categoryIndex, deviceIndex)]: false,
     }));
   };
 
@@ -1037,11 +1048,11 @@ const AdminRetailerPriceTables = () => {
     ]);
     setCollapsedCategories((current) => ({
       ...current,
-      [`${createdCategoryIndex}-${trimmedCategoryName}`]: false,
+      [getCategoryUiKey(createdCategoryIndex)]: false,
     }));
     setCollapsedDevices((current) => ({
       ...current,
-      [`${createdCategoryIndex}-0-Novo aparelho`]: false,
+      [getDeviceUiKey(createdCategoryIndex, 0)]: false,
     }));
     setPendingStructureFocus({
       categoryIndex: createdCategoryIndex,
@@ -1157,7 +1168,6 @@ const AdminRetailerPriceTables = () => {
   };
 
   const handleAddDevice = (categoryIndex: number) => {
-    const categoryName = structuredPreviewCategories[categoryIndex]?.name || "";
     const nextDeviceIndex = structuredPreviewCategories[categoryIndex]?.devices.length || 0;
     const nextDeviceName = `Novo aparelho ${nextDeviceIndex + 1}`;
 
@@ -1179,11 +1189,11 @@ const AdminRetailerPriceTables = () => {
     );
     setCollapsedCategories((current) => ({
       ...current,
-      [`${categoryIndex}-${categoryName}`]: false,
+      [getCategoryUiKey(categoryIndex)]: false,
     }));
     setCollapsedDevices((current) => ({
       ...current,
-      [`${categoryIndex}-${nextDeviceIndex}-${nextDeviceName}`]: false,
+      [getDeviceUiKey(categoryIndex, nextDeviceIndex)]: false,
     }));
     setPendingStructureFocus({
       categoryIndex,
@@ -1811,11 +1821,11 @@ const AdminRetailerPriceTables = () => {
     const nextDevices: Record<string, boolean> = {};
 
     structuredPreviewCategories.forEach((category, categoryIndex) => {
-      const categoryKey = `${categoryIndex}-${category.name}`;
+      const categoryKey = getCategoryUiKey(categoryIndex);
       nextCategories[categoryKey] = collapsed;
 
       category.devices.forEach((device, deviceIndex) => {
-        const deviceKey = `${categoryIndex}-${deviceIndex}-${device.name}`;
+        const deviceKey = getDeviceUiKey(categoryIndex, deviceIndex);
         nextDevices[deviceKey] = collapsed;
       });
     });
@@ -2478,7 +2488,7 @@ const AdminRetailerPriceTables = () => {
                       );
                     const categoryHasIssues =
                       categoryPendingPrices > 0 || categoryInvalidPrices > 0 || categoryMissingNames > 0;
-                    const categoryKey = `${category.categoryIndex}-${category.name}`;
+                    const categoryKey = getCategoryUiKey(category.categoryIndex);
                     const isCategoryCollapsed = collapsedCategories[categoryKey] ?? true;
 
                     return (
@@ -2585,7 +2595,7 @@ const AdminRetailerPriceTables = () => {
 
                         {!isCategoryCollapsed ? <div className="space-y-4 p-4">
                           {category.devices.map((device) => {
-                            const deviceKey = `${category.categoryIndex}-${device.deviceIndex}-${device.name}`;
+                            const deviceKey = getDeviceUiKey(category.categoryIndex, device.deviceIndex);
                             const isDeviceCollapsed = collapsedDevices[deviceKey] ?? true;
                             const devicePendingPrices = device.services.filter(
                               (service) => service.priceText.trim().length === 0
@@ -2871,7 +2881,11 @@ const AdminRetailerPriceTables = () => {
                                   <div className="mt-4 space-y-3">
                                     {device.services.map((service) => (
                                       <div
-                                        key={`${category.categoryIndex}-${device.deviceIndex}-${service.serviceIndex}-${service.name}`}
+                                        key={getServiceUiKey(
+                                          category.categoryIndex,
+                                          device.deviceIndex,
+                                          service.serviceIndex
+                                        )}
                                         className={`grid gap-3 rounded-[20px] border p-3.5 shadow-sm transition-colors hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_180px_120px_auto_auto_auto_auto] ${
                                           service.priceText.trim().length > 0 &&
                                           parsePriceValue(service.priceText.trim()) !== null
