@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   retailerPriceTablesService,
   RetailerPriceTableRecord,
@@ -90,7 +89,7 @@ const categoryLineRegex =
 const normalizeWhitespace = (value: string) => value.replace(/\s+/g, " ").trim();
 
 const normalizeCategoryName = (line: string) =>
-  normalizeWhitespace(line.replace(/[<>\p{Extended_Pictographic}]/gu, "").replace(/\s{2,}/g, " "));
+  normalizeWhitespace(line.replace(/[>\p{Extended_Pictographic}]/gu, "").replace(/\s{2,}/g, " "));
 
 const formatPriceText = (value: number) =>
   `R$${value.toLocaleString("pt-BR", {
@@ -167,7 +166,7 @@ const parseRetailerPriceTablePreview = (input: string) => {
     title: inferredTitle || "Tabela de Preços",
     effectiveDate: inferredDate,
     intro,
-    categories,
+    categories: categories.filter((category) => category.items.length > 0),
   };
 };
 
@@ -189,7 +188,7 @@ const serializeRetailerPriceTablePreview = (table: {
   }
 
   table.categories.forEach((category) => {
-    lines.push("", `> ${category.name} <`);
+    lines.push("", category.name);
     category.items.forEach((item) => {
       if (item.priceText) {
         lines.push(`${item.name} = ${item.priceText}`);
@@ -200,40 +199,6 @@ const serializeRetailerPriceTablePreview = (table: {
   });
 
   return lines.join("\n").trim();
-};
-
-const normalizeParsedTable = (table: {
-  title?: string;
-  effectiveDate?: string | null;
-  intro?: string[];
-  categories?: Array<{
-    name: string;
-    items: Array<{ name: string; priceText: string; priceValue: number | null }>;
-  }>;
-} | null | undefined) => {
-  if (!table) {
-    return {
-      title: "Tabela de Preços",
-      effectiveDate: null,
-      intro: [],
-      categories: [],
-    };
-  }
-
-  return {
-    title: table.title || "Tabela de Preços",
-    effectiveDate: table.effectiveDate || null,
-    intro: [...(table.intro || [])],
-    categories: (table.categories || []).map((category) => ({
-      ...category,
-      name: normalizeCategoryName(category.name || ""),
-      items: (category.items || []).map((item) => ({
-        ...item,
-        name: normalizeWhitespace(item.name || ""),
-        priceText: normalizeWhitespace(item.priceText || ""),
-      })),
-    })),
-  };
 };
 
 const getTableSummary = (table: Pick<RetailerPriceTableRecord, "parsed_data" | "raw_text">) => {
@@ -266,21 +231,6 @@ const getServiceUiKey = (
   serviceIndex: number
 ) => `service-${categoryIndex}-${deviceIndex}-${serviceIndex}`;
 
-const remapIndexedRecord = <T,>(
-  record: Record<number, T>,
-  mapper: (index: number) => number | null
-) => {
-  const next: Record<number, T> = {};
-
-  Object.entries(record).forEach(([key, value]) => {
-    const mappedIndex = mapper(Number(key));
-    if (mappedIndex === null) return;
-    next[mappedIndex] = value;
-  });
-
-  return next;
-};
-
 const buildDuplicateSlug = (sourceSlug: string, existingSlugs: string[]) => {
   const baseSlug = normalizeSlug(`${sourceSlug}-copia`) || "nova-tabela-copia";
   let nextSlug = baseSlug;
@@ -302,10 +252,7 @@ const AdminRetailerPriceTables = () => {
   const [allTables, setAllTables] = useState<RetailerPriceTableRecord[]>([]);
   const [tableSearch, setTableSearch] = useState("");
   const [tableFilter, setTableFilter] = useState<"all" | "visible" | "hidden" | "featured">("all");
-  const [newTableTitle, setNewTableTitle] = useState("");
   const [newSlug, setNewSlug] = useState("");
-  const [newSlugTouched, setNewSlugTouched] = useState(false);
-  const [newTableMode, setNewTableMode] = useState<"blank" | "template">("blank");
   const [title, setTitle] = useState("Tabela dos Vidros");
   const [effectiveDate, setEffectiveDate] = useState("");
   const [visibleToRetailers, setVisibleToRetailers] = useState(true);
@@ -319,9 +266,6 @@ const AdminRetailerPriceTables = () => {
   const [deviceBulkMode, setDeviceBulkMode] = useState<Record<string, "percent" | "set">>({});
   const [deviceBulkValue, setDeviceBulkValue] = useState<Record<string, string>>({});
   const [deviceServiceSource, setDeviceServiceSource] = useState<Record<string, string>>({});
-  const [emptyCategoryDrafts, setEmptyCategoryDrafts] = useState<
-    Record<number, { deviceName: string; serviceName: string; priceText: string }>
-  >({});
   const [serviceTemplates, setServiceTemplates] = useState<RetailerPriceTableServiceTemplate[]>([]);
   const [deviceTemplateSelection, setDeviceTemplateSelection] = useState<Record<string, string>>({});
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
@@ -331,7 +275,6 @@ const AdminRetailerPriceTables = () => {
   const newCategoryInputRef = useRef<HTMLInputElement | null>(null);
   const introLineRefs = useRef<Record<number, HTMLTextAreaElement | null>>({});
   const categoryNameRefs = useRef<Record<number, HTMLInputElement | null>>({});
-  const emptyCategoryDeviceRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const deviceNameRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [pendingStructureFocus, setPendingStructureFocus] = useState<{
     categoryIndex: number;
@@ -350,25 +293,6 @@ const AdminRetailerPriceTables = () => {
     deviceIndex: number;
     serviceIndex: number;
   } | null>(null);
-
-  const resetTransientEditorState = () => {
-    setPreviewQuery("");
-    setNewCategoryName("");
-    setCollapsedCategories({});
-    setCollapsedDevices({});
-    setDeviceBulkMode({});
-    setDeviceBulkValue({});
-    setDeviceServiceSource({});
-    setEmptyCategoryDrafts({});
-    setDeviceTemplateSelection({});
-    setEditingTemplateId(null);
-    setEditingTemplateName("");
-    setPendingIntroFocusIndex(null);
-    setPendingCategoryFocusIndex(null);
-    setPendingStructureFocus(null);
-    setPendingServiceFocus(null);
-    setPendingServicePriceFocus(null);
-  };
 
   useEffect(() => {
     const load = async () => {
@@ -400,7 +324,6 @@ const AdminRetailerPriceTables = () => {
         setRawText(data.raw_text || "");
         setServiceTemplates(data.service_templates || []);
         setIsDraftTable(false);
-        resetTransientEditorState();
       } else {
         setRecord(null);
         setTitle("Tabela dos Vidros");
@@ -409,7 +332,6 @@ const AdminRetailerPriceTables = () => {
         setFeaturedToRetailers(false);
         setRawText("");
         setServiceTemplates([]);
-        resetTransientEditorState();
       }
       setLoading(false);
     };
@@ -418,15 +340,15 @@ const AdminRetailerPriceTables = () => {
   }, [isDraftTable, tableSlug]);
 
   const parsedPreview = useMemo(() => {
-    const baseTable = normalizeParsedTable(
-      rawText.trim() ? parseRetailerPriceTablePreview(rawText) : record?.parsed_data
-    );
+    const baseTable = rawText.trim()
+      ? parseRetailerPriceTablePreview(rawText)
+      : record?.parsed_data;
 
     return {
-      title: title.trim() || baseTable.title || tableSlug || "Tabela de Preços",
-      effectiveDate: effectiveDate.trim() || baseTable.effectiveDate || null,
-      intro: [...baseTable.intro],
-      categories: [...baseTable.categories],
+      title: title.trim() || baseTable?.title || tableSlug || "Tabela de Preços",
+      effectiveDate: effectiveDate.trim() || baseTable?.effectiveDate || null,
+      intro: [...(baseTable?.intro || [])],
+      categories: [...(baseTable?.categories || [])],
     };
   }, [effectiveDate, rawText, record, tableSlug, title]);
 
@@ -617,11 +539,6 @@ const AdminRetailerPriceTables = () => {
     });
   }, [allTables, tableFilter, tableSearch]);
 
-  const newTableDraftTitle = normalizeWhitespace(newTableTitle) || normalizeWhitespace(newSlug);
-  const normalizedNewTableSlug = normalizeSlug(newSlug || newTableTitle);
-  const suggestedNewTableSlug = normalizeSlug(newTableTitle);
-  const newTableSlugConflict = allTables.some((table) => table.slug === normalizedNewTableSlug);
-
   const hasUnsavedChanges =
     title !== (record?.title || "Tabela dos Vidros") ||
     effectiveDate !== (record?.effective_date || "") ||
@@ -639,14 +556,6 @@ const AdminRetailerPriceTables = () => {
 
     if (structuredPreviewCategories.length === 0) {
       checks.push({ label: "Cadastre ao menos uma categoria", tone: "error" });
-    }
-
-    // Verificar categorias com nomes duplicados
-    const categoryNames = structuredPreviewCategories.map(cat => cat.name.toLowerCase().trim());
-    const duplicateNames = categoryNames.filter((name, index) => categoryNames.indexOf(name) !== index);
-    const uniqueDuplicates = [...new Set(duplicateNames)];
-    if (uniqueDuplicates.length > 0) {
-      checks.push({ label: `Categoria(s) duplicada(s): ${uniqueDuplicates.join(", ")}`, tone: "error" });
     }
 
     if ((totalServices || totalItems) === 0) {
@@ -689,7 +598,6 @@ const AdminRetailerPriceTables = () => {
 
   const blockingPublicationChecks = publicationChecks.filter((check) => check.tone === "error");
   const publicationReady = blockingPublicationChecks.length === 0;
-  const defaultCatalogCollapsed = !isDraftTable;
 
   const handleVisibleToRetailersChange = (nextValue: boolean) => {
     setVisibleToRetailers(nextValue);
@@ -829,53 +737,6 @@ const AdminRetailerPriceTables = () => {
     }
   };
 
-  const handleQuickVisibilityToggle = async (
-    table: RetailerPriceTableRecord,
-    nextVisible: boolean
-  ) => {
-    try {
-      setSaving(true);
-
-      const saved = await retailerPriceTablesService.save(table.slug, {
-        title: table.title,
-        effectiveDate: table.effective_date || null,
-        visibleToRetailers: nextVisible,
-        featuredToRetailers: nextVisible ? table.featured_to_retailers : false,
-        rawText: table.raw_text,
-        serviceTemplates: table.service_templates || [],
-      });
-
-      if (!saved) {
-        toast.error("Nao foi possivel atualizar a publicacao da tabela");
-        return;
-      }
-
-      setAllTables((current) =>
-        current.map((entry) => (entry.slug === saved.slug ? saved : entry))
-      );
-
-      if (tableSlug === saved.slug) {
-        setRecord(saved);
-        setVisibleToRetailers(saved.visible_to_retailers);
-        setFeaturedToRetailers(saved.featured_to_retailers);
-        setTitle(saved.title);
-        setEffectiveDate(saved.effective_date || "");
-        setRawText(saved.raw_text || "");
-        setServiceTemplates(saved.service_templates || []);
-      }
-
-      toast.success(
-        nextVisible
-          ? "Tabela publicada para lojistas"
-          : "Tabela movida para rascunho e removida da area do lojista"
-      );
-    } catch (error: any) {
-      toast.error(error?.response?.data?.error || "Erro ao atualizar publicacao da tabela");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleTxtImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -965,38 +826,16 @@ const AdminRetailerPriceTables = () => {
     setFeaturedToRetailers(record?.featured_to_retailers ?? false);
     setRawText(record?.raw_text || "");
     setServiceTemplates(record?.service_templates || []);
-    resetTransientEditorState();
+    setPreviewQuery("");
     toast.success("Campos restaurados para a última versão salva");
   };
 
-  const handleNewTableTitleChange = (value: string) => {
-    setNewTableTitle(value);
-
-    if (!newSlugTouched) {
-      setNewSlug(normalizeSlug(value));
-    }
-  };
-
-  const handleNewTableSlugChange = (value: string) => {
-    setNewSlugTouched(true);
-    setNewSlug(value);
-  };
-
   const handleCreateNewTable = () => {
-    const draftTitle = normalizeWhitespace(newTableTitle) || normalizeWhitespace(newSlug);
-    const normalizedSlug = normalizeSlug(newSlug || newTableTitle);
-    const templatePreview = parseRetailerPriceTablePreview(SAMPLE_TEMPLATE);
-    const seededRawText =
-      newTableMode === "template"
-        ? serializeRetailerPriceTablePreview({
-            ...templatePreview,
-            title: draftTitle || "Nova Tabela",
-            effectiveDate: null,
-          })
-        : "";
+    const draftTitle = newSlug.trim();
+    const normalizedSlug = normalizeSlug(newSlug);
 
     if (!normalizedSlug) {
-      toast.error("Informe um nome ou slug valido para a nova tabela");
+      toast.error("Informe um slug valido");
       return;
     }
 
@@ -1010,27 +849,13 @@ const AdminRetailerPriceTables = () => {
     setRecord(null);
     setTitle(draftTitle || normalizedSlug);
     setEffectiveDate("");
-    setVisibleToRetailers(false);
+    setVisibleToRetailers(true);
     setFeaturedToRetailers(false);
-    setRawText(seededRawText);
+    setRawText("");
     setServiceTemplates([]);
-    resetTransientEditorState();
-    setNewTableTitle("");
+    setPreviewQuery("");
     setNewSlug("");
-    setNewSlugTouched(false);
-    setNewTableMode("blank");
-    window.requestAnimationFrame(() => {
-      if (seededRawText) {
-        titleInputRef.current?.focus();
-      } else {
-        newCategoryInputRef.current?.focus();
-      }
-    });
-    toast.success(
-      seededRawText
-        ? "Nova tabela criada com modelo-base em rascunho. Ajuste a estrutura e salve quando quiser."
-        : "Nova tabela criada como rascunho. Monte a categoria e salve quando quiser."
-    );
+    toast.success("Nova tabela criada no editor. Preencha e salve quando quiser.");
   };
 
   const handleDuplicateTable = async (sourceTable: RetailerPriceTableRecord) => {
@@ -1141,7 +966,11 @@ const AdminRetailerPriceTables = () => {
     updater: (table: NonNullable<typeof parsedPreview>) => NonNullable<typeof parsedPreview>
   ) => {
     const updated = updater(parsedPreview);
+    console.log("replacePreviewTable called");
+    console.log("Current parsedPreview:", parsedPreview);
+    console.log("Updated table:", updated);
     setRawText(serializeRetailerPriceTablePreview(updated));
+    console.log("Raw text updated to:", serializeRetailerPriceTablePreview(updated));
   };
 
   const replaceStructuredPreviewCategories = (
@@ -1203,37 +1032,40 @@ const AdminRetailerPriceTables = () => {
   };
 
   const handleAddCategory = () => {
+    console.log("handleAddCategory called");
+    console.log("newCategoryName:", newCategoryName);
+    console.log("newCategoryName.trim():", newCategoryName.trim());
+
     if (!newCategoryName.trim()) {
+      console.log("Category name is empty, showing error");
       toast.error("Informe o nome da categoria");
       return;
     }
 
     const trimmedCategoryName = newCategoryName.trim();
-    const existingCategory = structuredPreviewCategories.find(
-      (cat) => cat.name.toLowerCase() === trimmedCategoryName.toLowerCase()
-    );
-
-    if (existingCategory) {
-      toast.error("Já existe uma categoria com este nome");
-      return;
-    }
-
     const createdCategoryIndex = structuredPreviewCategories.length;
 
+    console.log("Adding category:", trimmedCategoryName);
+    console.log("Current structuredPreviewCategories:", structuredPreviewCategories);
+
     replaceStructuredPreviewCategories((categories) => {
-      return [
+      const newCategories = [
         ...categories,
         {
           name: trimmedCategoryName,
           devices: [
             {
-              name: "Aparelho exemplo",
+              name: "Novo aparelho",
               services: [{ name: "Preco base", priceText: "", priceValue: null }],
             },
           ],
         },
       ];
+      console.log("New categories array:", newCategories);
+      return newCategories;
     });
+
+    console.log("Category added to state, updating collapsed states");
 
     setCollapsedCategories((current) => ({
       ...current,
@@ -1243,10 +1075,14 @@ const AdminRetailerPriceTables = () => {
       ...current,
       [getDeviceUiKey(createdCategoryIndex, 0)]: false,
     }));
-    setPendingStructureFocus({ categoryIndex: createdCategoryIndex, deviceIndex: 0 });
+    setPendingStructureFocus({
+      categoryIndex: createdCategoryIndex,
+      deviceIndex: 0,
+    });
     setNewCategoryName("");
 
-    toast.success("Categoria adicionada com aparelho exemplo");
+    console.log("All state updates completed");
+    toast.success("Categoria adicionada");
   };
 
   const toggleCategoryCollapsed = (categoryKey: string) => {
@@ -1284,79 +1120,11 @@ const AdminRetailerPriceTables = () => {
     }));
   };
 
-  const handleEmptyCategoryDraftChange = (
-    categoryIndex: number,
-    field: "deviceName" | "serviceName" | "priceText",
-    value: string
-  ) => {
-    setEmptyCategoryDrafts((current) => ({
-      ...current,
-      [categoryIndex]: {
-        deviceName: current[categoryIndex]?.deviceName || "",
-        serviceName: current[categoryIndex]?.serviceName || "",
-        priceText: current[categoryIndex]?.priceText || "",
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleEmptyCategoryDraftKeyDown = (
-    event: React.KeyboardEvent<HTMLInputElement>,
-    categoryIndex: number
-  ) => {
-    if (event.key !== "Enter") return;
-
-    event.preventDefault();
-    handleCreateFirstDevice(categoryIndex);
-  };
-
-  const handleEmptyCategoryPriceBlur = (categoryIndex: number) => {
-    const currentPriceText = emptyCategoryDrafts[categoryIndex]?.priceText?.trim() || "";
-    if (!currentPriceText) return;
-
-    const parsedValue = parsePriceValue(currentPriceText);
-    if (parsedValue === null) return;
-
-    setEmptyCategoryDrafts((current) => ({
-      ...current,
-      [categoryIndex]: {
-        deviceName: current[categoryIndex]?.deviceName || "",
-        serviceName: current[categoryIndex]?.serviceName || "",
-        priceText: formatPriceText(parsedValue),
-      },
-    }));
-  };
-
-  const handleEmptyCategoryServiceBlur = (categoryIndex: number) => {
-    const currentDraft = emptyCategoryDrafts[categoryIndex];
-    if (!currentDraft) return;
-
-    if (currentDraft.serviceName.trim()) return;
-
-    setEmptyCategoryDrafts((current) => ({
-      ...current,
-      [categoryIndex]: {
-        deviceName: current[categoryIndex]?.deviceName || "",
-        serviceName: "Preco base",
-        priceText: current[categoryIndex]?.priceText || "",
-      },
-    }));
-  };
-
   const handleDeviceTemplateSelectionChange = (deviceKey: string, value: string) => {
     setDeviceTemplateSelection((current) => ({
       ...current,
       [deviceKey]: value,
     }));
-  };
-
-  const handleClearEmptyCategoryDraft = (categoryIndex: number) => {
-    setEmptyCategoryDrafts((current) => {
-      const next = { ...current };
-      delete next[categoryIndex];
-      return next;
-    });
-    emptyCategoryDeviceRefs.current[categoryIndex]?.focus();
   };
 
   const handleRemoveCategory = (categoryIndex: number) => {
@@ -1371,12 +1139,6 @@ const AdminRetailerPriceTables = () => {
 
     replaceStructuredPreviewCategories((categories) =>
       categories.filter((_, index) => index !== categoryIndex)
-    );
-    setEmptyCategoryDrafts((current) =>
-      remapIndexedRecord(current, (index) => {
-        if (index === categoryIndex) return null;
-        return index > categoryIndex ? index - 1 : index;
-      })
     );
     toast.success("Categoria removida");
   };
@@ -1395,26 +1157,16 @@ const AdminRetailerPriceTables = () => {
   };
 
   const handleMoveCategory = (categoryIndex: number, direction: "up" | "down") => {
-    const targetIndex = direction === "up" ? categoryIndex - 1 : categoryIndex + 1;
-    if (targetIndex < 0 || targetIndex >= structuredPreviewCategories.length) return;
-
     replaceStructuredPreviewCategories((categories) => {
       const nextCategories = [...categories];
+      const targetIndex = direction === "up" ? categoryIndex - 1 : categoryIndex + 1;
+      if (targetIndex < 0 || targetIndex >= nextCategories.length) return categories;
       [nextCategories[categoryIndex], nextCategories[targetIndex]] = [nextCategories[targetIndex], nextCategories[categoryIndex]];
       return nextCategories;
     });
-    setEmptyCategoryDrafts((current) =>
-      remapIndexedRecord(current, (index) => {
-        if (index === categoryIndex) return targetIndex;
-        if (index === targetIndex) return categoryIndex;
-        return index;
-      })
-    );
   };
 
   const handleDuplicateCategory = (categoryIndex: number) => {
-    const sourceDraft = emptyCategoryDrafts[categoryIndex];
-
     replaceStructuredPreviewCategories((categories) => {
       const sourceCategory = categories[categoryIndex];
       if (!sourceCategory) return categories;
@@ -1433,22 +1185,6 @@ const AdminRetailerPriceTables = () => {
         duplicatedCategory,
         ...categories.slice(categoryIndex + 1),
       ];
-    });
-    setEmptyCategoryDrafts((current) => {
-      const shifted = remapIndexedRecord(current, (index) =>
-        index > categoryIndex ? index + 1 : index
-      );
-
-      if (!sourceDraft) return shifted;
-
-      return {
-        ...shifted,
-        [categoryIndex + 1]: {
-          deviceName: sourceDraft.deviceName,
-          serviceName: sourceDraft.serviceName,
-          priceText: sourceDraft.priceText,
-        },
-      };
     });
 
     toast.success("Categoria duplicada");
@@ -1487,64 +1223,6 @@ const AdminRetailerPriceTables = () => {
       deviceIndex: nextDeviceIndex,
     });
     toast.success("Aparelho adicionado");
-  };
-
-  const handleCreateFirstDevice = (categoryIndex: number) => {
-    const draft = emptyCategoryDrafts[categoryIndex];
-    const deviceName = draft?.deviceName?.trim() || "";
-    const serviceName = draft?.serviceName?.trim() || "Preco base";
-    const priceText = draft?.priceText?.trim() || "";
-
-    if (!deviceName) {
-      toast.error("Informe o nome do aparelho para iniciar a categoria");
-      emptyCategoryDeviceRefs.current[categoryIndex]?.focus();
-      return;
-    }
-
-    replaceStructuredPreviewCategories((categories) =>
-      categories.map((category, index) =>
-        index === categoryIndex
-          ? {
-              ...category,
-              devices: [
-                {
-                  name: deviceName,
-                  services: [{ name: serviceName, priceText, priceValue: parsePriceValue(priceText) }],
-                },
-              ],
-            }
-          : category
-      )
-    );
-
-    setCollapsedCategories((current) => ({
-      ...current,
-      [getCategoryUiKey(categoryIndex)]: false,
-    }));
-    setCollapsedDevices((current) => ({
-      ...current,
-      [getDeviceUiKey(categoryIndex, 0)]: false,
-    }));
-    setEmptyCategoryDrafts((current) => {
-      const next = { ...current };
-      delete next[categoryIndex];
-      return next;
-    });
-
-    if (!priceText) {
-      setPendingServicePriceFocus({
-        categoryIndex,
-        deviceIndex: 0,
-        serviceIndex: 0,
-      });
-    } else {
-      setPendingStructureFocus({
-        categoryIndex,
-        deviceIndex: 0,
-      });
-    }
-
-    toast.success("Primeiro aparelho criado na categoria");
   };
 
   const handleUpdateDeviceName = (
@@ -1840,30 +1518,6 @@ const AdminRetailerPriceTables = () => {
             }
           : category
       )
-    );
-  };
-
-  const handleServicePriceBlur = (
-    categoryIndex: number,
-    deviceIndex: number,
-    serviceIndex: number
-  ) => {
-    const currentPriceText =
-      structuredPreviewCategories[categoryIndex]?.devices[deviceIndex]?.services[
-        serviceIndex
-      ]?.priceText?.trim() || "";
-
-    if (!currentPriceText) return;
-
-    const parsedValue = parsePriceValue(currentPriceText);
-    if (parsedValue === null) return;
-
-    handleUpdateService(
-      categoryIndex,
-      deviceIndex,
-      serviceIndex,
-      "priceText",
-      formatPriceText(parsedValue)
     );
   };
 
@@ -2245,91 +1899,24 @@ const AdminRetailerPriceTables = () => {
                   <CardContent className="space-y-4">
                     <div className="rounded-[22px] border border-sky-100 bg-[linear-gradient(135deg,rgba(239,246,255,1),rgba(255,255,255,1))] p-4 shadow-sm">
                       <p className="text-xs uppercase tracking-[0.18em] text-sky-700">Nova entrada</p>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Abra uma nova tabela com nome comercial, slug sugerido e publicação como rascunho para montar a estrutura com calma.
-                      </p>
+                      <p className="mt-2 text-sm text-muted-foreground">Abra uma nova tabela a partir do slug e componha toda a estrutura no estúdio.</p>
                       <div className="mt-4 grid gap-3">
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            variant={newTableMode === "blank" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setNewTableMode("blank")}
-                          >
-                            Em branco
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={newTableMode === "template" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setNewTableMode("template")}
-                          >
-                            Com modelo-base
-                          </Button>
-                          <Badge variant="outline">
-                            {newTableMode === "template"
-                              ? "Abre com categorias e serviços iniciais"
-                              : "Abre pronta para montar do zero"}
-                          </Badge>
-                        </div>
-                        <Input
-                          value={newTableTitle}
-                          onChange={(e) => handleNewTableTitleChange(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleCreateNewTable();
-                            }
-                          }}
-                          placeholder="Nome da tabela"
-                          className="bg-white"
-                        />
-                        <Input
-                          value={newSlug}
-                          onChange={(e) => handleNewTableSlugChange(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleCreateNewTable();
-                            }
-                          }}
-                          placeholder="slug-da-tabela"
-                          className="bg-white"
-                        />
-                        <div className="flex flex-wrap gap-2">
-                          <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100">
-                            {newTableDraftTitle ? `Nome: ${newTableDraftTitle}` : "Nome pendente"}
-                          </Badge>
-                          <Badge
-                            className={
-                              !normalizedNewTableSlug
-                                ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                                : newTableSlugConflict
-                                  ? "bg-rose-100 text-rose-700 hover:bg-rose-100"
-                                  : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                            }
-                          >
-                            {!normalizedNewTableSlug
-                              ? "Slug pendente"
-                              : newTableSlugConflict
-                                ? `Slug em uso: ${normalizedNewTableSlug}`
-                                : `Slug pronto: ${normalizedNewTableSlug}`}
-                          </Badge>
-                          <Badge variant="outline">Nova tabela abre em rascunho</Badge>
-                          <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100">
-                            {newTableMode === "template" ? "Base: modelo inicial" : "Base: vazia"}
-                          </Badge>
-                        </div>
-                        {suggestedNewTableSlug && !newSlugTouched && suggestedNewTableSlug !== newSlug ? (
-                          <p className="text-xs text-muted-foreground">
-                            Slug sugerido: <span className="font-medium text-foreground">{suggestedNewTableSlug}</span>
-                          </p>
-                        ) : null}
-                        <Button type="button" onClick={handleCreateNewTable} disabled={!normalizedNewTableSlug || newTableSlugConflict}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Criar nova tabela
-                        </Button>
-                      </div>
+                      <Input
+                        value={newSlug}
+                        onChange={(e) => setNewSlug(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleCreateNewTable();
+                          }
+                        }}
+                        placeholder="novo-slug"
+                      />
+                      <Button type="button" onClick={handleCreateNewTable}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Nova tabela
+                      </Button>
+                    </div>
                     </div>
 
                     <div className="rounded-[22px] border border-border/70 bg-muted/10 p-4">
@@ -2388,19 +1975,6 @@ const AdminRetailerPriceTables = () => {
                               </div>
                             </div>
                             <div className="mt-4 flex flex-wrap gap-2">
-                              <Button
-                                type="button"
-                                variant={table.visible_to_retailers ? "outline" : "default"}
-                                size="sm"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleQuickVisibilityToggle(table, !table.visible_to_retailers);
-                                }}
-                                disabled={saving}
-                              >
-                                <Upload className="mr-2 h-4 w-4" />
-                                {table.visible_to_retailers ? "Mover para rascunho" : "Publicar"}
-                              </Button>
                               <Button
                                 type="button"
                                 variant="outline"
@@ -2650,9 +2224,7 @@ const AdminRetailerPriceTables = () => {
                 <div className="flex items-center justify-between rounded-[22px] border border-emerald-100 bg-[linear-gradient(135deg,rgba(236,253,245,1),rgba(255,255,255,1))] p-4 shadow-sm">
                   <div>
                     <p className="text-sm font-medium">Visível para lojistas</p>
-                    <p className="text-xs text-muted-foreground">
-                      Controla a publicação na área do lojista. Se estiver desligado, a tabela nao aparece para o lojista.
-                    </p>
+                    <p className="text-xs text-muted-foreground">Controla a publicação na área do lojista.</p>
                   </div>
                   <Checkbox checked={visibleToRetailers} onCheckedChange={(value) => handleVisibleToRetailersChange(Boolean(value))} />
                 </div>
@@ -2679,17 +2251,9 @@ const AdminRetailerPriceTables = () => {
                       </p>
                     </div>
                     <Badge variant={publicationReady ? "outline" : "secondary"}>
-                        {blockingPublicationChecks.length} bloqueio(s)
+                      {blockingPublicationChecks.length} bloqueio(s)
                     </Badge>
                   </div>
-                  {!visibleToRetailers ? (
-                    <div className="mt-4 rounded-[18px] border border-amber-200 bg-[linear-gradient(135deg,rgba(255,251,235,1),rgba(255,255,255,1))] p-4">
-                      <p className="text-sm font-medium text-amber-800">Tabela em rascunho</p>
-                      <p className="mt-1 text-xs leading-5 text-amber-700">
-                        No estado atual, esta tabela fica oculta para o lojista. Ative "Visível para lojistas" e salve, ou use o botão "Publicar" na biblioteca.
-                      </p>
-                    </div>
-                  ) : null}
                   <div className="mt-4 flex flex-wrap gap-2">
                     {publicationChecks.length === 0 ? (
                       <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
@@ -2863,29 +2427,19 @@ const AdminRetailerPriceTables = () => {
                     <CardDescription>Monte a tabela como catálogo: categoria, aparelho e serviços com preço.</CardDescription>
                   </div>
                   <div className="flex flex-wrap gap-2 rounded-[22px] border border-slate-200 bg-slate-50/80 p-3">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Input
-                          ref={newCategoryInputRef}
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleAddCategory();
-                            }
-                          }}
-                          placeholder="Ex.: Samsung"
-                          className="w-full lg:w-56"
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Digite o nome da categoria (ex: Samsung, Motorola)</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          No texto bruto, categorias são detectadas automaticamente quando escritas em maiúsculo
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <Input
+                      ref={newCategoryInputRef}
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddCategory();
+                        }
+                      }}
+                      placeholder="Ex.: Samsung"
+                      className="w-full lg:w-56"
+                    />
                     <Input
                       value={previewQuery}
                       onChange={(e) => setPreviewQuery(e.target.value)}
@@ -2965,22 +2519,7 @@ const AdminRetailerPriceTables = () => {
                     const categoryHasIssues =
                       categoryPendingPrices > 0 || categoryInvalidPrices > 0 || categoryMissingNames > 0;
                     const categoryKey = getCategoryUiKey(category.categoryIndex);
-                    const isCategoryCollapsed =
-                      collapsedCategories[categoryKey] ?? defaultCatalogCollapsed;
-                    const emptyCategoryDraft = emptyCategoryDrafts[category.categoryIndex];
-                    const emptyCategoryPriceText = emptyCategoryDraft?.priceText?.trim() || "";
-                    const emptyCategoryPriceValue = emptyCategoryPriceText
-                      ? parsePriceValue(emptyCategoryPriceText)
-                      : null;
-                    const emptyCategoryPriceTone =
-                      emptyCategoryPriceText.length === 0
-                        ? "neutral"
-                        : emptyCategoryPriceValue === null
-                          ? "invalid"
-                          : "valid";
-                    const emptyCategoryServiceText =
-                      emptyCategoryDraft?.serviceName?.trim() || "";
-                    const emptyCategoryUsesBaseService = emptyCategoryServiceText.length === 0;
+                    const isCategoryCollapsed = collapsedCategories[categoryKey] ?? true;
 
                     return (
                       <div
@@ -3085,129 +2624,9 @@ const AdminRetailerPriceTables = () => {
                         </div>
 
                         {!isCategoryCollapsed ? <div className="space-y-4 p-4">
-                          {category.devices.length === 0 ? (
-                            <div className="rounded-[20px] border border-dashed border-sky-200 bg-sky-50/60 p-4">
-                              <p className="text-sm font-medium text-foreground">Categoria pronta para montar</p>
-                              <p className="mt-1 text-sm text-muted-foreground">
-                                Esta categoria ainda não tem aparelhos. Adicione o primeiro item para começar a preencher os serviços e preços.
-                              </p>
-                              <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_180px_auto]">
-                                <Input
-                                  ref={(element) => {
-                                    emptyCategoryDeviceRefs.current[category.categoryIndex] = element;
-                                  }}
-                                  value={emptyCategoryDrafts[category.categoryIndex]?.deviceName || ""}
-                                  onChange={(e) =>
-                                    handleEmptyCategoryDraftChange(
-                                      category.categoryIndex,
-                                      "deviceName",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleEmptyCategoryDraftKeyDown(e, category.categoryIndex)
-                                  }
-                                  placeholder="Primeiro aparelho"
-                                  className="bg-white"
-                                />
-                                <Input
-                                  value={emptyCategoryDrafts[category.categoryIndex]?.serviceName || ""}
-                                  onChange={(e) =>
-                                    handleEmptyCategoryDraftChange(
-                                      category.categoryIndex,
-                                      "serviceName",
-                                      e.target.value
-                                    )
-                                  }
-                                  onBlur={() =>
-                                    handleEmptyCategoryServiceBlur(category.categoryIndex)
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleEmptyCategoryDraftKeyDown(e, category.categoryIndex)
-                                  }
-                                  placeholder="Primeiro serviço ou Preco base"
-                                  className="bg-white"
-                                />
-                                <Input
-                                  value={emptyCategoryDrafts[category.categoryIndex]?.priceText || ""}
-                                  onChange={(e) =>
-                                    handleEmptyCategoryDraftChange(
-                                      category.categoryIndex,
-                                      "priceText",
-                                      e.target.value
-                                    )
-                                  }
-                                  onBlur={() => handleEmptyCategoryPriceBlur(category.categoryIndex)}
-                                  onKeyDown={(e) =>
-                                    handleEmptyCategoryDraftKeyDown(e, category.categoryIndex)
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="Preço inicial"
-                                  className={
-                                    emptyCategoryPriceTone === "neutral"
-                                      ? "border-slate-200 bg-white"
-                                      : emptyCategoryPriceTone === "valid"
-                                        ? "border-emerald-200 bg-white text-emerald-700"
-                                        : "border-rose-200 bg-white text-rose-700"
-                                  }
-                                />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="border-sky-200 bg-white"
-                                  onClick={() => handleCreateFirstDevice(category.categoryIndex)}
-                                >
-                                  <Plus className="mr-2 h-4 w-4" />
-                                  Criar primeiro
-                                </Button>
-                              </div>
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="border-slate-200 bg-white"
-                                  onClick={() => handleAddDevice(category.categoryIndex)}
-                                >
-                                  Começar vazio
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-slate-600 hover:bg-white"
-                                  onClick={() => handleClearEmptyCategoryDraft(category.categoryIndex)}
-                                >
-                                  Limpar campos
-                                </Button>
-                                <Badge variant="outline">Serviço vazio vira "Preco base"</Badge>
-                                {emptyCategoryUsesBaseService ? (
-                                  <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100">
-                                    Primeiro serviço: Preco base
-                                  </Badge>
-                                ) : null}
-                                <Badge
-                                  className={
-                                    emptyCategoryPriceTone === "neutral"
-                                      ? "bg-slate-100 text-slate-700 hover:bg-slate-100"
-                                      : emptyCategoryPriceTone === "valid"
-                                        ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                                        : "bg-rose-100 text-rose-700 hover:bg-rose-100"
-                                  }
-                                >
-                                  {emptyCategoryPriceTone === "neutral"
-                                    ? "Preço opcional"
-                                    : emptyCategoryPriceTone === "valid"
-                                      ? "Preço válido"
-                                      : "Preço inválido"}
-                                </Badge>
-                              </div>
-                            </div>
-                          ) : null}
                           {category.devices.map((device) => {
                             const deviceKey = getDeviceUiKey(category.categoryIndex, device.deviceIndex);
-                            const isDeviceCollapsed =
-                              collapsedDevices[deviceKey] ?? defaultCatalogCollapsed;
+                            const isDeviceCollapsed = collapsedDevices[deviceKey] ?? true;
                             const devicePendingPrices = device.services.filter(
                               (service) => service.priceText.trim().length === 0
                             ).length;
@@ -3529,14 +2948,6 @@ const AdminRetailerPriceTables = () => {
                                       onChange={(e) =>
                                         handleUpdateService(category.categoryIndex, device.deviceIndex, service.serviceIndex, "priceText", e.target.value)
                                       }
-                                      onBlur={() =>
-                                        handleServicePriceBlur(
-                                          category.categoryIndex,
-                                          device.deviceIndex,
-                                          service.serviceIndex
-                                        )
-                                      }
-                                      inputMode="decimal"
                                       placeholder="Ex.: R$ 149,90"
                                       className={`h-10 font-medium ${
                                         service.priceText.trim().length === 0

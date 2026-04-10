@@ -9,7 +9,6 @@ import {
   PackageSearch,
   Search,
   Smartphone,
-  Star,
   Tablet,
   Watch,
   type LucideProps,
@@ -157,13 +156,13 @@ const getBrandTheme = (brandName: string, deviceName: string) => {
   }
 
   return {
-    iconBg: "bg-primary/10",
-    iconText: "text-primary",
-    badge: "border-primary/20 bg-primary/5 text-primary",
-    familyBadge: "border-primary/20 bg-white text-primary",
-    chip: "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10",
-    price: "bg-primary/10 text-primary",
-    dot: "bg-primary/70",
+    iconBg: "bg-slate-100",
+    iconText: "text-slate-700",
+    badge: "border-slate-200 bg-slate-100 text-slate-800",
+    familyBadge: "border-slate-200 bg-white text-slate-800",
+    chip: "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200",
+    price: "bg-slate-100 text-slate-800",
+    dot: "bg-slate-500",
   };
 };
 
@@ -178,13 +177,22 @@ const getLowestPriceValue = (
   return Math.min(...values);
 };
 
-const getTableSummary = (table: {
-  parsed_data: {
-    intro: string[];
-  };
-}) =>
+const isBasePriceService = (serviceName: string) => {
+  const normalized = serviceName.trim().toLowerCase();
+  return normalized === "preco base" || normalized === "preço base";
+};
+
+const normalizePriceText = (priceText: string) =>
+  priceText
+    .trim()
+    .replace(/^(?:a partir(?: de)?\s*)/i, "")
+    .trim();
+
+const getTableSummary = (table: { parsed_data: { intro: string[] } }) =>
   table.parsed_data?.intro?.find((line) => line.trim().length > 0) ||
   "Tabela organizada para consulta rapida durante o atendimento.";
+
+type RetailerSortMode = "relevance" | "device" | "price";
 
 const RetailerPriceTables = () => {
   const [loading, setLoading] = useState(true);
@@ -194,6 +202,7 @@ const RetailerPriceTables = () => {
   const [intro, setIntro] = useState<string[]>([]);
   const [brands, setBrands] = useState<RetailerPriceTableBrand[]>([]);
   const [activeBrand, setActiveBrand] = useState("Todas");
+  const [sortMode, setSortMode] = useState<RetailerSortMode>("relevance");
   const [copiedServiceKey, setCopiedServiceKey] = useState("");
   const [allTables, setAllTables] = useState<Array<{
     slug: string;
@@ -252,8 +261,11 @@ const RetailerPriceTables = () => {
     setActiveBrand("Todas");
   }, [selectedTable]);
 
+  const normalizedSearchQuery = search.trim().toLowerCase();
+  const hasActiveSearch = normalizedSearchQuery.length > 0;
+
   const filteredBrands = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = normalizedSearchQuery;
     const searchFiltered = !query
       ? brands
       : brands
@@ -277,7 +289,7 @@ const RetailerPriceTables = () => {
 
     if (activeBrand === "Todas") return searchFiltered;
     return searchFiltered.filter((brand) => brand.name === activeBrand);
-  }, [activeBrand, brands, search]);
+  }, [activeBrand, brands, normalizedSearchQuery]);
 
   const brandTabs = useMemo(
     () => ["Todas", ...brands.map((brand) => brand.name)],
@@ -296,15 +308,50 @@ const RetailerPriceTables = () => {
     [filteredBrands]
   );
 
+  const groupedDeviceCatalog = useMemo(
+    () =>
+      filteredBrands.map((brand) => {
+        const devices = [...brand.devices];
+
+        if (sortMode === "device") {
+          devices.sort((left, right) => left.name.localeCompare(right.name, "pt-BR"));
+        } else if (sortMode === "price") {
+          devices.sort((left, right) => {
+            const leftValue = getLowestPriceValue(left.services) ?? Number.POSITIVE_INFINITY;
+            const rightValue = getLowestPriceValue(right.services) ?? Number.POSITIVE_INFINITY;
+            if (leftValue !== rightValue) return leftValue - rightValue;
+            return left.name.localeCompare(right.name, "pt-BR");
+          });
+        }
+
+        return {
+          brand,
+          devices: devices.map((device) => ({
+            key: `${brand.name}::${device.name}`,
+            device,
+          })),
+        };
+      }),
+    [filteredBrands, sortMode]
+  );
+
   const totalDevices = useMemo(() => countBrandDevices(filteredBrands), [filteredBrands]);
   const totalServices = useMemo(() => countBrandServices(filteredBrands), [filteredBrands]);
 
+  const jumpToBrandGroup = (brandName: string) => {
+    const target = document.getElementById(`brand-group-${slugify(brandName)}`);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const handleCopyService = async (deviceName: string, serviceName: string, priceText: string) => {
-    const value = [deviceName, serviceName, priceText].filter(Boolean).join(" - ");
+    const normalizedPriceText = normalizePriceText(priceText);
+    const value = [deviceName, serviceName, normalizedPriceText].filter(Boolean).join(" - ");
 
     try {
       await navigator.clipboard.writeText(value);
-      const key = `${deviceName}::${serviceName}::${priceText}`;
+      const key = `${deviceName}::${serviceName}::${normalizedPriceText}`;
       setCopiedServiceKey(key);
       window.setTimeout(() => {
         setCopiedServiceKey((current) => (current === key ? "" : current));
@@ -316,54 +363,55 @@ const RetailerPriceTables = () => {
   };
 
   return (
+
     <RetailerLayout>
       <div className="space-y-6">
-        <section className="relative overflow-hidden rounded-[32px] border border-sky-100 bg-[linear-gradient(135deg,rgba(255,255,255,1)_0%,rgba(239,246,255,1)_38%,rgba(224,231,255,1)_100%)] p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-8">
-          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-sky-200/40 blur-3xl" />
-          <div className="absolute -bottom-16 left-0 h-44 w-44 rounded-full bg-indigo-200/30 blur-3xl" />
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_260px]">
-            <div className="relative z-10 space-y-4">
-              <Badge className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/10">
+        {/* Cabeçalho profissional */}
+        <section className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 p-4 shadow-[0_12px_35px_rgba(15,23,42,0.06)] sm:p-6 md:p-8 lg:p-10 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-sky-200/30 blur-3xl dark:bg-sky-900/20" />
+          <div className="absolute -bottom-16 left-0 h-44 w-44 rounded-full bg-sky-300/20 blur-3xl dark:bg-sky-900/10" />
+          <div className="grid gap-8 md:grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="relative z-10 space-y-5">
+              <Badge className="border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100">
                 Balcão de Preços
               </Badge>
               <div className="space-y-3">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{title}</h1>
-                <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+                <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">{title}</h1>
+                <p className="max-w-2xl text-base leading-6 text-slate-600 dark:text-slate-300">
                   Consulte aparelhos e valores em um painel direto, pensado para resposta rápida durante atendimento e negociação.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-3">
-                {effectiveDate ? <Badge variant="outline">Atualizada em {effectiveDate}</Badge> : null}
-                <Badge variant="outline">{allTables.length} tabela(s)</Badge>
-                <Badge variant="outline">{filteredBrands.length} marca(s)</Badge>
-                <Badge variant="outline">{deviceCatalog.length} aparelho(s)</Badge>
-                <Badge variant="outline">{totalServices} servico(s)</Badge>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                {effectiveDate ? <span>Atualizada em {effectiveDate}</span> : null}
+                <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100">{allTables.length} tabela(s)</span>
+                <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100">{filteredBrands.length} marca(s)</span>
+                <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100">{deviceCatalog.length} aparelho(s)</span>
               </div>
             </div>
-
-            <div className="relative z-10 rounded-[24px] border border-white/70 bg-white/80 p-5 backdrop-blur">
-              <p className="text-sm font-semibold text-foreground">Modo de uso</p>
-              <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                <p>1. Escolha a tabela certa para a negociação.</p>
-                <p>2. Filtre por marca ou pesquise o aparelho.</p>
-                <p>3. Compare serviços e valores no mesmo cartão.</p>
+            <div className="relative z-10 rounded-[24px] border border-sky-200/80 bg-white/90 p-6 shadow-md dark:border-sky-800/80 dark:bg-slate-950/90">
+              <p className="text-base font-bold text-sky-900 dark:text-sky-100">Como usar</p>
+              <div className="mt-3 grid gap-2 text-sm text-slate-700 dark:text-slate-300 sm:grid-cols-1">
+                <p>1. Selecione a tabela certa para o atendimento.</p>
+                <p>2. Filtre por marca ou pesquise o modelo.</p>
+                <p>3. Compare preços e copie com um clique.</p>
               </div>
             </div>
           </div>
         </section>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)]">
+          {/* Painel lateral profissional */}
+          <aside className="space-y-5 md:max-w-full xl:max-w-xs">
             {!loading && allTables.length > 0 ? (
-              <Card className="rounded-[28px] border-border/70 shadow-[0_12px_35px_rgba(15,23,42,0.06)]">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Layers3 className="h-5 w-5 text-primary" />
-                    Tabelas
-                  </CardTitle>
-                  <CardDescription>Troque a tabela ativa antes de consultar os valores.</CardDescription>
+              <Card className="rounded-[24px] border-sky-200/70 shadow-md dark:border-sky-800/70">
+                <CardHeader className="pb-0">
+                  <div className="flex items-center gap-2">
+                    <Layers3 className="h-5 w-5 text-sky-700 dark:text-sky-200" />
+                    <CardTitle className="text-base text-sky-900 dark:text-sky-100">Tabelas</CardTitle>
+                  </div>
+                  <CardDescription className="text-slate-600 dark:text-slate-300">Selecione a tabela que será usada na busca.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2 pt-0">
                   {allTables.map((table) => {
                     const isActive = table.slug === (selectedTable?.slug || "");
                     return (
@@ -371,22 +419,26 @@ const RetailerPriceTables = () => {
                         key={table.slug}
                         type="button"
                         onClick={() => setSelectedSlug(table.slug)}
-                        className={`w-full rounded-[22px] border p-4 text-left transition-all duration-200 ${
+                        className={`w-full rounded-[18px] border px-3 py-3 text-left transition-shadow duration-200 ${
                           isActive
-                            ? "border-primary bg-[linear-gradient(135deg,rgba(14,165,233,0.08),rgba(59,130,246,0.03))] shadow-[0_10px_28px_rgba(14,165,233,0.12)]"
-                            : "border-border/70 bg-background hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/20"
+                            ? "border-sky-500 bg-sky-50 shadow-sm dark:border-sky-700 dark:bg-sky-900"
+                            : "border-sky-200/70 bg-white hover:border-sky-300 hover:shadow-sm dark:border-sky-800/70 dark:bg-slate-950 dark:hover:border-sky-600"
                         }`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="font-semibold text-foreground">{table.title}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="font-semibold text-sm text-sky-900 dark:text-sky-100">{table.title}</p>
+                            <p className="mt-0.5 text-[11px] text-sky-600 dark:text-sky-300">
                               {table.effective_date ? `Atualizada em ${table.effective_date}` : "Sem data"}
                             </p>
                           </div>
-                          {isActive ? <Badge>Ativa</Badge> : null}
+                          {isActive ? (
+                            <span className="inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-800 dark:bg-sky-800 dark:text-sky-100">
+                              Ativa
+                            </span>
+                          ) : null}
                         </div>
-                        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{getTableSummary(table)}</p>
+                        <p className="mt-2 line-clamp-2 text-sm text-sky-700 dark:text-sky-200">{getTableSummary(table)}</p>
                       </button>
                     );
                   })}
@@ -395,83 +447,130 @@ const RetailerPriceTables = () => {
             ) : null}
 
             {intro.length > 0 ? (
-              <Card className="rounded-[28px] border-border/70 shadow-[0_12px_35px_rgba(15,23,42,0.06)]">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
-                    Observações
-                  </CardTitle>
+              <Card className="rounded-[24px] border-sky-200/70 shadow-md dark:border-sky-800/70">
+                <CardHeader className="pb-0">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-sky-700 dark:text-sky-200" />
+                    <CardTitle className="text-base text-sky-900 dark:text-sky-100">Observações</CardTitle>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2 pt-0 text-sm text-sky-700 dark:text-sky-200">
                   {intro.map((line, index) => (
-                    <div key={`${line}-${index}`} className="rounded-[20px] border border-border/70 bg-[linear-gradient(135deg,rgba(248,250,252,1),rgba(241,245,249,0.8))] p-4 text-sm leading-6 text-muted-foreground">
+                    <p key={`${line}-${index}`} className="rounded-[16px] border border-sky-200/70 bg-sky-50 p-3 leading-5 dark:border-sky-800/70 dark:bg-sky-950">
                       {line}
-                    </div>
+                    </p>
                   ))}
                 </CardContent>
               </Card>
             ) : null}
 
-            <Card className="rounded-[28px] border-border/70 shadow-[0_12px_35px_rgba(15,23,42,0.06)]">
-              <CardHeader>
-                <CardTitle>Resumo</CardTitle>
+            <Card className="rounded-[24px] border-sky-200/70 shadow-md dark:border-sky-800/70">
+              <CardHeader className="pb-0">
+                <CardTitle className="text-sky-900 dark:text-sky-100">Resumo</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="rounded-[20px] border border-border/70 bg-[linear-gradient(135deg,rgba(248,250,252,1),rgba(241,245,249,0.75))] p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Marcas</p>
-                  <p className="mt-2 text-2xl font-semibold text-foreground">{filteredBrands.length}</p>
-                </div>
-                <div className="rounded-[20px] border border-border/70 bg-[linear-gradient(135deg,rgba(248,250,252,1),rgba(241,245,249,0.75))] p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Aparelhos</p>
-                  <p className="mt-2 text-2xl font-semibold text-foreground">{deviceCatalog.length}</p>
-                </div>
-                <div className="rounded-[20px] border border-border/70 bg-[linear-gradient(135deg,rgba(248,250,252,1),rgba(241,245,249,0.75))] p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Serviços</p>
-                  <p className="mt-2 text-2xl font-semibold text-foreground">{totalServices}</p>
+              <CardContent className="space-y-3 pt-0">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-[16px] border border-sky-200/70 bg-sky-50 p-3 text-center dark:border-sky-800/70 dark:bg-sky-950">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Marcas</p>
+                    <p className="mt-2 text-xl font-semibold text-sky-900 dark:text-sky-100">{filteredBrands.length}</p>
+                  </div>
+                  <div className="rounded-[16px] border border-sky-200/70 bg-sky-50 p-3 text-center dark:border-sky-800/70 dark:bg-sky-950">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Aparelhos</p>
+                    <p className="mt-2 text-xl font-semibold text-sky-900 dark:text-sky-100">{deviceCatalog.length}</p>
+                  </div>
+                  <div className="rounded-[16px] border border-sky-200/70 bg-sky-50 p-3 text-center dark:border-sky-800/70 dark:bg-sky-950">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Serviços</p>
+                    <p className="mt-2 text-xl font-semibold text-sky-900 dark:text-sky-100">{totalServices}</p>
+                  </div>
                 </div>
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full"
+                  className="w-full border-sky-200 text-sky-700 hover:bg-sky-50 dark:border-sky-800 dark:text-sky-100 dark:hover:bg-sky-900"
                   onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 >
                   <ArrowUp className="mr-2 h-4 w-4" />
-                  Voltar ao topo
+                  Topo
                 </Button>
               </CardContent>
             </Card>
           </aside>
 
           <div className="space-y-6">
-            <Card className="rounded-[28px] border-border/70 shadow-[0_12px_35px_rgba(15,23,42,0.06)]">
+            {/* Filtros e busca profissional */}
+            <Card className="rounded-[20px] border-sky-200/70 shadow-lg dark:border-sky-800/70">
               <CardHeader>
-                <CardTitle>Consulta</CardTitle>
-                <CardDescription>Busque por aparelho, serviço ou marca e compare resultados no mesmo painel.</CardDescription>
+                <CardTitle className="text-sky-900 dark:text-sky-100">Consulta</CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-300">Busque por aparelho, serviço ou marca e consulte tudo em cards organizados para atendimento.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 bg-gradient-to-br from-sky-50/80 via-white/90 to-slate-100/80 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-sky-400 dark:text-sky-600" />
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Ex.: A15, iPhone 13, troca de vidro..."
-                    className="pl-10"
+                    className="h-11 rounded-[16px] border-sky-200 bg-white pl-10 text-base shadow-md dark:border-sky-800 dark:bg-slate-950 dark:text-sky-100"
                   />
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 md:gap-1 md:justify-start">
                   {brandTabs.map((brandName) => (
-                    <Button
+                    <button
                       key={brandName}
                       type="button"
-                      variant={activeBrand === brandName ? "default" : "outline"}
-                      size="sm"
                       onClick={() => setActiveBrand(brandName)}
-                      className="rounded-full"
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                        activeBrand === brandName
+                          ? "border-sky-500 bg-sky-100 text-sky-800 dark:border-sky-700 dark:bg-sky-900 dark:text-sky-100"
+                          : "border-sky-200 bg-white text-sky-700 hover:bg-sky-50 dark:border-sky-800 dark:bg-slate-950 dark:text-sky-200 dark:hover:bg-sky-900"
+                      }`}
+                      style={{ minWidth: 90, marginBottom: 4 }}
                     >
                       {brandName}
-                    </Button>
+                    </button>
                   ))}
                 </div>
+                <div className="flex flex-col gap-2 rounded-[20px] border border-sky-200/80 bg-white p-3 shadow-sm dark:border-sky-800/80 dark:bg-slate-950 md:flex-col lg:flex-row lg:items-center lg:justify-between">
+                  <div className="mb-2 md:mb-0">
+                    <p className="text-sm font-semibold text-sky-900 dark:text-sky-100">Consulta em cards</p>
+                    <p className="text-xs text-sky-600 dark:text-sky-300">
+                      Aparelhos agrupados por marca para consulta mais rápida.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 md:justify-start">
+                    <Badge variant="outline" className="border-sky-200 text-sky-700 dark:border-sky-800 dark:text-sky-100">{deviceCatalog.length} aparelho(s)</Badge>
+                    <select
+                      value={sortMode}
+                      onChange={(e) => setSortMode(e.target.value as RetailerSortMode)}
+                      className="h-9 rounded-md border border-sky-200 bg-white px-3 text-sm shadow-sm dark:border-sky-800 dark:bg-slate-950 dark:text-sky-100"
+                    >
+                      <option value="relevance">Ordenar: relevância</option>
+                      <option value="device">Ordenar: aparelho</option>
+                      <option value="price">Ordenar: menor preço</option>
+                    </select>
+                  </div>
+                </div>
+                {groupedDeviceCatalog.length > 1 ? (
+                  <div className="rounded-[22px] border border-sky-200/80 bg-sky-50 p-3 text-sm text-sky-700 shadow-sm dark:border-sky-800/80 dark:bg-sky-950 dark:text-sky-200 md:flex md:flex-col md:gap-2">
+                    <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <p className="font-semibold text-sky-900 dark:text-sky-100">Navegação por marca</p>
+                      <span className="text-xs text-sky-600 dark:text-sky-300">Salte para a marca desejada</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 md:gap-1 md:justify-start">
+                      {groupedDeviceCatalog.map((group) => (
+                        <button
+                          key={`jump-${group.brand.name}`}
+                          type="button"
+                          onClick={() => jumpToBrandGroup(group.brand.name)}
+                          className="rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-medium text-sky-700 hover:bg-sky-50 dark:border-sky-800 dark:bg-slate-950 dark:text-sky-200 dark:hover:bg-sky-900"
+                          style={{ minWidth: 90, marginBottom: 4 }}
+                        >
+                          {group.brand.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
 
@@ -482,7 +581,7 @@ const RetailerPriceTables = () => {
             ) : deviceCatalog.length === 0 ? (
               <Card className="rounded-[28px] border-border/70 shadow-[0_12px_35px_rgba(15,23,42,0.06)]">
                 <CardContent className="py-14 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-700">
                     <Search className="h-6 w-6" />
                   </div>
                   <p className="mt-4 text-base font-medium text-foreground">Nenhum resultado encontrado</p>
@@ -492,92 +591,128 @@ const RetailerPriceTables = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 2xl:grid-cols-3">
-                {deviceCatalog.map(({ key, brand, device }) => {
-                  const identity = getDeviceIdentity(brand.name, device.name);
-                  const theme = getBrandTheme(brand.name, device.name);
-                  const Icon = identity.icon;
-                  const lowestPrice = getLowestPriceValue(device.services);
-
-                  return (
-                    <Card key={key} className="overflow-hidden rounded-[28px] border-border/70 shadow-[0_16px_40px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(15,23,42,0.12)] animate-in fade-in-0 slide-in-from-bottom-1">
-                      <CardHeader className="border-b border-border/60 bg-[linear-gradient(135deg,rgba(248,250,252,1),rgba(255,255,255,1))]">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3">
-                            <div className={`flex h-12 w-12 items-center justify-center rounded-[20px] ${theme.iconBg} ${theme.iconText}`}>
-                              <Icon className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-xl">{device.name}</CardTitle>
-                              <div className="mt-2 flex flex-wrap items-center gap-2">
-                                <Badge variant="outline" className={`${theme.familyBadge} gap-1`}>
-                                  <Icon className="h-3.5 w-3.5" />
-                                  {identity.label}
-                                </Badge>
-                                <CardDescription>
-                                  {brand.name} • {device.services.length} servico(s)
-                                </CardDescription>
-                              </div>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className={`${theme.badge} shadow-sm`}>
-                            {brand.name}
-                          </Badge>
+              <div className="space-y-5">
+                {groupedDeviceCatalog.map((group) => (
+                  <Card
+                    key={group.brand.name}
+                    id={`brand-group-${slugify(group.brand.name)}`}
+                    className="overflow-hidden rounded-[30px] border-border/70 shadow-[0_18px_45px_rgba(15,23,42,0.08)]"
+                  >
+                    <CardHeader className="border-b border-slate-200/70 bg-slate-50/95 dark:border-slate-800/80 dark:bg-slate-950/85">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <CardTitle className="text-xl text-slate-900 dark:text-slate-100">{group.brand.name}</CardTitle>
+                          <CardDescription className="text-slate-600 dark:text-slate-400">
+                            {group.devices.length} aparelho(s) • {group.devices.reduce((total, item) => total + item.device.services.length, 0)} serviço(s)
+                          </CardDescription>
                         </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {device.services.map((service, index) => (
-                          (() => {
-                            const serviceKey = `${device.name}::${service.name}::${service.priceText}`;
-                            const isCopied = copiedServiceKey === serviceKey;
-                            const isLowest =
-                              lowestPrice !== null &&
-                              service.priceValue !== null &&
-                              service.priceValue === lowestPrice;
+                      </div>
+                    </CardHeader>
+                    <CardContent className="bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.9))] p-4 sm:p-5">
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3">
+                        {group.devices.map(({ key, device }) => {
+                          const brand = group.brand;
+                          const identity = getDeviceIdentity(brand.name, device.name);
+                          const theme = getBrandTheme(brand.name, device.name);
+                          const Icon = identity.icon;
+                          const lowestPrice = getLowestPriceValue(device.services);
+                          const deviceMatchesQuery =
+                            hasActiveSearch &&
+                            `${brand.name} ${device.name}`.toLowerCase().includes(normalizedSearchQuery);
+                          const onlySingleService = device.services.length === 1;
+                          const singleService = onlySingleService ? device.services[0] : null;
+                          const singleServiceDisplayName =
+                            singleService && isBasePriceService(singleService.name)
+                              ? "Preço base"
+                              : singleService?.name || "";
 
-                            return (
-                              <div
-                                key={`${key}-${service.name}-${index}`}
-                                className={`flex items-center justify-between gap-3 rounded-[18px] border px-4 py-3 transition-colors hover:bg-white ${
-                                  isLowest
-                                    ? "border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,1),rgba(255,255,255,1))]"
-                                    : "border-border/60 bg-[linear-gradient(135deg,rgba(248,250,252,1),rgba(255,255,255,1))]"
-                                }`}
-                              >
-                                <div className="min-w-0">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <p className="font-medium text-foreground">{service.name}</p>
-                                    {isLowest ? (
-                                      <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">
-                                        Melhor valor
-                                      </Badge>
-                                    ) : null}
+                          const basePriceServices = device.services.filter((service) =>
+                            isBasePriceService(service.name)
+                          );
+                          const displayService = basePriceServices[0] || device.services[0] || null;
+                          const displayServiceName = displayService
+                            ? isBasePriceService(displayService.name)
+                              ? "Preço base"
+                              : displayService.name
+                            : "Serviço indisponível";
+                          const displayServicePrice = displayService
+                            ? normalizePriceText(displayService.priceText)
+                            : "-";
+                          const serviceKey = displayService
+                            ? `${device.name}::${displayService.name}::${displayServicePrice}`
+                            : `${device.name}::empty`;
+                          const isCopied = copiedServiceKey === serviceKey;
+                          const serviceMatchesQuery =
+                            hasActiveSearch &&
+                            displayService &&
+                            `${displayService.name} ${displayService.priceText}`.toLowerCase().includes(normalizedSearchQuery);
+
+                          return (
+                            <Card
+                              key={key}
+                              className={`overflow-hidden rounded-[28px] border-2 border-sky-100 bg-gradient-to-br from-white via-sky-50 to-slate-100 shadow-2xl transition duration-200 hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(56,189,248,0.18)]
+                                dark:border-sky-700 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 dark:shadow-[0_8px_32px_rgba(56,189,248,0.10)]
+                                ${deviceMatchesQuery ? "ring-2 ring-sky-300/70 dark:ring-sky-400/60" : ""}`}
+                            >
+                              <CardHeader className="bg-sky-50/80 px-4 py-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+                                <div className="flex items-center justify-between gap-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-sky-400/70 via-sky-600/60 to-sky-900/60 shadow-lg ring-2 ring-white/30 dark:from-sky-700/80 dark:via-sky-900/80 dark:to-slate-950/80 dark:ring-sky-400/20">
+                                      <Icon className="h-8 w-8 text-white drop-shadow-[0_2px_8px_rgba(56,189,248,0.45)] dark:text-sky-200" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                                        {device.name}
+                                      </CardTitle>
+                                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                        <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 dark:border-slate-700 dark:bg-slate-800">
+                                          {identity.label}
+                                        </span>
+                                        <span className="rounded-full border border-sky-300 bg-sky-50 px-2.5 py-1 font-bold text-sky-700 dark:border-sky-700 dark:bg-sky-900 dark:text-sky-100">
+                                          1 serviço
+                                        </span>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <p className="text-xs text-muted-foreground">{brand.name}</p>
+
+                                  {deviceMatchesQuery ? (
+                                    <span className="inline-flex rounded-full bg-slate-900/5 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-700/70 dark:text-slate-100">
+                                      Resultado
+                                    </span>
+                                  ) : null}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <span className={`inline-flex shrink-0 rounded-full px-3 py-1 text-sm font-semibold ${theme.price}`}>
-                                    {service.priceText || "-"}
-                                  </span>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-9 w-9 shrink-0"
-                                    onClick={() => handleCopyService(device.name, service.name, service.priceText || "-")}
-                                    title="Copiar serviço e preço"
-                                  >
-                                    {isCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                                  </Button>
+                              </CardHeader>
+
+                              <CardContent className="px-4 py-5">
+                                <div
+                                  className={`rounded-[20px] border-2 border-sky-100 bg-gradient-to-br from-white via-sky-50 to-slate-100 p-4 shadow-md
+                                    dark:border-sky-700 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 dark:shadow-[0_4px_24px_rgba(56,189,248,0.10)]
+                                    ${serviceMatchesQuery ? "ring-2 ring-sky-200/80 dark:ring-sky-400/60" : ""}`}
+                                >
+                                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                      <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-500 dark:text-sky-200 drop-shadow">
+                                        Serviço principal
+                                      </p>
+                                      <p className="mt-2 text-lg font-extrabold text-sky-900 dark:text-white drop-shadow">
+                                        {displayServiceName}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <p className="text-3xl font-extrabold text-sky-700 dark:text-sky-300 drop-shadow">
+                                        {displayServicePrice || "-"}
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })()
-                        ))}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </div>

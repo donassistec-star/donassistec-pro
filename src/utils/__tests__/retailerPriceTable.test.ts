@@ -64,6 +64,23 @@ describe("retailerPriceTable utils", () => {
     ]);
   });
 
+  it("keeps empty categories available in structured mode", () => {
+    const categories = buildStructuredCategories([
+      {
+        name: "SAMSUNG",
+        items: [],
+      },
+    ]);
+
+    expect(categories).toEqual([
+      {
+        categoryIndex: 0,
+        name: "SAMSUNG",
+        devices: [],
+      },
+    ]);
+  });
+
   it("converts structured categories back to flat categories", () => {
     const categories = structuredCategoriesToFlatCategories([
       {
@@ -87,6 +104,22 @@ describe("retailerPriceTable utils", () => {
           { name: "Galaxy A15 > Troca de Vidro", priceText: "R$100,00", priceValue: 100 },
           { name: "Galaxy A15 > Troca de Bateria", priceText: "R$80,00", priceValue: 80 },
         ],
+      },
+    ]);
+  });
+
+  it("preserves empty categories when serializing structured mode", () => {
+    const categories = structuredCategoriesToFlatCategories([
+      {
+        name: "APPLE",
+        devices: [],
+      },
+    ]);
+
+    expect(categories).toEqual([
+      {
+        name: "APPLE",
+        items: [],
       },
     ]);
   });

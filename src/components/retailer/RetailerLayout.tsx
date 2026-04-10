@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/ui/theme-toggle";
 import { 
   User, 
   LogOut, 
@@ -88,7 +89,7 @@ const RetailerLayout = ({ children }: RetailerLayoutProps) => {
   const ApprovalIcon = approval.icon;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -100,7 +101,7 @@ const RetailerLayout = ({ children }: RetailerLayoutProps) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full border-r border-slate-200 bg-white transform transition-all duration-300 ease-in-out lg:translate-x-0",
+          "fixed top-0 left-0 z-50 h-full border-r border-border bg-card transform transition-all duration-300 ease-in-out lg:translate-x-0",
           sidebarCollapsed ? "lg:w-20" : "lg:w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
@@ -123,7 +124,7 @@ const RetailerLayout = ({ children }: RetailerLayoutProps) => {
 
           {/* User Info */}
           {user && (
-            <div className={cn("border-b border-slate-200 bg-sky-50/70", sidebarCollapsed ? "p-3" : "p-4")}>
+            <div className={cn("border-b border-border bg-sky-50/70 dark:bg-slate-950/70", sidebarCollapsed ? "p-3" : "p-4")}>
               {sidebarCollapsed ? (
                 <div className="flex justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sm font-semibold text-sky-700">
@@ -202,7 +203,7 @@ const RetailerLayout = ({ children }: RetailerLayoutProps) => {
       {/* Main Content */}
       <div className={cn("transition-[padding] duration-300", sidebarCollapsed ? "lg:pl-20" : "lg:pl-64")}>
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/92 backdrop-blur-md">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/92 dark:bg-slate-950/92 backdrop-blur-md">
           <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex min-h-16 items-center justify-between gap-4 py-3">
               <div className="flex items-center gap-3">
@@ -251,8 +252,9 @@ const RetailerLayout = ({ children }: RetailerLayoutProps) => {
               </div>
 
               <div className="ml-auto flex items-center gap-3">
+                <ThemeToggle />
                 <Link to="/">
-                  <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-slate-700 hover:bg-sky-50">
+                  <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-slate-700 hover:bg-sky-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
                     Ver Site
                   </Button>
                 </Link>

@@ -136,7 +136,7 @@ export const structuredCategoriesToFlatCategories = (
           }),
       ),
     }))
-    .filter((category) => category.name && category.items.length > 0);
+    .filter((category) => category.name);
 
 export const countBrandDevices = (brands: RetailerPriceTableBrand[] = []) =>
   brands.reduce((total, brand) => total + brand.devices.length, 0);
