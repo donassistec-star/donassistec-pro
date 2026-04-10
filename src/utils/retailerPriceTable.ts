@@ -8,17 +8,20 @@ const DEVICE_SERVICE_SEPARATOR_REGEX = /\s(?:>|\|)\s/;
 const normalizeLabel = (value: string) => value.replace(/\s+/g, " ").trim();
 
 export interface RetailerPriceTableStructuredService {
+  serviceIndex?: number;
   name: string;
   priceText: string;
   priceValue: number | null;
 }
 
 export interface RetailerPriceTableStructuredDevice {
+  deviceIndex?: number;
   name: string;
   services: RetailerPriceTableStructuredService[];
 }
 
 export interface RetailerPriceTableStructuredCategory {
+  categoryIndex?: number;
   name: string;
   devices: RetailerPriceTableStructuredDevice[];
 }
@@ -86,9 +89,17 @@ export const buildBrandsFromCategories = (
 export const buildStructuredCategories = (
   categories: RetailerPriceTableCategory[] = []
 ): RetailerPriceTableStructuredCategory[] =>
-  categories.map((category) => ({
+  categories.map((category, categoryIndex) => ({
+    categoryIndex,
     name: category.name,
-    devices: buildBrandsFromCategories([category])[0]?.devices || [],
+    devices: (buildBrandsFromCategories([category])[0]?.devices || []).map((device, deviceIndex) => ({
+      ...device,
+      deviceIndex,
+      services: device.services.map((service, serviceIndex) => ({
+        ...service,
+        serviceIndex,
+      })),
+    })),
   }));
 
 export const parsePriceValue = (priceText: string) => {

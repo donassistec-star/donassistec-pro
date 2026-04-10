@@ -53,8 +53,11 @@ describe("retailerPriceTable utils", () => {
     ]);
 
     expect(categories).toHaveLength(1);
+    expect(categories[0].categoryIndex).toBe(0);
     expect(categories[0].devices).toHaveLength(1);
+    expect(categories[0].devices[0].deviceIndex).toBe(0);
     expect(categories[0].devices[0].name).toBe("iPhone 11");
+    expect(categories[0].devices[0].services[0].serviceIndex).toBe(0);
     expect(categories[0].devices[0].services.map((service) => service.name)).toEqual([
       "Troca de Vidro",
       "Troca de Bateria",
