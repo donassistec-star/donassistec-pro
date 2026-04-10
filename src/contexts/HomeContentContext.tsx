@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   defaultHomeContent,
   HomeContent,
@@ -25,6 +25,8 @@ export const HomeContentProvider = ({
 }) => {
   const [content, setContent] = useState<HomeContent>(defaultHomeContent);
   const [loading, setLoading] = useState(true);
+  const contentRef = useRef<HomeContent>(defaultHomeContent);
+  const lastRequestIdRef = useRef(0);
 
   useEffect(() => {
     const loadContent = async () => {
@@ -35,10 +37,12 @@ export const HomeContentProvider = ({
         const apiContent = await homeContentService.get();
         
         if (apiContent) {
-          setContent(apiContent);
+          const mergedContent = { ...defaultHomeContent, ...apiContent };
+          contentRef.current = mergedContent;
+          setContent(mergedContent);
           // Sincronizar com localStorage como backup
           try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(apiContent));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedContent));
           } catch (error) {
             console.error("Erro ao salvar no localStorage:", error);
           }
@@ -48,7 +52,9 @@ export const HomeContentProvider = ({
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
               const parsed = JSON.parse(stored) as HomeContent;
-              setContent({ ...defaultHomeContent, ...parsed });
+              const mergedContent = { ...defaultHomeContent, ...parsed };
+              contentRef.current = mergedContent;
+              setContent(mergedContent);
             }
           } catch (error) {
             console.error("Erro ao carregar do localStorage:", error);
@@ -61,7 +67,9 @@ export const HomeContentProvider = ({
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) {
             const parsed = JSON.parse(stored) as HomeContent;
-            setContent({ ...defaultHomeContent, ...parsed });
+            const mergedContent = { ...defaultHomeContent, ...parsed };
+            contentRef.current = mergedContent;
+            setContent(mergedContent);
           }
         } catch (storageError) {
           console.error("Erro ao carregar do localStorage:", storageError);
@@ -75,15 +83,22 @@ export const HomeContentProvider = ({
   }, []);
 
   const persist = async (next: HomeContent) => {
+    const requestId = ++lastRequestIdRef.current;
+    contentRef.current = next;
     setContent(next);
     
     // Tentar salvar na API primeiro
     try {
       const updated = await homeContentService.update(next);
       if (updated) {
+        const mergedContent = { ...defaultHomeContent, ...updated };
+        if (requestId === lastRequestIdRef.current) {
+          contentRef.current = mergedContent;
+          setContent(mergedContent);
+        }
         // Se API funcionou, sincronizar localStorage
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedContent));
         } catch (error) {
           console.error("Erro ao salvar no localStorage:", error);
         }
@@ -102,7 +117,7 @@ export const HomeContentProvider = ({
   };
 
   const updateContent = async (partial: Partial<HomeContent>) => {
-    const next = { ...content, ...partial };
+    const next = { ...contentRef.current, ...partial };
     await persist(next);
   };
 
@@ -111,9 +126,11 @@ export const HomeContentProvider = ({
     try {
       const updated = await homeContentService.update(defaultHomeContent);
       if (updated) {
-        setContent(updated);
+        const mergedContent = { ...defaultHomeContent, ...updated };
+        contentRef.current = mergedContent;
+        setContent(mergedContent);
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedContent));
         } catch (error) {
           console.error("Erro ao salvar no localStorage:", error);
         }
@@ -124,6 +141,7 @@ export const HomeContentProvider = ({
     }
     
     // Fallback para localStorage
+    contentRef.current = defaultHomeContent;
     setContent(defaultHomeContent);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultHomeContent));
@@ -146,4 +164,3 @@ export const useHomeContent = () => {
   }
   return ctx;
 };
-

@@ -685,7 +685,7 @@ const HomeContentAdmin = () => {
                       onChange={(e) =>
                         handleStepChange(index, "href", e.target.value)
                       }
-                      placeholder="/catalogo, /lojista/login, #contato..."
+                      placeholder="/catalogo, /lojista/login, /contato..."
                     />
                   </div>
                 </div>

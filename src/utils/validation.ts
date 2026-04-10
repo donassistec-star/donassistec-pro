@@ -4,6 +4,31 @@
 
 export const validation = {
   /**
+   * Remove caracteres nao numericos de um documento brasileiro
+   */
+  cleanDocument(document: string): string {
+    return document.replace(/[^\d]/g, "");
+  },
+
+  /**
+   * Identifica se o documento informado parece CPF ou CNPJ
+   */
+  getDocumentType(document: string): "cpf" | "cnpj" | null {
+    const cleanDocument = this.cleanDocument(document);
+    if (cleanDocument.length === 11) return "cpf";
+    if (cleanDocument.length === 14) return "cnpj";
+    return null;
+  },
+
+  /**
+   * Valida formato de CPF (basico - apenas quantidade de digitos)
+   */
+  isValidCPF(cpf: string): boolean {
+    const cleanCPF = this.cleanDocument(cpf);
+    return cleanCPF.length === 11;
+  },
+
+  /**
    * Valida formato de email
    */
   isValidEmail(email: string): boolean {
@@ -15,8 +40,18 @@ export const validation = {
    * Valida formato de CNPJ (básico - apenas formato)
    */
   isValidCNPJ(cnpj: string): boolean {
-    const cleanCNPJ = cnpj.replace(/[^\d]/g, "");
+    const cleanCNPJ = this.cleanDocument(cnpj);
     return cleanCNPJ.length === 14;
+  },
+
+  /**
+   * Valida CPF ou CNPJ (basico - apenas quantidade de digitos)
+   */
+  isValidBrazilianDocument(document: string): boolean {
+    const documentType = this.getDocumentType(document);
+    if (documentType === "cpf") return this.isValidCPF(document);
+    if (documentType === "cnpj") return this.isValidCNPJ(document);
+    return false;
   },
 
   /**
@@ -29,15 +64,37 @@ export const validation = {
   },
 
   /**
+   * Formata CPF
+   */
+  formatCPF(cpf: string): string {
+    const cleanCPF = this.cleanDocument(cpf).slice(0, 11);
+    if (cleanCPF.length <= 3) return cleanCPF;
+    if (cleanCPF.length <= 6) return cleanCPF.replace(/^(\d{3})(\d+)/, "$1.$2");
+    if (cleanCPF.length <= 9) return cleanCPF.replace(/^(\d{3})(\d{3})(\d+)/, "$1.$2.$3");
+    return cleanCPF.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2}).*/, "$1.$2.$3-$4");
+  },
+
+  /**
    * Formata CNPJ
    */
   formatCNPJ(cnpj: string): string {
-    const cleanCNPJ = cnpj.replace(/[^\d]/g, "");
-    if (cleanCNPJ.length !== 14) return cnpj;
-    return cleanCNPJ.replace(
-      /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
-      "$1.$2.$3/$4-$5"
-    );
+    const cleanCNPJ = this.cleanDocument(cnpj).slice(0, 14);
+    if (cleanCNPJ.length <= 2) return cleanCNPJ;
+    if (cleanCNPJ.length <= 5) return cleanCNPJ.replace(/^(\d{2})(\d+)/, "$1.$2");
+    if (cleanCNPJ.length <= 8) return cleanCNPJ.replace(/^(\d{2})(\d{3})(\d+)/, "$1.$2.$3");
+    if (cleanCNPJ.length <= 12) return cleanCNPJ.replace(/^(\d{2})(\d{3})(\d{3})(\d+)/, "$1.$2.$3/$4");
+    return cleanCNPJ.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2}).*/, "$1.$2.$3/$4-$5");
+  },
+
+  /**
+   * Formata CPF ou CNPJ automaticamente conforme a quantidade de digitos
+   */
+  formatBrazilianDocument(document: string): string {
+    const cleanDocument = this.cleanDocument(document);
+    if (cleanDocument.length <= 11) {
+      return this.formatCPF(cleanDocument);
+    }
+    return this.formatCNPJ(cleanDocument);
   },
 
   /**

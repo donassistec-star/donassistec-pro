@@ -7,7 +7,10 @@ export interface User {
   contact_name: string;
   phone?: string;
   cnpj?: string;
-  role: "retailer" | "admin";
+  role: string;
+  source?: "admin_team" | "retailer";
+  modules?: string[];
+  approval_status?: "pending" | "approved" | "rejected";
 }
 
 export interface RegisterData {
@@ -28,6 +31,8 @@ export interface AuthResponse {
   success: boolean;
   token?: string;
   user?: User;
+  approval_status?: "pending" | "approved" | "rejected";
+  whatsapp_url?: string;
   error?: string;
   message?: string;
 }
@@ -81,6 +86,18 @@ export const authService = {
       return {
         success: false,
         error: error.response?.data?.error || "Erro ao fazer login",
+      };
+    }
+  },
+
+  async adminLogin(data: LoginData): Promise<AuthResponse> {
+    try {
+      const response = await api.post<AuthResponse>("/auth/admin-login", data);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || "Erro ao fazer login administrativo",
       };
     }
   },

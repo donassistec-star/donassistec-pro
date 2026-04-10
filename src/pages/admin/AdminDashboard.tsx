@@ -16,6 +16,8 @@ import {
   Settings,
   Wrench,
   ClipboardList
+  ,
+  PlayCircle
 } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -200,6 +202,12 @@ const AdminDashboard = () => {
       description: "Configure o sistema",
       href: "/admin/configuracoes",
       icon: Settings,
+    },
+    {
+      title: "Vídeos do Lojista",
+      description: "Cadastre os vídeos explicativos da área do lojista",
+      href: "/admin/videos-lojista",
+      icon: PlayCircle,
     },
   ];
 

@@ -25,7 +25,7 @@ function canAccessAdminPanel(u: { source?: string } | null): boolean {
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { login, loginWithBootstrap, isAuthenticated, user, isLoading } = useAuth();
+  const { loginAdmin, loginWithBootstrap, isAuthenticated, user, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bootstrapAvailable, setBootstrapAvailable] = useState(false);
   const [showBootstrapModal, setShowBootstrapModal] = useState(false);
@@ -75,22 +75,10 @@ const AdminLogin = () => {
     setIsSubmitting(true);
 
     try {
-      const success = await login(loginData.email, loginData.password);
+      const success = await loginAdmin(loginData.email, loginData.password);
       if (success) {
-        const userStr = localStorage.getItem("donassistec_auth");
-        if (userStr) {
-          const u = JSON.parse(userStr);
-          if (canAccessAdminPanel(u)) {
-            toast.success("Login realizado com sucesso!");
-            navigate("/admin/dashboard");
-          } else {
-            toast.error("Acesso negado. Esta área é apenas para a equipe administrativa.");
-            navigate("/lojista/login");
-          }
-        } else {
-          toast.error("Acesso negado. Dados do usuário não encontrados.");
-          navigate("/lojista/login");
-        }
+        toast.success("Login realizado com sucesso!");
+        navigate("/admin/dashboard");
       } else {
         toast.error("Email ou senha inválidos");
       }

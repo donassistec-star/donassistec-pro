@@ -1,122 +1,194 @@
-# CMS da Home - Backend Integrado ✅
+# CMS da Home - Backend Integrado
 
-## O que foi implementado
+## Status atual
 
-### 1. **Banco de Dados**
-- ✅ Tabela `home_content` criada para armazenar o conteúdo da home
-- ✅ Script SQL: `database/init/03_home_content_schema.sql`
-- ✅ Conteúdo padrão inserido automaticamente
+O CMS da home está integrado entre banco, backend e frontend.
 
-### 2. **Backend API**
-- ✅ **Model**: `backend/src/models/HomeContentModel.ts`
-  - `get()` - Buscar conteúdo
-  - `update()` - Atualizar conteúdo
-  
-- ✅ **Controller**: `backend/src/controllers/HomeContentController.ts`
-  - `GET /api/home-content` - Obter conteúdo
-  - `PUT /api/home-content` - Atualizar conteúdo
-  
-- ✅ **Rotas**: `backend/src/routes/homeContent.ts`
-- ✅ Integrado ao `backend/src/index.ts`
+- Banco: tabela `home_content` com JSON por seção
+- Backend: API pública para leitura e API protegida para atualização
+- Frontend: contexto centralizado com fallback para `localStorage`
+- Admin atual: `/admin/home-content`
 
-### 3. **Frontend**
-- ✅ **Serviço**: `src/services/homeContentService.ts`
-  - Integração com a API
-  - Tratamento de erros
-  
-- ✅ **Contexto atualizado**: `src/contexts/HomeContentContext.tsx`
-  - Busca da API primeiro
-  - Fallback para localStorage se API não disponível
-  - Sincronização automática
-  
-- ✅ **Página Admin**: `src/pages/retailer/HomeContentAdmin.tsx`
-  - Todas as funções agora são async
-  - Salva automaticamente na API
+## O que existe no código
+
+### Banco de dados
+
+Arquivo de schema: `database/init/03_home_content_schema.sql`
+
+A tabela `home_content` armazena:
+
+- `section` como chave única
+- `content` como `JSON`
+- `created_at` e `updated_at`
+
+O seed inicial insere a seção `main` com conteúdo padrão da home.
+
+### Backend
+
+Arquivos principais:
+
+- `backend/src/models/HomeContentModel.ts`
+- `backend/src/controllers/HomeContentController.ts`
+- `backend/src/routes/homeContent.ts`
+- `backend/src/index.ts`
+
+Rotas montadas em `backend/src/index.ts`:
+
+- `GET /api/home-content`
+- `PUT /api/home-content`
+
+Comportamento atual:
+
+- `GET` é público
+- `PUT` exige `authenticateToken` + `requireAdmin`
+- se a linha `section = 'main'` não existir, o `GET` retorna `404`
+- o `PUT` faz validação básica de campos obrigatórios antes de salvar
+- o model usa `INSERT ... ON DUPLICATE KEY UPDATE`
+
+### Frontend
+
+Arquivos principais:
+
+- `src/services/homeContentService.ts`
+- `src/contexts/HomeContentContext.tsx`
+- `src/pages/admin/HomeContentAdmin.tsx`
+- `src/App.tsx`
+
+Comportamento atual:
+
+- o contexto tenta buscar primeiro da API
+- se a API falhar ou estiver indisponível, usa `localStorage`
+- ao salvar, tenta persistir na API e mantém `localStorage` como backup
+- URLs de mídia são normalizadas no serviço
+- a tela administrativa exposta hoje no app é `/admin/home-content`
+
+## Fluxo
+
+```text
+Admin HomeContent
+  -> HomeContentContext
+  -> homeContentService
+  -> /api/home-content
+  -> HomeContentController
+  -> HomeContentModel
+  -> MySQL (home_content)
+```
+
+## Estrutura de conteúdo
+
+O tipo atual de `HomeContent` é mais amplo do que a primeira versão do CMS. Hoje ele inclui, além de hero, features, stats e process:
+
+- flags de visibilidade por seção
+- imagens da hero e da seção de serviços
+- links e toggles de CTA
+- seção de serviços com `servicesCards` e `servicesHighlights`
+- marcas exibidas na home via `homeBrandIds`
+
+Campos centrais do payload atual:
+
+```json
+{
+  "showHero": true,
+  "showBrands": true,
+  "homeBrandIds": [],
+  "showServices": true,
+  "showFeatures": true,
+  "showStats": true,
+  "showProcess": true,
+  "showTestimonials": true,
+  "showDifferentials": true,
+  "showCta": true,
+  "heroBadge": "Laboratório Premium B2B",
+  "heroTitle": "...",
+  "heroSubtitle": "...",
+  "heroImage": null,
+  "showHeroPrimaryCta": true,
+  "showHeroSecondaryCta": true,
+  "heroCtaLabel": "...",
+  "heroCtaLink": "/catalogo",
+  "heroSecondaryCtaLabel": "...",
+  "heroSecondaryCtaLink": "/lojista/login",
+  "servicesBadge": "...",
+  "servicesTitle": "...",
+  "servicesSubtitle": "...",
+  "servicesImage": null,
+  "servicesImageTitle": "...",
+  "servicesImageDescription": "...",
+  "servicesCards": [],
+  "servicesHighlights": [],
+  "featuresTitle": "...",
+  "featuresSubtitle": "...",
+  "features": [],
+  "statsTitle": "...",
+  "statsSubtitle": "...",
+  "stats": [],
+  "processTitle": "...",
+  "processSubtitle": "...",
+  "steps": []
+}
+```
 
 ## Como usar
 
-### 1. Aplicar o schema no banco de dados
+### 1. Garantir schema no banco
 
 ```bash
-# Se o container MySQL já está rodando
 docker exec -i donassistec_mysql mysql -u donassistec_user -pdonassistec_password donassistec_db < database/init/03_home_content_schema.sql
-
-# Ou reiniciar os containers para aplicar automaticamente
-docker-compose down
-docker-compose up -d
 ```
 
-### 2. Iniciar o backend
+Se o ambiente sobe o banco a partir dos scripts de init, reiniciar os containers também resolve.
+
+### 2. Subir o backend
 
 ```bash
 cd backend
 npm run dev
 ```
 
-### 3. Acessar o admin
+### 3. Acessar o CMS
 
-1. Faça login na área do lojista: `http://localhost:8200/lojista/login`
-2. Acesse: `http://localhost:8200/lojista/conteudo-home`
-3. Edite o conteúdo e salve
-4. As alterações são salvas no MySQL e refletem imediatamente na home
+1. Entrar em `http://localhost:8200/admin/login`
+2. Abrir `http://localhost:8200/admin/home-content`
+3. Editar o conteúdo
+4. Salvar para persistir no MySQL
 
-## Estrutura de dados
+## Contrato da API
 
-O conteúdo é armazenado como JSON na tabela `home_content`:
+### `GET /api/home-content`
+
+- uso público
+- retorno `200` com `data` quando existe conteúdo
+- retorno `404` quando a seção `main` ainda não existe
+
+Exemplo de resposta:
 
 ```json
 {
-  "heroTitle": "...",
-  "heroSubtitle": "...",
-  "heroCtaLabel": "...",
-  "heroSecondaryCtaLabel": "...",
-  "featuresTitle": "...",
-  "featuresSubtitle": "...",
-  "features": [...],
-  "statsTitle": "...",
-  "statsSubtitle": "...",
-  "stats": [...],
-  "processTitle": "...",
-  "processSubtitle": "...",
-  "steps": [...]
+  "success": true,
+  "data": {
+    "heroTitle": "Reconstrução de Telas e Peças Premium para Lojistas"
+  }
 }
 ```
 
-## Fluxo de dados
+### `PUT /api/home-content`
 
+- uso restrito a admin autenticado
+- body: objeto completo `HomeContent`
+- retorno `400` se faltarem campos obrigatórios básicos
+
+Exemplo de resposta:
+
+```json
+{
+  "success": true,
+  "data": {},
+  "message": "Conteúdo atualizado com sucesso"
+}
 ```
-Frontend (HomeContentAdmin)
-    ↓
-Context (HomeContentContext)
-    ↓
-Service (homeContentService)
-    ↓
-API Backend (Express)
-    ↓
-Model (HomeContentModel)
-    ↓
-MySQL Database (home_content)
-```
 
-## Fallback
+## Observações importantes
 
-Se a API não estiver disponível:
-- ✅ Frontend usa localStorage como backup
-- ✅ Quando API voltar, sincroniza automaticamente
-- ✅ Nenhuma perda de dados
-
-## Endpoints da API
-
-- **GET** `/api/home-content`
-  - Retorna o conteúdo completo da home
-  
-- **PUT** `/api/home-content`
-  - Atualiza o conteúdo
-  - Body: `HomeContent` (JSON completo)
-
-## Status
-
-✅ **Backend completo e funcional**
-✅ **Frontend integrado com API**
-✅ **Fallback para localStorage**
-✅ **Build passando sem erros**
+- o documento anterior citava a rota `/lojista/conteudo-home`, mas a rota ativa no app hoje é `/admin/home-content`
+- o frontend não depende exclusivamente da API: ele faz fallback para `localStorage`
+- se o backend estiver fora do ar, a home continua usando os dados padrão ou os dados locais salvos no navegador

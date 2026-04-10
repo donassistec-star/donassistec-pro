@@ -1,6 +1,6 @@
 import { Response } from "express";
 import TicketModel from "../models/TicketModel";
-import { AuthRequest } from "../middleware/auth";
+import { AuthRequest, isAdminTeamUser } from "../middleware/auth";
 import { sendNotification } from "../services/socket";
 
 interface ApiResponse<T> {
@@ -14,7 +14,7 @@ class TicketController {
   async getAll(req: AuthRequest, res: Response) {
     try {
       const { status, priority } = req.query;
-      const retailer_id = req.user?.role === "admin" ? undefined : req.user?.id;
+      const retailer_id = isAdminTeamUser(req.user) ? undefined : req.user?.id;
 
       const tickets = await TicketModel.findAll({
         retailer_id,
@@ -41,7 +41,7 @@ class TicketController {
       }
 
       // Verificar permissão
-      if (req.user?.role !== "admin" && ticket.retailer_id !== req.user?.id) {
+      if (!isAdminTeamUser(req.user) && ticket.retailer_id !== req.user?.id) {
         const response: ApiResponse<null> = { success: false, error: "Acesso negado" };
         return res.status(403).json(response);
       }
@@ -82,7 +82,7 @@ class TicketController {
         return res.status(404).json(response);
       }
 
-      const sender_type = req.user?.role === "admin" ? "admin" : "retailer";
+      const sender_type = isAdminTeamUser(req.user) ? "admin" : "retailer";
       const message = await TicketModel.addMessage({
         ticket_id: id,
         sender_id: req.user?.id || "",
@@ -91,7 +91,7 @@ class TicketController {
       });
 
       // Notificar via Socket.IO
-      const room = req.user?.role === "admin" ? ticket.retailer_id : "admin";
+      const room = isAdminTeamUser(req.user) ? ticket.retailer_id : "admin";
       sendNotification(room, "ticket-message", { ticket_id: id, message });
 
       const response: ApiResponse<any> = { success: true, data: message, message: "Mensagem enviada com sucesso" };

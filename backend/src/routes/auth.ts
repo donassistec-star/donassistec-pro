@@ -8,6 +8,7 @@ router.get("/bootstrap-available", AuthController.bootstrapAvailable);
 router.post("/bootstrap-admin", AuthController.bootstrapAdmin);
 
 router.post("/register", AuthController.register);
+router.post("/admin-login", AuthController.adminLogin);
 router.post("/login", AuthController.login);
 router.get("/me", authenticateToken, AuthController.me);
 router.put("/profile", authenticateToken, AuthController.updateProfile);

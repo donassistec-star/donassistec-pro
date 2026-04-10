@@ -30,6 +30,7 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 const PORT = parseInt(process.env.PORT || "3001", 10);
+const HOST = process.env.HOST || (process.env.NODE_ENV === "production" ? "127.0.0.1" : "0.0.0.0");
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET?.trim()) {
   throw new Error("JWT_SECRET é obrigatório para iniciar o backend em produção.");
@@ -142,9 +143,9 @@ app.use((err: any, req: Request, res: Response, next: any) => {
 });
 
 // Iniciar servidor HTTP (com Socket.IO)
-httpServer.listen(PORT, "0.0.0.0", () => {
+httpServer.listen(PORT, HOST, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log(`📊 API disponível em http://0.0.0.0:${PORT}`);
+  console.log(`📊 API disponível em http://${HOST}:${PORT}`);
   console.log(`🔍 Health check: http://localhost:${PORT}/health`);
   console.log(`📱 Endpoints:`);
   console.log(`   - POST /api/auth/register - Registrar lojista`);

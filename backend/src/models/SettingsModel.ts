@@ -15,6 +15,7 @@ interface SettingsMap {
 }
 
 const SETTING_DESCRIPTIONS: Record<string, string> = {
+  retailerTrainingVideos: "JSON com vídeos explicativos exibidos na área do lojista",
   showNavHome: "Exibir link Home no menu principal",
   showNavCatalog: "Exibir link Catálogo no menu principal",
   showNavFavorites: "Exibir link Favoritos no menu principal",
@@ -30,6 +31,14 @@ const SETTING_DESCRIPTIONS: Record<string, string> = {
   showCompanyTradeNameHeader: "Exibir nome fantasia no cabeçalho público",
   showCompanyTradeNameFooter: "Exibir nome fantasia no rodapé público",
   showCompanySloganFooter: "Exibir slogan no rodapé público",
+  aboutHeroBadge: "Badge da página Sobre",
+  aboutHeroTitle: "Título principal da página Sobre",
+  helpHeroTitle: "Título principal da página Ajuda",
+  homeContactTitle: "Título da seção Contato da home",
+  contactPageTitle: "Título principal da página Contato",
+  homeContactPageButtonLabel: "Texto do botão da página Contato na home",
+  aboutHeroPrimaryLabel: "Texto do botão principal do topo da página Sobre",
+  helpBackLabel: "Texto do botão voltar da página Ajuda",
 };
 
 class SettingsModel {
@@ -155,6 +164,24 @@ class SettingsModel {
     "showNavHome", "showNavCatalog", "showNavFavorites", "showNavAbout", "showNavHelp",
     "showNavServices", "showNavBrands", "showNavContact", "showAdminAccessButton",
     "showHeaderPhone", "showRetailerAreaButton",
+    "aboutHeroBadge", "aboutHeroTitle", "aboutHeroDescription",
+    "aboutMissionTitle", "aboutMissionDescription", "aboutVisionTitle", "aboutVisionDescription",
+    "aboutValuesTitle", "aboutValuesDescription", "aboutValuesItems", "aboutStatsItems",
+    "aboutAchievementsTitle", "aboutAchievementsDescription", "aboutAchievementsItems",
+    "aboutCtaTitle", "aboutCtaDescription", "aboutHeroPrimaryLabel", "aboutHeroSecondaryLabel",
+    "aboutCtaPrimaryLabel", "aboutCtaSecondaryLabel",
+    "helpHeroBadge", "helpHeroTitle", "helpHeroDescription", "helpSearchPlaceholder",
+    "helpFaqItems", "helpBackLabel", "helpNoResultsTitle", "helpNoResultsDescription", "helpNoResultsButtonLabel",
+    "helpContactTitle", "helpContactDescription", "helpWhatsappTitle", "helpWhatsappDescription",
+    "helpWhatsappLabel", "helpPhoneTitle", "helpPhoneLabel", "helpEmailTitle", "helpEmailLabel",
+    "homeContactTitle", "homeContactDescription", "homeContactWhatsappLabel",
+    "homeContactPhoneLabel", "homeContactInfoBadge", "homeContactPageButtonLabel",
+    "contactPageBadge", "contactPageTitle", "contactPageDescription",
+    "contactPageWhatsappTitle", "contactPageWhatsappDescription", "contactPageWhatsappButtonLabel",
+    "contactPagePhoneTitle", "contactPagePhoneDescription", "contactPagePhoneButtonLabel",
+    "contactPageEmailTitle", "contactPageEmailDescription", "contactPageEmailButtonLabel",
+    "contactPageAddressTitle", "contactPageAddressDescription",
+    "retailerTrainingVideos",
   ];
 
   async getPublic(): Promise<SettingsMap> {

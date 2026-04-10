@@ -22,7 +22,7 @@ export interface AdminTeamCreateData {
   role: AdminTeamRole;
 }
 
-async function runQuery<T>(q: string, vals: unknown[]): Promise<T> {
+async function runQuery<T>(q: string, vals: unknown[] = []): Promise<T> {
   const [rows] = await pool.execute(q, vals);
   return rows as T;
 }

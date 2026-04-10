@@ -11,6 +11,28 @@ export interface RetailerPriceTableCategory {
   items: RetailerPriceTableItem[];
 }
 
+export interface RetailerPriceTableDeviceService {
+  name: string;
+  priceText: string;
+  priceValue: number | null;
+}
+
+export interface RetailerPriceTableDevice {
+  name: string;
+  services: RetailerPriceTableDeviceService[];
+}
+
+export interface RetailerPriceTableBrand {
+  name: string;
+  devices: RetailerPriceTableDevice[];
+}
+
+export interface RetailerPriceTableServiceTemplate {
+  id: string;
+  name: string;
+  serviceNames: string[];
+}
+
 export interface RetailerPriceTableRecord {
   id: number;
   slug: string;
@@ -20,11 +42,13 @@ export interface RetailerPriceTableRecord {
   featured_to_retailers: boolean;
   sort_order: number;
   raw_text: string;
+  service_templates: RetailerPriceTableServiceTemplate[];
   parsed_data: {
     title: string;
     effectiveDate?: string | null;
     intro: string[];
     categories: RetailerPriceTableCategory[];
+    brands?: RetailerPriceTableBrand[];
   };
 }
 
@@ -69,6 +93,7 @@ class RetailerPriceTablesService {
     visibleToRetailers: boolean;
     featuredToRetailers?: boolean;
     rawText: string;
+    serviceTemplates?: RetailerPriceTableServiceTemplate[];
   }): Promise<RetailerPriceTableRecord | null> {
     const response = await api.put<ApiResponse<RetailerPriceTableRecord>>(
       `/retailer-price-tables/admin/${slug}`,

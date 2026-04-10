@@ -25,6 +25,10 @@ const ProtectedRouteLojista = ({ children }: ProtectedRouteLojistaProps) => {
     return <Navigate to="/lojista/login" replace />;
   }
 
+  if (user?.approvalStatus && user.approvalStatus !== "approved") {
+    return <Navigate to="/lojista/login" replace />;
+  }
+
   return children;
 };
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Smartphone, Mail, Lock, Building2, User, Phone, FileText } from "lucide
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { validation } from "@/utils/validation";
+
+const AUTH_STORAGE_KEY = "donassistec_auth";
 
 const RetailerLogin = () => {
   const navigate = useNavigate();
@@ -30,10 +32,26 @@ const RetailerLogin = () => {
     cnpj: "",
   });
 
-  // Redirect se já estiver autenticado
   if (isAuthenticated) {
-    navigate("/lojista/dashboard");
-    return null;
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (stored) {
+        try {
+          const authenticatedUser = JSON.parse(stored);
+          if (authenticatedUser?.source === "admin_team") {
+            return <Navigate to="/admin/dashboard" replace />;
+          }
+          if (authenticatedUser?.approvalStatus && authenticatedUser.approvalStatus !== "approved") {
+            localStorage.removeItem(AUTH_STORAGE_KEY);
+            localStorage.removeItem("donassistec_token");
+          } else {
+            return <Navigate to="/lojista/dashboard" replace />;
+          }
+        } catch {
+          // ignore invalid storage
+        }
+      }
+    }
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -52,9 +70,9 @@ const RetailerLogin = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(loginData.email, loginData.password);
-      if (success) {
-        const stored = localStorage.getItem("donassistec_auth");
+      const response = await login(loginData.email, loginData.password);
+      if (response.success) {
+        const stored = localStorage.getItem(AUTH_STORAGE_KEY);
         if (stored) {
           try {
             const u = JSON.parse(stored);
@@ -68,7 +86,7 @@ const RetailerLogin = () => {
         toast.success("Login realizado com sucesso!");
         navigate("/lojista/dashboard");
       } else {
-        toast.error("Email ou senha inválidos");
+        toast.error(response.error || "Email ou senha inválidos");
       }
     } catch (error) {
       toast.error("Erro ao fazer login. Tente novamente.");
@@ -107,15 +125,15 @@ const RetailerLogin = () => {
       return;
     }
 
-    if (registerData.cnpj && !validation.isValidCNPJ(registerData.cnpj)) {
-      toast.error("CNPJ inválido");
+    if (registerData.cnpj && !validation.isValidBrazilianDocument(registerData.cnpj)) {
+      toast.error("CPF ou CNPJ invalido");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const success = await register({
+      const response = await register({
         email: registerData.email,
         password: registerData.password,
         companyName: registerData.companyName,
@@ -124,11 +142,22 @@ const RetailerLogin = () => {
         cnpj: registerData.cnpj || undefined,
       });
 
-      if (success) {
-        toast.success("Cadastro realizado com sucesso!");
-        navigate("/lojista/dashboard");
+      if (response.success) {
+        toast.success(response.message || "Cadastro enviado para aprovação.");
+        setRegisterData({
+          email: "",
+          password: "",
+          confirmPassword: "",
+          companyName: "",
+          contactName: "",
+          phone: "",
+          cnpj: "",
+        });
+        if (response.whatsapp_url && typeof window !== "undefined") {
+          window.open(response.whatsapp_url, "_blank", "noopener,noreferrer");
+        }
       } else {
-        toast.error("Erro ao criar conta. Tente novamente.");
+        toast.error(response.error || "Erro ao criar conta. Tente novamente.");
       }
     } catch (error) {
       toast.error("Erro ao criar conta. Tente novamente.");
@@ -222,7 +251,7 @@ const RetailerLogin = () => {
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground mt-4">
-                    Acesso demo: use qualquer email e senha para testar
+                    O acesso do lojista só é liberado após a aprovação do administrador.
                   </p>
                 </form>
               </CardContent>
@@ -233,7 +262,7 @@ const RetailerLogin = () => {
               <CardHeader>
                 <CardTitle>Criar conta de lojista</CardTitle>
                 <CardDescription>
-                  Cadastre-se para ter acesso ao catálogo B2B e fazer pedidos
+                  Cadastre-se e envie a solicitação de aprovação para liberar o acesso às tabelas de preço.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -346,15 +375,15 @@ const RetailerLogin = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="register-cnpj">CNPJ</Label>
+                      <Label htmlFor="register-cnpj">CPF ou CNPJ</Label>
                       <div className="relative">
                         <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="register-cnpj"
-                          placeholder="00.000.000/0000-00"
+                          placeholder="000.000.000-00 ou 00.000.000/0000-00"
                           value={registerData.cnpj}
                           onChange={(e) => {
-                            const formatted = validation.formatCNPJ(e.target.value);
+                            const formatted = validation.formatBrazilianDocument(e.target.value);
                             setRegisterData({ ...registerData, cnpj: formatted });
                           }}
                           className="pl-10"
@@ -372,6 +401,10 @@ const RetailerLogin = () => {
                   >
                     {isLoading ? "Cadastrando..." : "Cadastrar"}
                   </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    Após o cadastro, o sistema abre o WhatsApp para avisar o administrador sobre sua solicitação.
+                  </p>
                 </form>
               </CardContent>
             </TabsContent>

@@ -202,7 +202,7 @@ export const defaultHomeContent: HomeContent = {
       description:
         "Entre em contato via WhatsApp ou e-mail para solicitar um orçamento personalizado.",
       action: "Falar no WhatsApp",
-      href: "#contato",
+      href: "/contato",
     },
     {
       id: "step-3",

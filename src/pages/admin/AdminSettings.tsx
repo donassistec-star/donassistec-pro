@@ -118,15 +118,6 @@ const AdminSettings = () => {
     (settings.showCompanyTradeNameFooter ?? settings.showCompanyTradeName) !== false;
   const footerSloganVisible = settings.showCompanySloganFooter !== false;
   const brandingLogoPreview = settings.brandingLogoUrl?.trim() || "";
-  const brandingLogoFaviconPreview = settings.brandingLogoFavicon?.trim() || "";
-  const headerLogoPreview =
-    !headerTradeNameVisible && brandingLogoFaviconPreview
-      ? brandingLogoFaviconPreview
-      : brandingLogoPreview;
-  const footerLogoPreview =
-    !footerTradeNameVisible && brandingLogoFaviconPreview
-      ? brandingLogoFaviconPreview
-      : brandingLogoPreview;
   const companyDescriptionPreview =
     settings.companyDescription?.trim() ||
     "Laboratório premium de reconstrução de telas e revenda de peças para lojistas e assistências técnicas.";
@@ -355,7 +346,7 @@ const AdminSettings = () => {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8 gap-2">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-9 gap-2">
             <TabsTrigger value="general">
               <Globe className="w-4 h-4 mr-2" />
               Geral
@@ -367,6 +358,10 @@ const AdminSettings = () => {
             <TabsTrigger value="contact">
               <Phone className="w-4 h-4 mr-2" />
               Contato
+            </TabsTrigger>
+            <TabsTrigger value="pages">
+              <FileText className="w-4 h-4 mr-2" />
+              Páginas
             </TabsTrigger>
             <TabsTrigger value="email">
               <Mail className="w-4 h-4 mr-2" />
@@ -819,20 +814,20 @@ const AdminSettings = () => {
                       Preview visual
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Pré-visualização de como o nome fantasia aparece nas áreas públicas. Ao ocultar o nome, o sistema usa o favicon se ele estiver configurado.
+                      Pré-visualização de como o nome fantasia aparece nas áreas públicas mantendo o logo principal.
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="rounded-lg border border-border bg-background overflow-hidden">
                       <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                        {headerLogoPreview ? (
+                        {brandingLogoPreview ? (
                           <img
-                            src={headerLogoPreview}
+                            src={brandingLogoPreview}
                             alt="Logo preview"
-                            className="h-10 w-auto max-w-[96px] object-contain"
+                            className="h-12 w-auto max-w-[160px] object-contain"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                          <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
                             D
                           </div>
                         )}
@@ -851,14 +846,14 @@ const AdminSettings = () => {
                     <div className="rounded-lg border border-border bg-foreground overflow-hidden">
                       <div className="px-4 py-4 border-b border-white/10 space-y-3">
                         <div className="flex items-center gap-3">
-                          {footerLogoPreview ? (
+                          {brandingLogoPreview ? (
                             <img
-                              src={footerLogoPreview}
+                              src={brandingLogoPreview}
                               alt="Logo preview"
-                              className="h-10 w-auto max-w-[96px] object-contain"
+                              className="h-12 w-auto max-w-[160px] object-contain"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                            <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
                               D
                             </div>
                           )}
@@ -1251,6 +1246,816 @@ const AdminSettings = () => {
                 })} disabled={saving}>
                   <Save className="w-4 h-4 mr-2" />
                   {saving ? "Salvando..." : "Salvar Mídias Sociais"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Aba Páginas */}
+          <TabsContent value="pages" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Página Sobre
+                    </CardTitle>
+                    <CardDescription>
+                      Edite os principais textos da página pública <code>/sobre</code>.
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" asChild>
+                    <a href="/sobre" target="_blank" rel="noopener noreferrer">
+                      Abrir Página
+                    </a>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutHeroBadge">Badge</Label>
+                    <Input
+                      id="aboutHeroBadge"
+                      value={settings.aboutHeroBadge || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutHeroBadge: e.target.value })}
+                      placeholder="Sobre Nós"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutHeroTitle">Título Principal</Label>
+                    <Input
+                      id="aboutHeroTitle"
+                      value={settings.aboutHeroTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutHeroTitle: e.target.value })}
+                      placeholder="DonAssistec"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="aboutHeroDescription">Descrição Principal</Label>
+                  <Textarea
+                    id="aboutHeroDescription"
+                    value={settings.aboutHeroDescription || ""}
+                    onChange={(e) => setSettings({ ...settings, aboutHeroDescription: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutMissionTitle">Título da Missão</Label>
+                    <Input
+                      id="aboutMissionTitle"
+                      value={settings.aboutMissionTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutMissionTitle: e.target.value })}
+                      placeholder="Nossa Missão"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutVisionTitle">Título da Visão</Label>
+                    <Input
+                      id="aboutVisionTitle"
+                      value={settings.aboutVisionTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutVisionTitle: e.target.value })}
+                      placeholder="Nossa Visão"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutMissionDescription">Texto da Missão</Label>
+                    <Textarea
+                      id="aboutMissionDescription"
+                      value={settings.aboutMissionDescription || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutMissionDescription: e.target.value })}
+                      rows={5}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutVisionDescription">Texto da Visão</Label>
+                    <Textarea
+                      id="aboutVisionDescription"
+                      value={settings.aboutVisionDescription || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutVisionDescription: e.target.value })}
+                      rows={5}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutValuesTitle">Título da seção Valores</Label>
+                    <Input
+                      id="aboutValuesTitle"
+                      value={settings.aboutValuesTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutValuesTitle: e.target.value })}
+                      placeholder="Nossos Valores"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutAchievementsTitle">Título da seção Reconhecimentos</Label>
+                    <Input
+                      id="aboutAchievementsTitle"
+                      value={settings.aboutAchievementsTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutAchievementsTitle: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="aboutValuesDescription">Descrição da seção Valores</Label>
+                  <Textarea
+                    id="aboutValuesDescription"
+                    value={settings.aboutValuesDescription || ""}
+                    onChange={(e) => setSettings({ ...settings, aboutValuesDescription: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="aboutValuesItems">Cards de Valores</Label>
+                  <Textarea
+                    id="aboutValuesItems"
+                    value={settings.aboutValuesItems || ""}
+                    onChange={(e) => setSettings({ ...settings, aboutValuesItems: e.target.value })}
+                    placeholder={"Qualidade Garantida|Todas as peças e serviços passam por rigoroso controle de qualidade.\nFoco no Cliente|Atendimento personalizado e dedicado às necessidades de cada lojista."}
+                    rows={5}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Um item por linha no formato <code>Título|Descrição</code>.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="aboutStatsItems">Números da seção Estatísticas</Label>
+                  <Textarea
+                    id="aboutStatsItems"
+                    value={settings.aboutStatsItems || ""}
+                    onChange={(e) => setSettings({ ...settings, aboutStatsItems: e.target.value })}
+                    placeholder={"Anos de Experiência|10+\nLojistas Atendidos|500+"}
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Um item por linha no formato <code>Rótulo|Valor</code>.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="aboutAchievementsDescription">Descrição da seção Reconhecimentos</Label>
+                  <Textarea
+                    id="aboutAchievementsDescription"
+                    value={settings.aboutAchievementsDescription || ""}
+                    onChange={(e) => setSettings({ ...settings, aboutAchievementsDescription: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="aboutAchievementsItems">Lista de Reconhecimentos</Label>
+                  <Textarea
+                    id="aboutAchievementsItems"
+                    value={settings.aboutAchievementsItems || ""}
+                    onChange={(e) => setSettings({ ...settings, aboutAchievementsItems: e.target.value })}
+                    placeholder={"Certificação ISO 9001\nParceiro Oficial Apple"}
+                    rows={5}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Um reconhecimento por linha.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutCtaTitle">Título do CTA final</Label>
+                    <Input
+                      id="aboutCtaTitle"
+                      value={settings.aboutCtaTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutCtaTitle: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutCtaDescription">Descrição do CTA final</Label>
+                    <Textarea
+                      id="aboutCtaDescription"
+                      value={settings.aboutCtaDescription || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutCtaDescription: e.target.value })}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border p-4 space-y-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-foreground">
+                      Botões do topo e CTA final
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Textos dos botões exibidos no hero da página e no bloco final.
+                    </p>
+                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutCtaPrimaryLabel">Texto do botão principal</Label>
+                    <Input
+                      id="aboutCtaPrimaryLabel"
+                      value={settings.aboutCtaPrimaryLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutCtaPrimaryLabel: e.target.value })}
+                      placeholder="Criar Conta de Lojista"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutHeroPrimaryLabel">Botão do topo: catálogo</Label>
+                    <Input
+                      id="aboutHeroPrimaryLabel"
+                      value={settings.aboutHeroPrimaryLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutHeroPrimaryLabel: e.target.value })}
+                      placeholder="Explorar Catálogo"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutHeroSecondaryLabel">Botão do topo: contato</Label>
+                    <Input
+                      id="aboutHeroSecondaryLabel"
+                      value={settings.aboutHeroSecondaryLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutHeroSecondaryLabel: e.target.value })}
+                      placeholder="Falar Conosco"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="aboutCtaSecondaryLabel">Texto do botão WhatsApp</Label>
+                    <Input
+                      id="aboutCtaSecondaryLabel"
+                      value={settings.aboutCtaSecondaryLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, aboutCtaSecondaryLabel: e.target.value })}
+                      placeholder="Falar no WhatsApp"
+                    />
+                  </div>
+                </div>
+                </div>
+
+                <Button
+                  onClick={() =>
+                    handleSave("about-page", {
+                      aboutHeroBadge: settings.aboutHeroBadge,
+                      aboutHeroTitle: settings.aboutHeroTitle,
+                      aboutHeroDescription: settings.aboutHeroDescription,
+                      aboutMissionTitle: settings.aboutMissionTitle,
+                      aboutMissionDescription: settings.aboutMissionDescription,
+                      aboutVisionTitle: settings.aboutVisionTitle,
+                      aboutVisionDescription: settings.aboutVisionDescription,
+                      aboutValuesTitle: settings.aboutValuesTitle,
+                      aboutValuesDescription: settings.aboutValuesDescription,
+                      aboutValuesItems: settings.aboutValuesItems,
+                      aboutStatsItems: settings.aboutStatsItems,
+                      aboutAchievementsTitle: settings.aboutAchievementsTitle,
+                      aboutAchievementsDescription: settings.aboutAchievementsDescription,
+                      aboutAchievementsItems: settings.aboutAchievementsItems,
+                      aboutCtaTitle: settings.aboutCtaTitle,
+                      aboutCtaDescription: settings.aboutCtaDescription,
+                      aboutHeroPrimaryLabel: settings.aboutHeroPrimaryLabel,
+                      aboutHeroSecondaryLabel: settings.aboutHeroSecondaryLabel,
+                      aboutCtaPrimaryLabel: settings.aboutCtaPrimaryLabel,
+                      aboutCtaSecondaryLabel: settings.aboutCtaSecondaryLabel,
+                    })
+                  }
+                  disabled={saving}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? "Salvando..." : "Salvar Página Sobre"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Página Ajuda
+                    </CardTitle>
+                    <CardDescription>
+                      Edite o conteúdo da página <code>/ajuda</code> e a lista de FAQs.
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" asChild>
+                    <a href="/ajuda" target="_blank" rel="noopener noreferrer">
+                      Abrir Página
+                    </a>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="helpHeroBadge">Badge</Label>
+                    <Input
+                      id="helpHeroBadge"
+                      value={settings.helpHeroBadge || ""}
+                      onChange={(e) => setSettings({ ...settings, helpHeroBadge: e.target.value })}
+                      placeholder="Central de Ajuda"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="helpHeroTitle">Título Principal</Label>
+                    <Input
+                      id="helpHeroTitle"
+                      value={settings.helpHeroTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, helpHeroTitle: e.target.value })}
+                      placeholder="Como Podemos Ajudar?"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="helpHeroDescription">Descrição Principal</Label>
+                  <Textarea
+                    id="helpHeroDescription"
+                    value={settings.helpHeroDescription || ""}
+                    onChange={(e) => setSettings({ ...settings, helpHeroDescription: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="helpSearchPlaceholder">Placeholder da Busca</Label>
+                  <Input
+                    id="helpSearchPlaceholder"
+                    value={settings.helpSearchPlaceholder || ""}
+                    onChange={(e) => setSettings({ ...settings, helpSearchPlaceholder: e.target.value })}
+                    placeholder="Buscar perguntas frequentes..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="helpBackLabel">Texto do botão voltar</Label>
+                  <Input
+                    id="helpBackLabel"
+                    value={settings.helpBackLabel || ""}
+                    onChange={(e) => setSettings({ ...settings, helpBackLabel: e.target.value })}
+                    placeholder="Voltar para Home"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="helpFaqItems">Perguntas Frequentes</Label>
+                  <Textarea
+                    id="helpFaqItems"
+                    value={settings.helpFaqItems || ""}
+                    onChange={(e) => setSettings({ ...settings, helpFaqItems: e.target.value })}
+                    placeholder={"Geral|Como faço um pedido?|Acesse o catálogo e envie seu orçamento.\nLojistas|Como acompanho meu pedido?|Na área do lojista, acesse Pedidos."}
+                    rows={8}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Uma FAQ por linha no formato <code>Categoria|Pergunta|Resposta</code>.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="helpNoResultsTitle">Título sem resultado</Label>
+                    <Input
+                      id="helpNoResultsTitle"
+                      value={settings.helpNoResultsTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, helpNoResultsTitle: e.target.value })}
+                      placeholder="Nenhum resultado encontrado"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="helpNoResultsDescription">Descrição sem resultado</Label>
+                    <Textarea
+                      id="helpNoResultsDescription"
+                      value={settings.helpNoResultsDescription || ""}
+                      onChange={(e) => setSettings({ ...settings, helpNoResultsDescription: e.target.value })}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="helpNoResultsButtonLabel">Botão sem resultado</Label>
+                    <Input
+                      id="helpNoResultsButtonLabel"
+                      value={settings.helpNoResultsButtonLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, helpNoResultsButtonLabel: e.target.value })}
+                      placeholder="Falar no WhatsApp"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="helpContactTitle">Título do bloco final</Label>
+                    <Input
+                      id="helpContactTitle"
+                      value={settings.helpContactTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, helpContactTitle: e.target.value })}
+                      placeholder="Ainda Precisa de Ajuda?"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="helpContactDescription">Descrição do bloco final</Label>
+                    <Textarea
+                      id="helpContactDescription"
+                      value={settings.helpContactDescription || ""}
+                      onChange={(e) => setSettings({ ...settings, helpContactDescription: e.target.value })}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border p-4 space-y-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-foreground">
+                      Cards de suporte
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Controle os títulos, descrições e textos dos botões exibidos no final da página Ajuda.
+                    </p>
+                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="helpWhatsappTitle">Título do card WhatsApp</Label>
+                    <Input
+                      id="helpWhatsappTitle"
+                      value={settings.helpWhatsappTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, helpWhatsappTitle: e.target.value })}
+                      placeholder="WhatsApp"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="helpPhoneTitle">Título do card Telefone</Label>
+                    <Input
+                      id="helpPhoneTitle"
+                      value={settings.helpPhoneTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, helpPhoneTitle: e.target.value })}
+                      placeholder="Telefone"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="helpEmailTitle">Título do card E-mail</Label>
+                    <Input
+                      id="helpEmailTitle"
+                      value={settings.helpEmailTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, helpEmailTitle: e.target.value })}
+                      placeholder="E-mail"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="helpWhatsappDescription">Descrição do card WhatsApp</Label>
+                    <Textarea
+                      id="helpWhatsappDescription"
+                      value={settings.helpWhatsappDescription || ""}
+                      onChange={(e) => setSettings({ ...settings, helpWhatsappDescription: e.target.value })}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="helpWhatsappLabel">Botão WhatsApp</Label>
+                    <Input
+                      id="helpWhatsappLabel"
+                      value={settings.helpWhatsappLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, helpWhatsappLabel: e.target.value })}
+                      placeholder="Abrir Chat"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="helpPhoneLabel">Botão Telefone</Label>
+                    <Input
+                      id="helpPhoneLabel"
+                      value={settings.helpPhoneLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, helpPhoneLabel: e.target.value })}
+                      placeholder="Ligar Agora"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="helpEmailLabel">Botão E-mail</Label>
+                    <Input
+                      id="helpEmailLabel"
+                      value={settings.helpEmailLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, helpEmailLabel: e.target.value })}
+                      placeholder="Enviar E-mail"
+                    />
+                  </div>
+                </div>
+                </div>
+
+                <Button
+                  onClick={() =>
+                    handleSave("help-page", {
+                      helpHeroBadge: settings.helpHeroBadge,
+                      helpHeroTitle: settings.helpHeroTitle,
+                      helpHeroDescription: settings.helpHeroDescription,
+                      helpSearchPlaceholder: settings.helpSearchPlaceholder,
+                      helpFaqItems: settings.helpFaqItems,
+                      helpBackLabel: settings.helpBackLabel,
+                      helpNoResultsTitle: settings.helpNoResultsTitle,
+                      helpNoResultsDescription: settings.helpNoResultsDescription,
+                      helpNoResultsButtonLabel: settings.helpNoResultsButtonLabel,
+                      helpContactTitle: settings.helpContactTitle,
+                      helpContactDescription: settings.helpContactDescription,
+                      helpWhatsappTitle: settings.helpWhatsappTitle,
+                      helpWhatsappDescription: settings.helpWhatsappDescription,
+                      helpWhatsappLabel: settings.helpWhatsappLabel,
+                      helpPhoneTitle: settings.helpPhoneTitle,
+                      helpPhoneLabel: settings.helpPhoneLabel,
+                      helpEmailTitle: settings.helpEmailTitle,
+                      helpEmailLabel: settings.helpEmailLabel,
+                    })
+                  }
+                  disabled={saving}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? "Salvando..." : "Salvar Página Ajuda"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Seção Contato da Home
+                    </CardTitle>
+                    <CardDescription>
+                      Edite o conteúdo do resumo de contato da home e o atalho para <code>/contato</code>.
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" asChild>
+                    <a href="/#contato" target="_blank" rel="noopener noreferrer">
+                      Abrir Home
+                    </a>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="homeContactTitle">Título</Label>
+                  <Input
+                    id="homeContactTitle"
+                    value={settings.homeContactTitle || ""}
+                    onChange={(e) => setSettings({ ...settings, homeContactTitle: e.target.value })}
+                    placeholder="Precisa de Peças ou Reconstrução?"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="homeContactDescription">Descrição</Label>
+                  <Textarea
+                    id="homeContactDescription"
+                    value={settings.homeContactDescription || ""}
+                    onChange={(e) => setSettings({ ...settings, homeContactDescription: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="homeContactWhatsappLabel">Texto do botão WhatsApp</Label>
+                    <Input
+                      id="homeContactWhatsappLabel"
+                      value={settings.homeContactWhatsappLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, homeContactWhatsappLabel: e.target.value })}
+                      placeholder="Chamar no WhatsApp"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="homeContactPhoneLabel">Texto do botão Telefone</Label>
+                    <Input
+                      id="homeContactPhoneLabel"
+                      value={settings.homeContactPhoneLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, homeContactPhoneLabel: e.target.value })}
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="homeContactInfoBadge">Texto do selo final</Label>
+                    <Input
+                      id="homeContactInfoBadge"
+                      value={settings.homeContactInfoBadge || ""}
+                      onChange={(e) => setSettings({ ...settings, homeContactInfoBadge: e.target.value })}
+                      placeholder="Garantia de 90 dias"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="homeContactPageButtonLabel">Texto do botão Página de Contato</Label>
+                    <Input
+                      id="homeContactPageButtonLabel"
+                      value={settings.homeContactPageButtonLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, homeContactPageButtonLabel: e.target.value })}
+                      placeholder="Ver pagina de contato"
+                    />
+                  </div>
+                </div>
+                <Button
+                  onClick={() =>
+                    handleSave("home-contact", {
+                      homeContactTitle: settings.homeContactTitle,
+                      homeContactDescription: settings.homeContactDescription,
+                      homeContactWhatsappLabel: settings.homeContactWhatsappLabel,
+                      homeContactPhoneLabel: settings.homeContactPhoneLabel,
+                      homeContactInfoBadge: settings.homeContactInfoBadge,
+                      homeContactPageButtonLabel: settings.homeContactPageButtonLabel,
+                    })
+                  }
+                  disabled={saving}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? "Salvando..." : "Salvar Seção Contato"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Página Contato
+                    </CardTitle>
+                    <CardDescription>
+                      Edite a página pública <code>/contato</code>.
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" asChild>
+                    <a href="/contato" target="_blank" rel="noopener noreferrer">
+                      Abrir Página
+                    </a>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPageBadge">Badge</Label>
+                    <Input
+                      id="contactPageBadge"
+                      value={settings.contactPageBadge || ""}
+                      onChange={(e) => setSettings({ ...settings, contactPageBadge: e.target.value })}
+                      placeholder="Contato"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPageTitle">Título Principal</Label>
+                    <Input
+                      id="contactPageTitle"
+                      value={settings.contactPageTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, contactPageTitle: e.target.value })}
+                      placeholder="Fale com a DonAssistec"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactPageDescription">Descrição Principal</Label>
+                  <Textarea
+                    id="contactPageDescription"
+                    value={settings.contactPageDescription || ""}
+                    onChange={(e) => setSettings({ ...settings, contactPageDescription: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPageWhatsappTitle">Título do card WhatsApp</Label>
+                    <Input
+                      id="contactPageWhatsappTitle"
+                      value={settings.contactPageWhatsappTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, contactPageWhatsappTitle: e.target.value })}
+                      placeholder="WhatsApp"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPageWhatsappButtonLabel">Botão do card WhatsApp</Label>
+                    <Input
+                      id="contactPageWhatsappButtonLabel"
+                      value={settings.contactPageWhatsappButtonLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, contactPageWhatsappButtonLabel: e.target.value })}
+                      placeholder="Abrir WhatsApp"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactPageWhatsappDescription">Descrição do card WhatsApp</Label>
+                  <Textarea
+                    id="contactPageWhatsappDescription"
+                    value={settings.contactPageWhatsappDescription || ""}
+                    onChange={(e) => setSettings({ ...settings, contactPageWhatsappDescription: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPagePhoneTitle">Título do card Telefone</Label>
+                    <Input
+                      id="contactPagePhoneTitle"
+                      value={settings.contactPagePhoneTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, contactPagePhoneTitle: e.target.value })}
+                      placeholder="Telefone"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPagePhoneButtonLabel">Botão do card Telefone</Label>
+                    <Input
+                      id="contactPagePhoneButtonLabel"
+                      value={settings.contactPagePhoneButtonLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, contactPagePhoneButtonLabel: e.target.value })}
+                      placeholder="Ligar Agora"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactPagePhoneDescription">Descrição do card Telefone</Label>
+                  <Textarea
+                    id="contactPagePhoneDescription"
+                    value={settings.contactPagePhoneDescription || ""}
+                    onChange={(e) => setSettings({ ...settings, contactPagePhoneDescription: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPageEmailTitle">Título do card E-mail</Label>
+                    <Input
+                      id="contactPageEmailTitle"
+                      value={settings.contactPageEmailTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, contactPageEmailTitle: e.target.value })}
+                      placeholder="E-mail"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPageEmailButtonLabel">Botão do card E-mail</Label>
+                    <Input
+                      id="contactPageEmailButtonLabel"
+                      value={settings.contactPageEmailButtonLabel || ""}
+                      onChange={(e) => setSettings({ ...settings, contactPageEmailButtonLabel: e.target.value })}
+                      placeholder="Enviar E-mail"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactPageEmailDescription">Descrição do card E-mail</Label>
+                  <Textarea
+                    id="contactPageEmailDescription"
+                    value={settings.contactPageEmailDescription || ""}
+                    onChange={(e) => setSettings({ ...settings, contactPageEmailDescription: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPageAddressTitle">Título do card Endereço</Label>
+                    <Input
+                      id="contactPageAddressTitle"
+                      value={settings.contactPageAddressTitle || ""}
+                      onChange={(e) => setSettings({ ...settings, contactPageAddressTitle: e.target.value })}
+                      placeholder="Endereço"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPageAddressDescription">Descrição do card Endereço</Label>
+                    <Textarea
+                      id="contactPageAddressDescription"
+                      value={settings.contactPageAddressDescription || ""}
+                      onChange={(e) => setSettings({ ...settings, contactPageAddressDescription: e.target.value })}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() =>
+                    handleSave("contact-page", {
+                      contactPageBadge: settings.contactPageBadge,
+                      contactPageTitle: settings.contactPageTitle,
+                      contactPageDescription: settings.contactPageDescription,
+                      contactPageWhatsappTitle: settings.contactPageWhatsappTitle,
+                      contactPageWhatsappDescription: settings.contactPageWhatsappDescription,
+                      contactPageWhatsappButtonLabel: settings.contactPageWhatsappButtonLabel,
+                      contactPagePhoneTitle: settings.contactPagePhoneTitle,
+                      contactPagePhoneDescription: settings.contactPagePhoneDescription,
+                      contactPagePhoneButtonLabel: settings.contactPagePhoneButtonLabel,
+                      contactPageEmailTitle: settings.contactPageEmailTitle,
+                      contactPageEmailDescription: settings.contactPageEmailDescription,
+                      contactPageEmailButtonLabel: settings.contactPageEmailButtonLabel,
+                      contactPageAddressTitle: settings.contactPageAddressTitle,
+                      contactPageAddressDescription: settings.contactPageAddressDescription,
+                    })
+                  }
+                  disabled={saving}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? "Salvando..." : "Salvar Página Contato"}
                 </Button>
               </CardContent>
             </Card>

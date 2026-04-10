@@ -15,18 +15,16 @@ export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction
   next();
 };
 
-/** admin_team com role admin ou gerente pode gerenciar a equipe (adicionar/editar usuários) */
+/** Apenas admin_team com role admin pode gerenciar a equipe (adicionar/editar usuários) */
 export const requireAdminTeamAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
   if (!req.user) {
     return res.status(401).json({ success: false, error: "Não autenticado" });
   }
-  const ok =
-    req.user.source === "admin_team" &&
-    (req.user.role === "admin" || req.user.role === "gerente");
+  const ok = req.user.source === "admin_team" && req.user.role === "admin";
   if (!ok) {
     return res.status(403).json({
       success: false,
-      error: "Apenas administradores ou gerentes da equipe podem gerenciar.",
+      error: "Apenas administradores da equipe podem gerenciar.",
     });
   }
   next();

@@ -1,6 +1,9 @@
 import api from "./api";
+import { normalizeMediaUrl } from "@/utils/mediaUrl";
 
 export interface SystemSettings {
+  retailerTrainingVideos?: string;
+
   // Configurações Gerais
   siteName: string;
   siteDescription: string;
@@ -116,6 +119,72 @@ export interface SystemSettings {
   companySlogan?: string;
   companyYearFounded?: string;
 
+  // Conteúdo da página Sobre
+  aboutHeroBadge?: string;
+  aboutHeroTitle?: string;
+  aboutHeroDescription?: string;
+  aboutMissionTitle?: string;
+  aboutMissionDescription?: string;
+  aboutVisionTitle?: string;
+  aboutVisionDescription?: string;
+  aboutValuesTitle?: string;
+  aboutValuesDescription?: string;
+  aboutValuesItems?: string;
+  aboutStatsItems?: string;
+  aboutAchievementsTitle?: string;
+  aboutAchievementsDescription?: string;
+  aboutAchievementsItems?: string;
+  aboutCtaTitle?: string;
+  aboutCtaDescription?: string;
+  aboutHeroPrimaryLabel?: string;
+  aboutHeroSecondaryLabel?: string;
+  aboutCtaPrimaryLabel?: string;
+  aboutCtaSecondaryLabel?: string;
+
+  // Conteúdo da página Ajuda
+  helpHeroBadge?: string;
+  helpHeroTitle?: string;
+  helpHeroDescription?: string;
+  helpSearchPlaceholder?: string;
+  helpFaqItems?: string;
+  helpBackLabel?: string;
+  helpNoResultsTitle?: string;
+  helpNoResultsDescription?: string;
+  helpNoResultsButtonLabel?: string;
+  helpContactTitle?: string;
+  helpContactDescription?: string;
+  helpWhatsappTitle?: string;
+  helpWhatsappDescription?: string;
+  helpWhatsappLabel?: string;
+  helpPhoneTitle?: string;
+  helpPhoneLabel?: string;
+  helpEmailTitle?: string;
+  helpEmailLabel?: string;
+
+  // Conteúdo da seção Contato da Home
+  homeContactTitle?: string;
+  homeContactDescription?: string;
+  homeContactWhatsappLabel?: string;
+  homeContactPhoneLabel?: string;
+  homeContactInfoBadge?: string;
+  homeContactPageButtonLabel?: string;
+
+  // Conteúdo da página Contato
+  contactPageBadge?: string;
+  contactPageTitle?: string;
+  contactPageDescription?: string;
+  contactPageWhatsappTitle?: string;
+  contactPageWhatsappDescription?: string;
+  contactPageWhatsappButtonLabel?: string;
+  contactPagePhoneTitle?: string;
+  contactPagePhoneDescription?: string;
+  contactPagePhoneButtonLabel?: string;
+  contactPageEmailTitle?: string;
+  contactPageEmailDescription?: string;
+  contactPageEmailButtonLabel?: string;
+  contactPageAddressTitle?: string;
+  contactPageAddressDescription?: string;
+
   // Navegação
   showNavHome?: boolean;
   showNavCatalog?: boolean;
@@ -152,7 +221,14 @@ export const settingsService = {
   async getPublic(): Promise<SystemSettings | null> {
     try {
       const response = await api.get<ApiResponse<SystemSettings>>("/settings/public");
-      if (response.data.success && response.data.data) return response.data.data;
+      if (response.data.success && response.data.data) {
+        return {
+          ...response.data.data,
+          brandingLogoUrl: normalizeMediaUrl(response.data.data.brandingLogoUrl),
+          brandingLogoFavicon: normalizeMediaUrl(response.data.data.brandingLogoFavicon),
+          seoOgImage: normalizeMediaUrl(response.data.data.seoOgImage),
+        };
+      }
       return null;
     } catch {
       return null;
@@ -162,7 +238,14 @@ export const settingsService = {
   async getAll(): Promise<SystemSettings | null> {
     try {
       const response = await api.get<ApiResponse<SystemSettings>>("/settings");
-      if (response.data.success && response.data.data) return response.data.data;
+      if (response.data.success && response.data.data) {
+        return {
+          ...response.data.data,
+          brandingLogoUrl: normalizeMediaUrl(response.data.data.brandingLogoUrl),
+          brandingLogoFavicon: normalizeMediaUrl(response.data.data.brandingLogoFavicon),
+          seoOgImage: normalizeMediaUrl(response.data.data.seoOgImage),
+        };
+      }
       return null;
     } catch (error) {
       console.error("Erro ao buscar configurações:", error);

@@ -1,5 +1,6 @@
 import api from "./api";
 import { ApiResponse, ApiPhoneModel } from "./modelsService";
+import { normalizeMediaUrl } from "@/utils/mediaUrl";
 
 export interface ApiModelVideo {
   id: number;
@@ -26,7 +27,7 @@ const convertApiVideoToFrontend = (video: ApiModelVideo): ModelVideoFrontend => 
   modelId: video.model_id,
   title: video.title,
   url: video.url,
-  thumbnail: video.thumbnail_url,
+  thumbnail: normalizeMediaUrl(video.thumbnail_url),
   duration: video.duration,
   order: video.video_order,
 });
@@ -119,4 +120,3 @@ export const modelVideosService = {
     }
   },
 };
-

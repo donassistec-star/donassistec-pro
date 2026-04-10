@@ -3,7 +3,7 @@ import OrderModel from "../models/OrderModel";
 import PrePedidoModel from "../models/PrePedidoModel";
 import CouponModel from "../models/CouponModel";
 import { ApiResponse, Order, OrderItem, OrderWithItems } from "../types";
-import { AuthRequest } from "../middleware/auth";
+import { AuthRequest, isAdminTeamUser } from "../middleware/auth";
 
 class OrderController {
   async getAll(req: AuthRequest, res: Response) {
@@ -12,7 +12,7 @@ class OrderController {
         return res.status(401).json({ success: false, error: "Não autenticado" });
       }
       const retailerIds: string[] | undefined =
-        req.user.role === "admin"
+        isAdminTeamUser(req.user)
           ? undefined
           : [req.user.id, req.user.email].filter(Boolean);
       const orders = await OrderModel.findAll(retailerIds);
@@ -36,7 +36,7 @@ class OrderController {
     try {
       const { id } = req.params;
       const retailerIdOrIds: string | string[] | undefined =
-        !req.user || req.user.role === "admin"
+        !req.user || isAdminTeamUser(req.user)
           ? (req.query.retailerId as string | undefined)
           : [req.user.id, req.user.email].filter(Boolean);
       const order = await OrderModel.findById(id, retailerIdOrIds);
@@ -84,7 +84,7 @@ class OrderController {
       }
 
       const canConvert =
-        req.user.role === "admin" ||
+        isAdminTeamUser(req.user) ||
         (pp.retailer_id && [req.user.id, req.user.email].includes(pp.retailer_id));
       if (!canConvert) {
         return res.status(403).json({ success: false, error: "Você não pode converter este pré-pedido" });
@@ -93,7 +93,7 @@ class OrderController {
       const retailerId =
         pp.retailer_id ||
         pp.contact_email ||
-        (req.user.role === "admin" ? (req.user.email as string) : req.user.id);
+        (isAdminTeamUser(req.user) ? (req.user.email as string) : req.user.id);
 
       const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
       const notes = [pp.notes, pp.need_by ? `Preciso até: ${pp.need_by}` : null].filter(Boolean).join(" | ") || undefined;
@@ -224,7 +224,7 @@ class OrderController {
       const { id } = req.params;
       const { status } = req.body;
       const retailerIds: string[] | undefined =
-        req.user.role === "admin" ? undefined : [req.user.id, req.user.email].filter(Boolean);
+        isAdminTeamUser(req.user) ? undefined : [req.user.id, req.user.email].filter(Boolean);
 
       if (!["pending", "processing", "completed", "cancelled"].includes(status)) {
         const response: ApiResponse<null> = {
@@ -266,7 +266,7 @@ class OrderController {
       }
       const { id } = req.params;
       const retailerIds: string[] | undefined =
-        req.user.role === "admin" ? undefined : [req.user.id, req.user.email].filter(Boolean);
+        isAdminTeamUser(req.user) ? undefined : [req.user.id, req.user.email].filter(Boolean);
       const deleted = await OrderModel.delete(id, retailerIds);
 
       if (!deleted) {

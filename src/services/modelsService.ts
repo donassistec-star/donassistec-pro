@@ -1,5 +1,6 @@
 import api from "./api";
 import { PhoneModel, Brand } from "@/data/models";
+import { normalizeMediaUrl } from "@/utils/mediaUrl";
 
 export interface ApiPhoneModel {
   id: string;
@@ -70,13 +71,13 @@ const convertApiModelToFrontend = (apiModel: ApiPhoneModel): PhoneModel => {
     id: apiModel.id,
     brand: apiModel.brand_id,
     name: apiModel.name,
-    image: apiModel.image_url || "",
+    image: normalizeMediaUrl(apiModel.image_url),
     videoUrl: apiModel.video_url,
     videos: apiModel.videos?.map((v) => ({
       id: v.id.toString(),
       title: v.title,
       url: v.url,
-      thumbnail: v.thumbnail_url,
+      thumbnail: normalizeMediaUrl(v.thumbnail_url),
       duration: v.duration,
     })),
     services: servicesFromModelServices ?? {
@@ -97,7 +98,7 @@ const convertApiBrandToFrontend = (apiBrand: ApiBrand): Brand => {
   return {
     id: apiBrand.id,
     name: apiBrand.name,
-    logo: apiBrand.logo_url,
+    logo: normalizeMediaUrl(apiBrand.logo_url),
     icon: apiBrand.icon_name,
   };
 };

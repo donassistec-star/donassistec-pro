@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import RetailerModel from "../models/RetailerModel";
 import { Retailer } from "../types";
+import { buildRetailerApprovedWhatsAppUrl } from "../utils/retailerWhatsApp";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -95,6 +96,54 @@ class RetailerController {
     }
   }
 
+  // Aprovar ou rejeitar cadastro do lojista - apenas admin
+  async updateApprovalStatus(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { approval_status } = req.body;
+      const adminUserId = (req as any).user?.id;
+
+      if (!["pending", "approved", "rejected"].includes(approval_status)) {
+        return res.status(400).json({
+          success: false,
+          error: "approval_status deve ser pending, approved ou rejected",
+        } as ApiResponse<null>);
+      }
+
+      const retailer = await RetailerModel.updateApprovalStatus(id, approval_status, adminUserId);
+
+      if (!retailer) {
+        return res.status(404).json({
+          success: false,
+          error: "Lojista não encontrado",
+        } as ApiResponse<null>);
+      }
+
+      const statusMessageMap = {
+        pending: "Cadastro marcado como pendente",
+        approved: "Lojista aprovado com sucesso",
+        rejected: "Cadastro do lojista rejeitado",
+      } as const;
+
+      const whatsappUrl =
+        approval_status === "approved"
+          ? await buildRetailerApprovedWhatsAppUrl(retailer)
+          : undefined;
+
+      return res.json({
+        success: true,
+        data: retailer,
+        message: statusMessageMap[approval_status as keyof typeof statusMessageMap],
+        whatsapp_url: whatsappUrl,
+      } as ApiResponse<Retailer> & { whatsapp_url?: string });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Erro ao atualizar aprovação do lojista",
+      } as ApiResponse<null>);
+    }
+  }
+
   // Deletar lojista (soft delete) - apenas admin
   async delete(req: Request, res: Response) {
     try {
@@ -131,6 +180,55 @@ class RetailerController {
         error: error.message || "Erro ao desativar lojista",
       };
       res.status(500).json(response);
+    }
+  }
+
+  // Excluir lojista permanentemente - apenas admin
+  async deletePermanent(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const userId = (req as any).user?.id;
+
+      if (userId === id) {
+        return res.status(400).json({
+          success: false,
+          error: "Você não pode excluir sua própria conta",
+        } as ApiResponse<null>);
+      }
+
+      const retailer = await RetailerModel.findByIdIncludingInactive(id);
+      if (!retailer) {
+        return res.status(404).json({
+          success: false,
+          error: "Lojista não encontrado",
+        } as ApiResponse<null>);
+      }
+
+      if (retailer.active) {
+        return res.status(400).json({
+          success: false,
+          error: "Desative o lojista antes de excluir permanentemente",
+        } as ApiResponse<null>);
+      }
+
+      const success = await RetailerModel.deletePermanent(id);
+
+      if (!success) {
+        return res.status(404).json({
+          success: false,
+          error: "Lojista não encontrado",
+        } as ApiResponse<null>);
+      }
+
+      return res.json({
+        success: true,
+        message: "Lojista excluído permanentemente",
+      } as ApiResponse<null>);
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Erro ao excluir lojista permanentemente",
+      } as ApiResponse<null>);
     }
   }
 }

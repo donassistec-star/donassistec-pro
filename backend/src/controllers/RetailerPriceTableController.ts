@@ -1,6 +1,7 @@
 import { Response } from "express";
 import RetailerPriceTableModel from "../models/RetailerPriceTableModel";
 import { AuthRequest } from "../middleware/auth";
+import { validateRetailerPriceTable } from "../utils/retailerPriceTableValidation";
 
 class RetailerPriceTableController {
   async getAdminList(_req: AuthRequest, res: Response) {
@@ -39,10 +40,31 @@ class RetailerPriceTableController {
   async upsert(req: AuthRequest, res: Response) {
     try {
       const { slug } = req.params;
-      const { title, effectiveDate, visibleToRetailers = true, featuredToRetailers = false, rawText } = req.body || {};
+      const {
+        title,
+        effectiveDate,
+        visibleToRetailers = true,
+        featuredToRetailers = false,
+        rawText,
+        serviceTemplates = [],
+      } = req.body || {};
 
       if (!rawText || typeof rawText !== "string" || rawText.trim().length === 0) {
         return res.status(400).json({ success: false, error: "Informe o texto bruto da tabela para importar" });
+      }
+
+      const validation = validateRetailerPriceTable({
+        title,
+        rawText,
+        visibleToRetailers: Boolean(visibleToRetailers),
+        featuredToRetailers: Boolean(featuredToRetailers),
+      });
+
+      if (validation.issues.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: validation.issues[0].label,
+        });
       }
 
       const record = await RetailerPriceTableModel.upsert({
@@ -52,6 +74,7 @@ class RetailerPriceTableController {
         visibleToRetailers: Boolean(visibleToRetailers),
         featuredToRetailers: Boolean(featuredToRetailers),
         rawText,
+        serviceTemplates: Array.isArray(serviceTemplates) ? serviceTemplates : [],
       });
 
       return res.json({

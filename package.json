@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:android": "cross-env VITE_CAPACITOR=true vite build && npx cap sync android",
-    "start:prod": "serve -s dist -l 8200",
+    "start:prod": "serve -s dist -l tcp://127.0.0.1:8200",
     "build:dev": "vite build --mode development",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "preview": "vite preview",

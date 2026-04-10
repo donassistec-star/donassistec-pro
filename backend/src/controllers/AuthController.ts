@@ -4,11 +4,14 @@ import AdminTeamModel from "../models/AdminTeamModel";
 import { AuthRequest } from "../middleware/auth";
 import { AuthResponse, RetailerRegisterData, RetailerLoginData } from "../types";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 import { getJwtSecret, isAdminBootstrapEnabled } from "../config/security";
+import { buildRetailerApprovalRequestWhatsAppUrl } from "../utils/retailerWhatsApp";
 
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as jwt.SignOptions["expiresIn"];
 
 class AuthController {
+
   async adminLogin(req: Request, res: Response) {
     try {
       const data: RetailerLoginData = req.body;
@@ -83,32 +86,18 @@ class AuthController {
 
       // Criar usuário
       const retailer = await RetailerModel.create(data);
-
-      // Gerar token JWT (source: retailer para lojistas)
-      const token = jwt.sign(
-        { id: retailer.id, email: retailer.email, role: retailer.role, source: "retailer" },
-        getJwtSecret(),
-        { expiresIn: JWT_EXPIRES_IN }
-      );
+      const whatsappUrl = await buildRetailerApprovalRequestWhatsAppUrl(retailer);
 
       const response: AuthResponse = {
         success: true,
-        token,
-        user: {
-          id: retailer.id,
-          email: retailer.email,
-          company_name: retailer.company_name,
-          contact_name: retailer.contact_name,
-          phone: retailer.phone,
-          cnpj: retailer.cnpj,
-          role: retailer.role,
-          source: "retailer",
-        },
-        message: "Cadastro realizado com sucesso",
+        approval_status: retailer.approval_status,
+        whatsapp_url: whatsappUrl,
+        message: "Cadastro recebido. Aguarde a aprovação do administrador para acessar as tabelas de preço.",
       };
 
       res.status(201).json(response);
     } catch (error: any) {
+      console.error("Erro no cadastro de lojista:", error);
       const response: AuthResponse = {
         success: false,
         error: error.message || "Erro ao criar conta",
@@ -255,14 +244,55 @@ class AuthController {
       }
 
       // 2) Tentar lojista (retailers)
-      const retailer = await RetailerModel.verifyPassword(data.email, data.password);
-      if (!retailer) {
+      const authStatus = await RetailerModel.getAuthStatusByEmail(data.email);
+      if (!authStatus) {
         const response: AuthResponse = {
           success: false,
           error: "Email ou senha inválidos",
         };
         return res.status(401).json(response);
       }
+
+      const passwordMatch = await RetailerModel.verifyPassword(data.email, data.password);
+      if (!passwordMatch) {
+        const validPassword = await bcrypt.compare(data.password, authStatus.password_hash);
+        if (!validPassword) {
+          return res.status(401).json({
+            success: false,
+            error: "Email ou senha inválidos",
+          });
+        }
+
+        if (!authStatus.active) {
+          return res.status(403).json({
+            success: false,
+            error: "Seu cadastro de lojista está inativo. Fale com o administrador.",
+          });
+        }
+
+        if (authStatus.approval_status === "pending") {
+          return res.status(403).json({
+            success: false,
+            approval_status: "pending",
+            error: "Seu cadastro está aguardando aprovação do administrador.",
+          });
+        }
+
+        if (authStatus.approval_status === "rejected") {
+          return res.status(403).json({
+            success: false,
+            approval_status: "rejected",
+            error: "Seu cadastro foi recusado. Entre em contato com o administrador.",
+          });
+        }
+
+        return res.status(401).json({
+          success: false,
+          error: "Email ou senha inválidos",
+        });
+      }
+
+      const retailer = passwordMatch;
 
       const token = jwt.sign(
         { id: retailer.id, email: retailer.email, role: retailer.role, source: "retailer" },
@@ -282,6 +312,7 @@ class AuthController {
           cnpj: retailer.cnpj,
           role: retailer.role,
           source: "retailer",
+          approval_status: retailer.approval_status,
         },
         message: "Login realizado com sucesso",
       };
@@ -343,6 +374,7 @@ class AuthController {
           cnpj: retailer.cnpj,
           role: retailer.role,
           source: "retailer",
+          approval_status: retailer.approval_status,
         },
       });
     } catch (error: any) {
@@ -393,6 +425,7 @@ class AuthController {
           cnpj: retailer.cnpj,
           role: retailer.role,
           source: "retailer",
+          approval_status: retailer.approval_status,
         },
         message: "Perfil atualizado com sucesso",
       });

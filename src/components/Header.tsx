@@ -24,10 +24,6 @@ const Header = () => {
   const showHeaderPhone = settings?.showHeaderPhone !== false;
   const showRetailerAreaButton = settings?.showRetailerAreaButton !== false;
   const showCompanyTradeName = (settings?.showCompanyTradeNameHeader ?? settings?.showCompanyTradeName) !== false;
-  const brandingLogoSrc =
-    !showCompanyTradeName && settings?.brandingLogoFavicon
-      ? settings.brandingLogoFavicon
-      : settings?.brandingLogoUrl;
 
   const navLinks = [
     { label: "Home", href: "/", visible: settings?.showNavHome !== false },
@@ -37,7 +33,7 @@ const Header = () => {
     { label: "Ajuda", href: "/ajuda", visible: settings?.showNavHelp !== false },
     { label: "Serviços", href: "/#servicos", visible: settings?.showNavServices !== false },
     { label: "Marcas", href: "/#marcas", visible: settings?.showNavBrands !== false },
-    { label: "Contato", href: "/#contato", visible: settings?.showNavContact !== false },
+    { label: "Contato", href: "/contato", visible: settings?.showNavContact !== false },
   ].filter((link) => link.visible);
 
   return (
@@ -50,11 +46,11 @@ const Header = () => {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            {brandingLogoSrc ? (
+            {settings?.brandingLogoUrl ? (
               <img
-                src={brandingLogoSrc}
+                src={settings.brandingLogoUrl}
                 alt={settings.companyTradeName || settings.siteName || "Logo"}
-                className="h-10 w-auto object-contain"
+                className="h-12 lg:h-14 w-auto max-w-[180px] object-contain"
                 onError={(e) => {
                   // Fallback para ícone se logo não carregar
                   const target = e.target as HTMLImageElement;
@@ -69,7 +65,7 @@ const Header = () => {
                 }}
               />
             ) : (
-              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+              <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-lg bg-primary flex items-center justify-center">
                 <Smartphone className="w-6 h-6 text-primary-foreground" />
               </div>
             )}

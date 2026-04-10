@@ -17,7 +17,9 @@
     "migrate:admin-team": "tsx scripts/run-migration-29.ts",
     "migrate:retailer-price-tables": "tsx scripts/run-migration-30.ts",
     "migrate:retailer-price-tables-utf8mb4": "tsx scripts/run-migration-31.ts",
-    "migrate:retailer-price-tables-display": "tsx scripts/run-migration-32.ts"
+    "migrate:retailer-price-tables-display": "tsx scripts/run-migration-32.ts",
+    "migrate:retailer-price-tables-service-templates": "tsx scripts/run-migration-33.ts",
+    "migrate:retailer-approval-flow": "tsx scripts/run-migration-34.ts"
   },
   "keywords": [
     "donassistec",

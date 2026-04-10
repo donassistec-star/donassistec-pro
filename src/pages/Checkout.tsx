@@ -323,13 +323,13 @@ const Checkout = () => {
                         </div>
 
                         <div>
-                          <Label htmlFor="cnpj">CNPJ</Label>
+                          <Label htmlFor="cnpj">CPF ou CNPJ</Label>
                           <Input
                             id="cnpj"
                             name="cnpj"
                             value={formData.cnpj}
                             onChange={handleInputChange}
-                            placeholder="00.000.000/0000-00"
+                            placeholder="000.000.000-00 ou 00.000.000/0000-00"
                           />
                         </div>
 

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { AuthRequest } from "../middleware/auth";
+import { AuthRequest, isAdminTeamUser } from "../middleware/auth";
 import PrePedidoModel, { PrePedidoItem } from "../models/PrePedidoModel";
 import { ApiResponse } from "../types";
 
@@ -11,7 +11,7 @@ class PrePedidoController {
         return res.status(401).json(response);
       }
       const retailerIds =
-        req.user.role === "admin" ? undefined : [req.user.id, req.user.email].filter(Boolean);
+        isAdminTeamUser(req.user) ? undefined : [req.user.id, req.user.email].filter(Boolean);
       const list = await PrePedidoModel.findAll(retailerIds);
       const response: ApiResponse<typeof list> = { success: true, data: list };
       res.set("Cache-Control", "no-store, no-cache, must-revalidate");
@@ -36,7 +36,7 @@ class PrePedidoController {
         return res.status(404).json({ success: false, error: "Pré-pedido não encontrado" });
       }
       const canAccess =
-        req.user.role === "admin" ||
+        isAdminTeamUser(req.user) ||
         (pp.retailer_id && [req.user.id, req.user.email].includes(pp.retailer_id));
       if (!canAccess) {
         return res.status(403).json({ success: false, error: "Você não pode acessar este pré-pedido" });

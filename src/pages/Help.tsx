@@ -16,11 +16,14 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import { useSettings } from "@/hooks/useSettings";
+import { validation } from "@/utils/validation";
 
 const Help = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const { settings } = useSettings();
 
-  const faqs = [
+  const defaultFaqs = [
     {
       category: "Geral",
       questions: [
@@ -86,6 +89,35 @@ const Help = () => {
     },
   ];
 
+  const parsedFaqs = (settings?.helpFaqItems || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [category, question, answer] = line.split("|").map((item) => item.trim());
+      return { category, question, answer };
+    })
+    .filter((item) => item.category && item.question && item.answer);
+
+  const faqs =
+    parsedFaqs.length > 0
+      ? Object.values(
+          parsedFaqs.reduce<Record<string, { category: string; questions: Array<{ question: string; answer: string }> }>>(
+            (acc, item) => {
+              if (!acc[item.category]) {
+                acc[item.category] = { category: item.category, questions: [] };
+              }
+              acc[item.category].questions.push({
+                question: item.question,
+                answer: item.answer,
+              });
+              return acc;
+            },
+            {}
+          )
+        )
+      : defaultFaqs;
+
   const filteredFAQs = faqs.map((category) => ({
     ...category,
     questions: category.questions.filter((faq) =>
@@ -97,9 +129,16 @@ const Help = () => {
   })).filter((category) => category.questions.length > 0);
 
   const handleWhatsApp = () => {
-    const message = encodeURIComponent("Olá! Preciso de ajuda.");
-    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
+    const url = validation.generateWhatsAppUrl(
+      settings?.contactWhatsApp || settings?.whatsappNumber || "5511999999999",
+      settings?.whatsappContactMessage || "Olá! Preciso de ajuda."
+    );
+    window.open(url, "_blank");
   };
+
+  const contactPhone = settings?.contactPhone || "(11) 99999-9999";
+  const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
+  const contactEmail = settings?.contactEmail || "suporte@donassistec.com.br";
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,20 +150,20 @@ const Help = () => {
           <div className="container mx-auto px-4 text-center">
             <Badge className="mb-4 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">
               <HelpCircle className="w-3 h-3 mr-1" />
-              Central de Ajuda
+              {settings?.helpHeroBadge || "Central de Ajuda"}
             </Badge>
             <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-              Como Podemos <span className="text-secondary">Ajudar</span>?
+              {settings?.helpHeroTitle || "Como Podemos Ajudar?"}
             </h1>
             <p className="text-lg text-primary-foreground/90 max-w-2xl mx-auto mb-8">
-              Encontre respostas para suas dúvidas ou entre em contato com nosso suporte
+              {settings?.helpHeroDescription || "Encontre respostas para suas dúvidas ou entre em contato com nosso suporte"}
             </p>
 
             {/* Search */}
             <div className="max-w-2xl mx-auto relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                placeholder="Buscar perguntas frequentes..."
+                placeholder={settings?.helpSearchPlaceholder || "Buscar perguntas frequentes..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 pr-4 h-14 bg-card text-foreground"
@@ -140,7 +179,7 @@ const Help = () => {
               <Link to="/">
                 <Button variant="ghost" className="mb-6">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Voltar para Home
+                  {settings?.helpBackLabel || "Voltar para Home"}
                 </Button>
               </Link>
             </div>
@@ -176,13 +215,16 @@ const Help = () => {
             ) : (
               <Card className="text-center p-12">
                 <HelpCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-xl font-semibold mb-2">Nenhum resultado encontrado</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  {settings?.helpNoResultsTitle || "Nenhum resultado encontrado"}
+                </h3>
                 <p className="text-muted-foreground mb-6">
-                  Tente buscar com outras palavras-chave ou entre em contato com nosso suporte.
+                  {settings?.helpNoResultsDescription ||
+                    "Tente buscar com outras palavras-chave ou entre em contato com nosso suporte."}
                 </p>
                 <Button onClick={handleWhatsApp}>
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  Falar no WhatsApp
+                  {settings?.helpNoResultsButtonLabel || "Falar no WhatsApp"}
                 </Button>
               </Card>
             )}
@@ -192,10 +234,10 @@ const Help = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
                   <MessageCircle className="w-6 h-6 text-primary" />
-                  Ainda Precisa de Ajuda?
+                  {settings?.helpContactTitle || "Ainda Precisa de Ajuda?"}
                 </CardTitle>
                 <CardDescription>
-                  Nossa equipe está pronta para ajudá-lo com qualquer dúvida ou problema
+                  {settings?.helpContactDescription || "Nossa equipe está pronta para ajudá-lo com qualquer dúvida ou problema"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -204,23 +246,23 @@ const Help = () => {
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                       <MessageCircle className="w-6 h-6 text-primary" />
                     </div>
-                    <h4 className="font-semibold mb-2">WhatsApp</h4>
+                    <h4 className="font-semibold mb-2">{settings?.helpWhatsappTitle || "WhatsApp"}</h4>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Atendimento rápido via WhatsApp
+                      {settings?.helpWhatsappDescription || "Atendimento rápido via WhatsApp"}
                     </p>
                     <Button variant="outline" size="sm" onClick={handleWhatsApp}>
-                      Abrir Chat
+                      {settings?.helpWhatsappLabel || "Abrir Chat"}
                     </Button>
                   </div>
                   <div className="text-center">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                       <Phone className="w-6 h-6 text-primary" />
                     </div>
-                    <h4 className="font-semibold mb-2">Telefone</h4>
-                    <p className="text-sm text-muted-foreground mb-3">(11) 99999-9999</p>
-                    <a href="tel:+5511999999999">
+                    <h4 className="font-semibold mb-2">{settings?.helpPhoneTitle || "Telefone"}</h4>
+                    <p className="text-sm text-muted-foreground mb-3">{contactPhone}</p>
+                    <a href={`tel:${contactPhoneRaw}`}>
                       <Button variant="outline" size="sm">
-                        Ligar Agora
+                        {settings?.helpPhoneLabel || "Ligar Agora"}
                       </Button>
                     </a>
                   </div>
@@ -228,13 +270,11 @@ const Help = () => {
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                       <Mail className="w-6 h-6 text-primary" />
                     </div>
-                    <h4 className="font-semibold mb-2">E-mail</h4>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      suporte@donassistec.com.br
-                    </p>
-                    <a href="mailto:suporte@donassistec.com.br">
+                    <h4 className="font-semibold mb-2">{settings?.helpEmailTitle || "E-mail"}</h4>
+                    <p className="text-sm text-muted-foreground mb-3">{contactEmail}</p>
+                    <a href={`mailto:${contactEmail}`}>
                       <Button variant="outline" size="sm">
-                        Enviar E-mail
+                        {settings?.helpEmailLabel || "Enviar E-mail"}
                       </Button>
                     </a>
                   </div>

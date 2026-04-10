@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useSettings } from "@/hooks/useSettings";
+import { normalizeMediaUrl } from "@/utils/mediaUrl";
 
 /**
  * Componente para atualizar dinamicamente o favicon
@@ -17,16 +18,17 @@ const Favicon = () => {
 
     // Adicionar novo favicon se configurado
     if (settings?.brandingLogoFavicon) {
+      const faviconUrl = normalizeMediaUrl(settings.brandingLogoFavicon);
       const link = document.createElement("link");
       link.rel = "icon";
       link.type = "image/x-icon";
-      link.href = settings.brandingLogoFavicon;
+      link.href = faviconUrl;
       document.head.appendChild(link);
 
       // Também adicionar apple-touch-icon
       const appleLink = document.createElement("link");
       appleLink.rel = "apple-touch-icon";
-      appleLink.href = settings.brandingLogoFavicon;
+      appleLink.href = faviconUrl;
       document.head.appendChild(appleLink);
     } else {
       // Fallback para favicon padrão se não configurado

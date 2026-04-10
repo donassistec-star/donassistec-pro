@@ -3,6 +3,7 @@ import { MessageCircle, Phone } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { validation } from "@/utils/validation";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const CTASection = () => {
   const { settings } = useSettings();
@@ -14,16 +15,23 @@ const CTASection = () => {
   const contactPhone = settings?.contactPhone || "(11) 99999-9999";
   const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
   const contactAddress = settings?.contactAddress || "São Paulo - SP";
+  const title = settings?.homeContactTitle || "Precisa de Peças ou Reconstrução?";
+  const description =
+    settings?.homeContactDescription ||
+    "Fale com nossa equipe especializada e receba um orçamento sem compromisso. Atendimento exclusivo para lojistas e assistências técnicas.";
+  const whatsappLabel = settings?.homeContactWhatsappLabel || "Chamar no WhatsApp";
+  const phoneLabel = settings?.homeContactPhoneLabel || contactPhone;
+  const infoBadge = settings?.homeContactInfoBadge || "Garantia de 90 dias";
+  const contactPageLabel = settings?.homeContactPageButtonLabel || "Ver pagina de contato";
 
   return (
     <section id="contato" className="py-20 bg-gradient-to-br from-primary to-primary/80">
       <div className="container mx-auto px-4 text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-          Precisa de Peças ou Reconstrução?
+          {title}
         </h2>
         <p className="text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-          Fale com nossa equipe especializada e receba um orçamento sem compromisso. 
-          Atendimento exclusivo para lojistas e assistências técnicas.
+          {description}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -39,7 +47,7 @@ const CTASection = () => {
             className="gap-3"
           >
             <MessageCircle className="w-6 h-6" />
-            Chamar no WhatsApp
+            {whatsappLabel}
           </Button>
           <a href={`tel:${contactPhoneRaw}`}>
             <Button
@@ -48,9 +56,12 @@ const CTASection = () => {
               className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground hover:text-primary"
             >
               <Phone className="w-5 h-5" />
-              {contactPhone}
+              {phoneLabel}
             </Button>
           </a>
+          <Button asChild size="xl" variant="secondary">
+            <Link to="/contato">{contactPageLabel}</Link>
+          </Button>
         </div>
 
         {/* Info Strip */}
@@ -66,7 +77,7 @@ const CTASection = () => {
               <span>📍 {contactAddress}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span>✅ Garantia de 90 dias</span>
+              <span>✅ {infoBadge}</span>
             </div>
           </div>
         </div>

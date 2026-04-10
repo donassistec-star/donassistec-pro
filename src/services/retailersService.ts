@@ -9,6 +9,9 @@ export interface Retailer {
   cnpj?: string;
   role: "retailer" | "admin";
   active: boolean;
+  approval_status: "pending" | "approved" | "rejected";
+  approved_at?: string | null;
+  approved_by?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -18,6 +21,13 @@ interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+  whatsapp_url?: string;
+}
+
+export interface RetailerApprovalResult {
+  retailer: Retailer;
+  message?: string;
+  whatsapp_url?: string;
 }
 
 export const retailersService = {
@@ -69,6 +79,31 @@ export const retailersService = {
     }
   },
 
+  async updateApprovalStatus(
+    id: string,
+    approvalStatus: "pending" | "approved" | "rejected"
+  ): Promise<RetailerApprovalResult | null> {
+    try {
+      const response = await api.put<ApiResponse<Retailer>>(
+        `/retailers/${id}/approval`,
+        { approval_status: approvalStatus }
+      );
+
+      if (response.data.success && response.data.data) {
+        return {
+          retailer: response.data.data,
+          message: response.data.message,
+          whatsapp_url: response.data.whatsapp_url,
+        };
+      }
+
+      return null;
+    } catch (error: any) {
+      console.error("Erro ao atualizar aprovação do lojista:", error);
+      throw new Error(error.response?.data?.error || "Erro ao atualizar aprovação do lojista");
+    }
+  },
+
   async delete(id: string): Promise<boolean> {
     try {
       const response = await api.delete<ApiResponse<null>>(`/retailers/${id}`);
@@ -77,6 +112,19 @@ export const retailersService = {
     } catch (error: any) {
       console.error("Erro ao deletar lojista:", error);
       throw new Error(error.response?.data?.error || "Erro ao deletar lojista");
+    }
+  },
+
+  async deletePermanent(id: string): Promise<boolean> {
+    try {
+      const response = await api.delete<ApiResponse<null>>(`/retailers/${id}/permanent`);
+
+      return response.data.success || false;
+    } catch (error: any) {
+      console.error("Erro ao excluir lojista permanentemente:", error);
+      throw new Error(
+        error.response?.data?.error || "Erro ao excluir lojista permanentemente"
+      );
     }
   },
 };

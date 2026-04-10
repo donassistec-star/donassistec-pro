@@ -5,6 +5,12 @@ import {
   parseRetailerPriceTable,
 } from "../utils/retailerPriceTableParser";
 
+export interface RetailerPriceTableServiceTemplate {
+  id: string;
+  name: string;
+  serviceNames: string[];
+}
+
 export interface RetailerPriceTableRecord {
   id: number;
   slug: string;
@@ -14,17 +20,57 @@ export interface RetailerPriceTableRecord {
   featured_to_retailers: boolean;
   sort_order: number;
   raw_text: string;
+  service_templates: RetailerPriceTableServiceTemplate[];
   parsed_data: ParsedRetailerPriceTable;
   created_at?: string;
   updated_at?: string;
 }
 
 class RetailerPriceTableModel {
+  private normalizeServiceTemplates(input: unknown): RetailerPriceTableServiceTemplate[] {
+    if (!Array.isArray(input)) return [];
+
+    return input
+      .map((item, index) => {
+        if (!item || typeof item !== "object") return null;
+
+        const template = item as Record<string, unknown>;
+        const serviceNames = Array.isArray(template.serviceNames)
+          ? Array.from(
+              new Set(
+                template.serviceNames
+                  .map((serviceName) => (typeof serviceName === "string" ? serviceName.replace(/\s+/g, " ").trim() : ""))
+                  .filter(Boolean)
+              )
+            )
+          : [];
+
+        const name =
+          typeof template.name === "string" ? template.name.replace(/\s+/g, " ").trim() : "";
+
+        if (!name || serviceNames.length === 0) return null;
+
+        return {
+          id:
+            typeof template.id === "string" && template.id.trim().length > 0
+              ? template.id.trim()
+              : `template-${index + 1}`,
+          name,
+          serviceNames,
+        };
+      })
+      .filter((template): template is RetailerPriceTableServiceTemplate => Boolean(template));
+  }
+
   private mapRow(row: mysql2.RowDataPacket): RetailerPriceTableRecord {
     const parsed =
       typeof row.parsed_data === "string"
         ? JSON.parse(row.parsed_data)
         : row.parsed_data;
+    const serviceTemplates =
+      typeof row.service_templates === "string"
+        ? JSON.parse(row.service_templates)
+        : row.service_templates;
 
     return {
       id: Number(row.id),
@@ -35,6 +81,7 @@ class RetailerPriceTableModel {
       featured_to_retailers: Boolean(row.featured_to_retailers),
       sort_order: Number(row.sort_order || 0),
       raw_text: row.raw_text,
+      service_templates: this.normalizeServiceTemplates(serviceTemplates),
       parsed_data: parsed,
       created_at: row.created_at,
       updated_at: row.updated_at,
@@ -93,6 +140,7 @@ class RetailerPriceTableModel {
     visibleToRetailers: boolean;
     featuredToRetailers?: boolean;
     rawText: string;
+    serviceTemplates?: RetailerPriceTableServiceTemplate[];
   }): Promise<RetailerPriceTableRecord> {
     const parsed = parseRetailerPriceTable(data.rawText);
     const title = data.title?.trim() || parsed.title || "Tabela de Preços";
@@ -107,6 +155,9 @@ class RetailerPriceTableModel {
       title,
       effectiveDate,
     });
+    const serviceTemplatesJson = JSON.stringify(
+      this.normalizeServiceTemplates(data.serviceTemplates ?? existing?.service_templates ?? [])
+    );
 
     if (featuredToRetailers) {
       await pool.execute(
@@ -116,8 +167,8 @@ class RetailerPriceTableModel {
     }
 
     await pool.execute(
-      `INSERT INTO retailer_price_tables (slug, title, effective_date, visible_to_retailers, featured_to_retailers, sort_order, raw_text, parsed_data)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO retailer_price_tables (slug, title, effective_date, visible_to_retailers, featured_to_retailers, sort_order, raw_text, parsed_data, service_templates)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
          title = VALUES(title),
          effective_date = VALUES(effective_date),
@@ -125,8 +176,9 @@ class RetailerPriceTableModel {
          featured_to_retailers = VALUES(featured_to_retailers),
          raw_text = VALUES(raw_text),
          parsed_data = VALUES(parsed_data),
+         service_templates = VALUES(service_templates),
          updated_at = CURRENT_TIMESTAMP`,
-      [data.slug, title, effectiveDate, data.visibleToRetailers, featuredToRetailers, sortOrder, data.rawText, parsedJson]
+      [data.slug, title, effectiveDate, data.visibleToRetailers, featuredToRetailers, sortOrder, data.rawText, parsedJson, serviceTemplatesJson]
     );
 
     const updated = await this.findBySlug(data.slug);

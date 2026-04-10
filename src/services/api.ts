@@ -88,6 +88,26 @@ api.interceptors.response.use(
 
       // Tratamento de erro 403 (proibido)
       if (status === 403) {
+        const errorMessage = data?.error || "Você não tem permissão para realizar esta ação.";
+        const currentPath = window.location.pathname;
+        const isRetailerApprovalBlock =
+          currentPath.startsWith("/lojista") &&
+          (
+            errorMessage.includes("aguardando aprovação") ||
+            errorMessage.includes("aguardando aprovacao") ||
+            errorMessage.includes("foi recusado") ||
+            errorMessage.includes("está inativo") ||
+            errorMessage.includes("esta inativo")
+          );
+
+        if (isRetailerApprovalBlock) {
+          localStorage.removeItem("donassistec_token");
+          localStorage.removeItem("donassistec_auth");
+          toast.error(errorMessage);
+          window.location.href = "/lojista/login";
+          return Promise.reject(error);
+        }
+
         toast.error("Você não tem permissão para realizar esta ação.");
         return Promise.reject(error);
       }

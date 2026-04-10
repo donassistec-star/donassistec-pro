@@ -1,6 +1,13 @@
 import api from "./api";
 import { HomeContent } from "@/data/homeContent";
 import { ApiResponse } from "./modelsService";
+import { normalizeMediaUrl } from "@/utils/mediaUrl";
+
+const normalizeHomeContent = (content: HomeContent): HomeContent => ({
+  ...content,
+  heroImage: normalizeMediaUrl(content.heroImage),
+  servicesImage: normalizeMediaUrl(content.servicesImage),
+});
 
 export const homeContentService = {
   // Buscar conteúdo da home
@@ -9,7 +16,7 @@ export const homeContentService = {
       const response = await api.get<ApiResponse<HomeContent>>("/home-content");
       
       if (response.data.success && response.data.data) {
-        return response.data.data;
+        return normalizeHomeContent(response.data.data);
       }
       
       return null;
@@ -31,7 +38,7 @@ export const homeContentService = {
       const response = await api.put<ApiResponse<HomeContent>>("/home-content", content);
       
       if (response.data.success && response.data.data) {
-        return response.data.data;
+        return normalizeHomeContent(response.data.data);
       }
       
       return null;

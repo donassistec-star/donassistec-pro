@@ -1,29 +1,44 @@
-import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { brands as staticBrands } from "@/data/models";
 import { ArrowRight } from "lucide-react";
 import { useBrands } from "@/hooks/useBrands";
-import { useAuth } from "@/contexts/AuthContext";
+import { useModels } from "@/hooks/useModels";
 import { LoadingSkeleton } from "@/components/ui/loading";
-
-const brandData = [
-  { id: "apple", models: 45, hasReconstruction: true },
-  { id: "samsung", models: 120, hasReconstruction: true },
-  { id: "xiaomi", models: 85, hasReconstruction: true },
-  { id: "motorola", models: 60, hasReconstruction: true },
-  { id: "lg", models: 35, hasReconstruction: false },
-  { id: "huawei", models: 40, hasReconstruction: true },
-];
+import { useHomeContent } from "@/contexts/HomeContentContext";
+import { useSettings } from "@/hooks/useSettings";
+import { validation } from "@/utils/validation";
 
 const BrandsSection = () => {
   const { brands: apiBrands, loading } = useBrands();
-  const { user } = useAuth();
+  const { models, loading: loadingModels } = useModels();
+  const { content } = useHomeContent();
+  const { settings } = useSettings();
   const brands = apiBrands && apiBrands.length > 0 ? apiBrands : staticBrands;
-  const isLojista = user?.role === "retailer";
+  const loadingData = loading || loadingModels;
+  const selectedBrandIds = content.homeBrandIds || [];
+  const rawWhatsAppNumber =
+    settings?.contactWhatsApp || settings?.whatsappNumber || "5511999999999";
 
-  if (loading) {
+  const brandsWithStats = brands
+    .map((brand) => {
+      const brandModels = models.filter((model) => model.brand === brand.id);
+      return {
+        ...brand,
+        modelsCount: brandModels.length,
+        hasReconstruction: brandModels.some((model) => model.services.reconstruction),
+      };
+    })
+    .filter((brand) => brand.logo || brand.modelsCount > 0 || apiBrands.length > 0);
+
+  const orderedBrands =
+    selectedBrandIds.length > 0
+      ? selectedBrandIds
+          .map((id) => brandsWithStats.find((brand) => brand.id === id))
+          .filter((brand): brand is NonNullable<typeof brand> => Boolean(brand))
+      : brandsWithStats;
+
+  if (loadingData) {
     return (
       <section id="marcas" className="py-20 bg-background">
         <div className="container mx-auto px-4">
@@ -56,12 +71,16 @@ const BrandsSection = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
-          {brandData.map((brandInfo) => {
-            const brand = brands.find((b) => b.id === brandInfo.id);
-            if (!brand) return null;
-
-            return (
-              <Link key={brand.id} to={isLojista ? `/catalogo?brand=${brand.id}` : "/lojista/login"}>
+          {orderedBrands.map((brand) => (
+            <a
+              key={brand.id}
+              href={validation.generateWhatsAppUrl(
+                rawWhatsAppNumber,
+                `Olá! Gostaria de ver mais modelos da marca ${brand.name}.`
+              )}
+              target="_blank"
+              rel="noreferrer"
+            >
                 <Card
                   className="group relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-2 border-border hover:border-primary/50 bg-gradient-to-br from-card to-muted/30 hover:from-card hover:to-muted/50"
                 >
@@ -121,11 +140,11 @@ const BrandsSection = () => {
 
                     {/* Models Count */}
                     <p className="text-sm font-medium text-muted-foreground mb-4">
-                      {brandInfo.models} {brandInfo.models === 1 ? "modelo" : "modelos"}
+                      {brand.modelsCount} {brand.modelsCount === 1 ? "modelo" : "modelos"}
                     </p>
 
                     {/* Reconstruction Badge */}
-                    {brandInfo.hasReconstruction && (
+                    {brand.hasReconstruction && (
                       <Badge 
                         variant="secondary" 
                         className="text-xs font-semibold mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
@@ -136,7 +155,7 @@ const BrandsSection = () => {
 
                     {/* Arrow Indicator */}
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors mt-2">
-                      <span>Ver modelos</span>
+                      <span>Ver mais modelos</span>
                       <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </CardContent>
@@ -146,9 +165,8 @@ const BrandsSection = () => {
                     className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   />
                 </Card>
-              </Link>
-            );
-          })}
+              </a>
+          ))}
         </div>
       </div>
     </section>

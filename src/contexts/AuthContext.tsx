@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { authService } from "@/services/authService";
+import { authService, AuthResponse } from "@/services/authService";
 
 interface User {
   id: string;
@@ -13,13 +13,15 @@ interface User {
   source?: "admin_team" | "retailer";
   /** Módulos visíveis no admin (apenas para source=admin_team) */
   modules?: string[];
+  approvalStatus?: "pending" | "approved" | "rejected";
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<AuthResponse>;
+  loginAdmin: (email: string, password: string) => Promise<boolean>;
   loginWithBootstrap: (data: { token: string; user: { id: string; email: string; company_name?: string; contact_name: string; phone?: string; cnpj?: string; role: string; source?: string; modules?: string[] } }) => void;
-  register: (data: RegisterData) => Promise<boolean>;
+  register: (data: RegisterData) => Promise<AuthResponse>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -38,6 +40,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_STORAGE_KEY = "donassistec_auth";
 const TOKEN_STORAGE_KEY = "donassistec_token";
+
+const clearStoredAuth = () => {
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -68,19 +75,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: meResponse.user.role,
               source: meResponse.user.source,
               modules: meResponse.user.modules,
+              approvalStatus: meResponse.user.approval_status,
             };
             setUser(updatedUser);
             localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser));
           } else {
             // Token inválido, limpar
-            localStorage.removeItem(TOKEN_STORAGE_KEY);
-            localStorage.removeItem(AUTH_STORAGE_KEY);
+            clearStoredAuth();
             setUser(null);
           }
         } catch {
           // Ignore invalid data
-          localStorage.removeItem(TOKEN_STORAGE_KEY);
-          localStorage.removeItem(AUTH_STORAGE_KEY);
+          clearStoredAuth();
+          setUser(null);
         }
       }
       setIsLoading(false);
@@ -89,12 +96,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<AuthResponse> => {
     setIsLoading(true);
     
     try {
       const response = await authService.login({ email, password });
       
+      if (response.success && response.token && response.user) {
+        const userData: User = {
+          id: response.user.id,
+          email: response.user.email,
+          companyName: response.user.company_name ?? "",
+          contactName: response.user.contact_name,
+          phone: response.user.phone || "",
+          cnpj: response.user.cnpj,
+          role: response.user.role,
+          source: response.user.source,
+          modules: response.user.modules,
+          approvalStatus: response.user.approval_status,
+        };
+
+        setUser(userData);
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
+        localStorage.setItem(TOKEN_STORAGE_KEY, response.token);
+        setIsLoading(false);
+        return response;
+      }
+
+      setIsLoading(false);
+      return response;
+    } catch (error: any) {
+      setIsLoading(false);
+      return {
+        success: false,
+        error: error?.message || "Erro ao fazer login",
+      };
+    }
+  };
+
+  const loginAdmin = async (email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+
+    try {
+      const response = await authService.adminLogin({ email, password });
+
       if (response.success && response.token && response.user) {
         const userData: User = {
           id: response.user.id,
@@ -117,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setIsLoading(false);
       return false;
-    } catch (error) {
+    } catch {
       setIsLoading(false);
       return false;
     }
@@ -134,16 +179,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: data.user.role,
       source: (data.user.source as "admin_team" | "retailer") || "admin_team",
       modules: data.user.modules,
+      approvalStatus: data.user.source === "retailer" ? "approved" : undefined,
     };
     setUser(userData);
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
     localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
   };
 
-  const register = async (data: RegisterData): Promise<boolean> => {
+  const register = async (data: RegisterData): Promise<AuthResponse> => {
     setIsLoading(true);
 
     try {
+      setUser(null);
+      clearStoredAuth();
       const response = await authService.register({
         email: data.email,
         password: data.password,
@@ -153,38 +201,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         cnpj: data.cnpj,
       });
 
-      if (response.success && response.token && response.user) {
-        const userData: User = {
-          id: response.user.id,
-          email: response.user.email,
-          companyName: response.user.company_name ?? "",
-          contactName: response.user.contact_name,
-          phone: response.user.phone || "",
-          cnpj: response.user.cnpj,
-          role: response.user.role,
-          source: response.user.source ?? "retailer",
-          modules: response.user.modules,
-        };
-
-        setUser(userData);
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
-        localStorage.setItem(TOKEN_STORAGE_KEY, response.token);
-        setIsLoading(false);
-        return true;
-      }
-
       setIsLoading(false);
-      return false;
-    } catch (error) {
+      return response;
+    } catch (error: any) {
       setIsLoading(false);
-      return false;
+      return {
+        success: false,
+        error: error?.message || "Erro ao criar conta",
+      };
     }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    clearStoredAuth();
   };
 
   return (
@@ -192,6 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         login,
+        loginAdmin,
         loginWithBootstrap,
         register,
         logout,

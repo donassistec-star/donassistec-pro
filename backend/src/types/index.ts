@@ -92,6 +92,9 @@ export interface Retailer {
   cnpj?: string;
   role: "retailer" | "admin";
   active: boolean;
+  approval_status: "pending" | "approved" | "rejected";
+  approved_at?: string | null;
+  approved_by?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -123,7 +126,10 @@ export interface AuthResponse {
     role: "retailer" | "admin" | "gerente" | "tecnico" | "user";
     source?: "admin_team" | "retailer";
     modules?: string[];
+    approval_status?: "pending" | "approved" | "rejected";
   };
+  approval_status?: "pending" | "approved" | "rejected";
+  whatsapp_url?: string;
   error?: string;
   message?: string;
 }

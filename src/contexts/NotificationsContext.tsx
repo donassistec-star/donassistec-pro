@@ -19,9 +19,27 @@ interface NotificationsContextType {
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
+const NOTIFICATIONS_STORAGE_KEY = "donassistec_notifications";
 
 export const NotificationsProvider = ({ children }: { children: React.ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+      if (!stored) return;
+
+      const parsed = JSON.parse(stored) as Array<Omit<Notification, "timestamp"> & { timestamp: string }>;
+      setNotifications(
+        parsed.map((notification) => ({
+          ...notification,
+          timestamp: new Date(notification.timestamp),
+        }))
+      );
+    } catch {
+      localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY);
+    }
+  }, []);
 
   const addNotification = useCallback(
     (notification: Omit<Notification, "id" | "timestamp" | "read">) => {
@@ -67,6 +85,10 @@ export const NotificationsProvider = ({ children }: { children: React.ReactNode 
       Notification.requestPermission();
     }
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
+  }, [notifications]);
 
   return (
     <NotificationsContext.Provider

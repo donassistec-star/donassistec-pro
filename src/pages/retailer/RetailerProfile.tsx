@@ -74,8 +74,8 @@ const RetailerProfile = () => {
       return;
     }
 
-    if (formData.cnpj && !validation.isValidCNPJ(formData.cnpj)) {
-      toast.error("CNPJ inválido");
+    if (formData.cnpj && !validation.isValidBrazilianDocument(formData.cnpj)) {
+      toast.error("CPF ou CNPJ invalido");
       return;
     }
 
@@ -232,16 +232,16 @@ const RetailerProfile = () => {
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="cnpj">CNPJ</Label>
+                  <Label htmlFor="cnpj">CPF ou CNPJ</Label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="cnpj"
                       name="cnpj"
-                      placeholder="00.000.000/0000-00"
+                      placeholder="000.000.000-00 ou 00.000.000/0000-00"
                       value={formData.cnpj}
                       onChange={(e) => {
-                        const formatted = validation.formatCNPJ(e.target.value);
+                        const formatted = validation.formatBrazilianDocument(e.target.value);
                         setFormData({ ...formData, cnpj: formatted });
                       }}
                       className="pl-10"

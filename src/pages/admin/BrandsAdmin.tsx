@@ -36,6 +36,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const BrandsAdmin = () => {
   const navigate = useNavigate();
@@ -47,6 +55,9 @@ const BrandsAdmin = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [transferTargetBrandId, setTransferTargetBrandId] = useState("");
+  const [movingModels, setMovingModels] = useState(false);
   const pageSize = 10;
 
   useEffect(() => {
@@ -82,6 +93,15 @@ const BrandsAdmin = () => {
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
 
+    const linkedModelsCount = modelsCount[itemToDelete.id] || 0;
+    if (linkedModelsCount > 0) {
+      setDeleteDialogOpen(false);
+      const fallbackTarget = brands.find((brand) => brand.id !== itemToDelete.id)?.id || "";
+      setTransferTargetBrandId(fallbackTarget);
+      setTransferDialogOpen(true);
+      return;
+    }
+
     try {
       setDeleting(true);
       await brandsService.delete(itemToDelete.id);
@@ -96,6 +116,33 @@ const BrandsAdmin = () => {
     }
   };
 
+  const handleTransferAndDelete = async () => {
+    if (!itemToDelete || !transferTargetBrandId) {
+      toast.error("Selecione a marca de destino");
+      return;
+    }
+
+    try {
+      setMovingModels(true);
+      const modelsToMove = await modelsService.getByBrand(itemToDelete.id);
+
+      for (const model of modelsToMove) {
+        await modelsService.update(model.id, { ...model, brand: transferTargetBrandId });
+      }
+
+      await brandsService.delete(itemToDelete.id);
+      toast.success("Modelos movidos e marca excluida com sucesso!");
+      setTransferDialogOpen(false);
+      setItemToDelete(null);
+      setTransferTargetBrandId("");
+      await loadData();
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao mover modelos e excluir marca");
+    } finally {
+      setMovingModels(false);
+    }
+  };
+
   const filteredBrands = brands.filter((brand) =>
     !searchQuery ||
     brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -107,6 +154,7 @@ const BrandsAdmin = () => {
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
+  const availableTransferBrands = brands.filter((brand) => brand.id !== itemToDelete?.id);
 
   return (
     <AdminLayout>
@@ -309,11 +357,11 @@ const BrandsAdmin = () => {
               <br />
               <br />
               <span className="text-destructive font-medium">
-                Atenção: Isso pode afetar os modelos associados a esta marca.
+                Atenção: {itemToDelete ? (modelsCount[itemToDelete.id] || 0) : 0} modelo(s) estao associados a esta marca.
               </span>
               <br />
               <br />
-              Esta ação não pode ser desfeita. Todos os dados relacionados a esta marca serão permanentemente removidos.
+              Se houver modelos vinculados, exclua ou mova esses modelos antes de remover a marca.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -328,6 +376,51 @@ const BrandsAdmin = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mover modelos antes de excluir</DialogTitle>
+            <DialogDescription>
+              A marca <strong>{itemToDelete?.name}</strong> possui{" "}
+              <strong>{itemToDelete ? modelsCount[itemToDelete.id] || 0 : 0} modelo(s)</strong> vinculado(s).
+              Escolha a marca de destino para mover esses modelos e concluir a exclusao.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <label className="text-sm font-medium text-foreground">Marca de destino</label>
+            <select
+              value={transferTargetBrandId}
+              onChange={(e) => setTransferTargetBrandId(e.target.value)}
+              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+            >
+              <option value="">Selecione a marca</option>
+              {availableTransferBrands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setTransferDialogOpen(false);
+                setTransferTargetBrandId("");
+              }}
+              disabled={movingModels}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleTransferAndDelete} disabled={movingModels || !transferTargetBrandId}>
+              {movingModels ? "Movendo..." : "Mover e excluir marca"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

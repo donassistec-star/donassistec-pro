@@ -1,611 +1,258 @@
+import RetailerLayout from "@/components/retailer/RetailerLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  Package, 
-  TrendingUp, 
-  Clock, 
-  CheckCircle2, 
-  ShoppingCart,
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import {
   ArrowRight,
-  DollarSign,
-  Users,
   BarChart3,
-  LineChart,
-  TrendingDown,
-  Target,
-  Sparkles
+  CheckCircle2,
+  LifeBuoy,
+  PackageSearch,
+  PlayCircle,
+  Store,
+  TableProperties,
+  User,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect, useState, useMemo } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import RetailerLayout from "@/components/retailer/RetailerLayout";
-import { useModels } from "@/hooks/useModels";
-import { useBrands } from "@/hooks/useBrands";
-import { ordersService, OrderWithItems } from "@/services/ordersService";
-import { LineChart as RechartsLineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { formatCurrency, formatDate } from "@/utils/format";
-import ProductRecommendations from "@/components/recommendations/ProductRecommendations";
+import { cn } from "@/lib/utils";
+
+const quickActions = [
+  {
+    title: "Meu Perfil",
+    description: "Atualize cadastro, contato e informações da empresa.",
+    href: "/lojista/perfil",
+    icon: User,
+  },
+  {
+    title: "Tabela de Preços",
+    description: "Consulte valores e serviços disponíveis para lojistas.",
+    href: "/lojista/tabela-precos",
+    icon: TableProperties,
+  },
+  {
+    title: "Suporte",
+    description: "Fale com a equipe para tirar dúvidas e destravar processos.",
+    href: "/lojista/suporte",
+    icon: LifeBuoy,
+  },
+  {
+    title: "Vídeos Explicativos",
+    description: "Assista aos tutoriais de cadastro, pedidos e operação.",
+    href: "/lojista/videos-explicativos",
+    icon: PlayCircle,
+  },
+];
+
+const journeyCards = [
+  {
+    title: "Atualizar cadastro",
+    description: "Confira seus dados da empresa e mantenha o acesso sempre consistente.",
+    href: "/lojista/perfil",
+  },
+  {
+    title: "Consultar tabela",
+    description: "Use a tabela exclusiva para avaliar serviços e organizar seu atendimento.",
+    href: "/lojista/tabela-precos",
+  },
+  {
+    title: "Assistir vídeos",
+    description: "Veja os tutoriais para entender melhor o fluxo operacional da plataforma.",
+    href: "/lojista/videos-explicativos",
+  },
+];
 
 const RetailerDashboard = () => {
   const { user } = useAuth();
+  const { getTotalItems } = useCart();
+  const totalCartItems = getTotalItems();
 
-  // Dados do catálogo vindos da API (modelos e marcas)
-  const { models, loading: loadingModels } = useModels();
-  const { brands, loading: loadingBrands } = useBrands();
+  const approvalMeta = {
+    approved: {
+      label: "Conta liberada para operar",
+      description: "Seu acesso está pronto para consultar tabelas, montar pedidos e acompanhar o fluxo.",
+      tone: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
+    },
+    pending: {
+      label: "Cadastro em análise",
+      description: "Enquanto a liberação é concluída, você já pode organizar seus acessos e revisar o portal.",
+      tone: "bg-amber-500/10 text-amber-700 border-amber-200",
+    },
+    rejected: {
+      label: "Cadastro requer ajuste",
+      description: "Revise seus dados e fale com o suporte para regularizar a conta.",
+      tone: "bg-rose-500/10 text-rose-700 border-rose-200",
+    },
+  } as const;
 
-  const [orders, setOrders] = useState<OrderWithItems[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
+  const approval = approvalMeta[user?.approvalStatus ?? "approved"];
 
-  useEffect(() => {
-    const loadOrders = async () => {
-      try {
-        const data = await ordersService.getAll();
-        setOrders(data);
-      } finally {
-        setLoadingOrders(false);
-      }
-    };
-
-    loadOrders();
-  }, [user]);
-
-  const isLoading = loadingModels || loadingBrands;
-
-  // Estatísticas básicas calculadas a partir dos modelos
-  const totalModels = models.length;
-  const premiumModels = models.filter((m) => m.premium).length;
-  const popularModels = models.filter((m) => m.popular).length;
-  const inStockModels = models.filter((m) => m.availability === "in_stock").length;
-
-  const catalogCoverage =
-    brands.length > 0 ? Math.round((totalModels / (brands.length * 50)) * 100) : 0;
-
-  // Estatísticas de pedidos a partir da API (com fallback para zero)
-  const { stats, recentOrders, orderTrends, recommendations } = useMemo(() => {
-    if (!orders || orders.length === 0) {
-      return {
-        stats: {
-          totalOrders: 0,
-          pendingOrders: 0,
-          completedOrders: 0,
-          totalSpent: 0,
-          thisMonth: 0,
-          averageOrderValue: 0,
-          growthRate: 0,
-        },
-        recentOrders: [] as Array<{
-          id: string;
-          date: string;
-          items: number;
-          status: string;
-          total: number;
-        }>,
-        orderTrends: [] as Array<{ date: string; orders: number; revenue: number }>,
-        recommendations: [] as Array<{ model: any; reason: string; score: number }>,
-      };
-    }
-
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    let pending = 0;
-    let completed = 0;
-    let totalSpent = 0;
-    let thisMonth = 0;
-    let lastMonth = 0;
-
-    // Calcular tendências (últimos 6 meses)
-    const trendsMap = new Map<string, { orders: number; revenue: number }>();
-    const last6Months = Array.from({ length: 6 }, (_, i) => {
-      const date = new Date();
-      date.setMonth(date.getMonth() - (5 - i));
-      return date.toISOString().slice(0, 7); // YYYY-MM
-    });
-
-    last6Months.forEach((month) => {
-      trendsMap.set(month, { orders: 0, revenue: 0 });
-    });
-
-    orders.forEach((order) => {
-      if (order.status === "pending" || order.status === "processing") pending += 1;
-      if (order.status === "completed") completed += 1;
-
-      if (order.total > 0) {
-        totalSpent += order.total;
-
-        if (order.created_at) {
-          const d = new Date(order.created_at);
-          const monthKey = d.toISOString().slice(0, 7);
-          
-          if (trendsMap.has(monthKey)) {
-            const trend = trendsMap.get(monthKey)!;
-            trend.orders += 1;
-            trend.revenue += order.total;
-          }
-
-          if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-            thisMonth += order.total;
-          }
-
-          // Mês anterior
-          const lastMonthDate = new Date();
-          lastMonthDate.setMonth(currentMonth - 1);
-          if (d.getMonth() === lastMonthDate.getMonth() && d.getFullYear() === currentYear) {
-            lastMonth += order.total;
-          }
-        }
-      }
-    });
-
-    const orderTrends = last6Months.map((month) => {
-      const trend = trendsMap.get(month) || { orders: 0, revenue: 0 };
-      const date = new Date(month + "-01");
-      return {
-        date: date.toLocaleDateString("pt-BR", { month: "short", year: "numeric" }),
-        orders: trend.orders,
-        revenue: trend.revenue,
-      };
-    });
-
-    // Calcular taxa de crescimento
-    const growthRate = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
-
-    // Média de valor por pedido
-    const averageOrderValue = orders.length > 0 && totalSpent > 0 ? totalSpent / orders.length : 0;
-
-    const sorted = [...orders].sort((a, b) => {
-      const da = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const db = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return db - da;
-    });
-
-    const recent = sorted.slice(0, 5).map((order) => ({
-      id: order.id,
-      date: order.created_at || new Date().toISOString(),
-      items: order.items.length,
-      status: order.status,
-      total: order.total,
-    }));
-
-    // Gerar recomendações baseadas em histórico de pedidos
-    const modelCounts = new Map<string, number>();
-    orders.forEach((order) => {
-      order.items.forEach((item) => {
-        const count = modelCounts.get(item.model_id) || 0;
-        modelCounts.set(item.model_id, count + item.quantity);
-      });
-    });
-
-    // Produtos mais comprados
-    const topModels = Array.from(modelCounts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([modelId]) => modelId);
-
-    // Gerar recomendações
-    const recommendations = models
-      .filter((m) => {
-        // Priorizar modelos premium/populares que não foram comprados ainda
-        return (m.premium || m.popular) && !topModels.includes(m.id);
-      })
-      .slice(0, 6)
-      .map((model) => ({
-        model,
-        reason: model.premium
-          ? "Modelo premium com alta qualidade"
-          : model.popular
-          ? "Modelo popular e bem avaliado"
-          : "Disponível no catálogo",
-        score: (model.premium ? 9 : model.popular ? 7 : 5) + Math.random() * 2,
-      }))
-      .sort((a, b) => b.score - a.score);
-
-    return {
-      stats: {
-        totalOrders: orders.length,
-        pendingOrders: pending,
-        completedOrders: completed,
-        totalSpent,
-        thisMonth,
-        averageOrderValue,
-        growthRate,
-      },
-      recentOrders: recent,
-      orderTrends,
-      recommendations,
-    };
-  }, [orders, models]);
+  const highlights = [
+    {
+      label: "Status da conta",
+      value: approval.label,
+      helper: "Acompanhamento do acesso lojista",
+      icon: CheckCircle2,
+    },
+    {
+      label: "Itens no carrinho",
+      value: totalCartItems === 0 ? "Vazio" : `${totalCartItems} item(ns)`,
+      helper: "Resumo do orçamento em andamento",
+      icon: PackageSearch,
+    },
+    {
+      label: "Atalhos ativos",
+      value: `${quickActions.length}`,
+      helper: "Recursos principais desta área",
+      icon: BarChart3,
+    },
+    {
+      label: "Portal B2B",
+      value: "Operacional",
+      helper: "Catálogo, suporte e acompanhamento centralizados",
+      icon: Store,
+    },
+  ];
 
   return (
     <RetailerLayout>
-      <div className="space-y-8">
-        {/* Welcome Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Bem-vindo, {user?.contactName || "Lojista"}!
-          </h1>
-          <p className="text-muted-foreground">
-            Gerencie seus pedidos e acompanhe seu histórico de compras
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Pedidos</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalOrders}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Todos os pedidos
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pedidos Pendentes</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-secondary">{stats.pendingOrders}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Aguardando processamento
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pedidos Concluídos</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.completedOrders}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Finalizados
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Investido</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(stats.totalSpent)}
+      <div className="mx-auto max-w-7xl space-y-6">
+        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <div className="grid gap-0 lg:grid-cols-[1.35fr_0.85fr]">
+            <div className="bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.22),_transparent_38%),linear-gradient(135deg,#0f172a_0%,#111827_45%,#1d4ed8_100%)] p-8 text-white sm:p-10">
+              <div className={cn("inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold", approval.tone, "border-white/10 bg-white/10 text-white")}>
+                {approval.label}
               </div>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-xs text-muted-foreground">
-                  Este mês: {formatCurrency(stats.thisMonth)}
+              <div className="mt-6 max-w-2xl space-y-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">
+                  Área do Lojista
                 </p>
-                {stats.growthRate !== 0 && (
-                  <Badge
-                    variant={stats.growthRate > 0 ? "default" : "secondary"}
-                    className="text-xs"
+                <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
+                  Acesse rapidamente os recursos essenciais da sua área do lojista.
+                </h1>
+                <p className="max-w-xl text-sm leading-7 text-slate-200 sm:text-base">
+                  {approval.description}
+                </p>
+              </div>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/lojista/perfil">
+                  <Button className="rounded-xl bg-white text-slate-950 hover:bg-slate-100">
+                    Meu perfil
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to="/lojista/suporte">
+                  <Button
+                    variant="outline"
+                    className="rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
                   >
-                    {stats.growthRate > 0 ? (
-                      <TrendingUp className="w-3 h-3 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3 mr-1" />
-                    )}
-                    {Math.abs(stats.growthRate).toFixed(1)}%
-                  </Badge>
-                )}
+                    Abrir suporte
+                  </Button>
+                </Link>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
 
-        {/* Gráficos de Tendências */}
-        {orderTrends.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LineChart className="w-5 h-5" />
-                  Tendência de Pedidos (Últimos 6 Meses)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RechartsLineChart data={orderTrends}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="orders"
-                      stroke="#8884d8"
-                      name="Pedidos"
-                      strokeWidth={2}
-                    />
-                  </RechartsLineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+            <div className="grid gap-3 bg-slate-50 p-6 sm:grid-cols-2 lg:grid-cols-1 lg:p-8">
+              {highlights.map((item) => {
+                const Icon = item.icon;
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  Receita por Mês (Últimos 6 Meses)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={orderTrends}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                    <Legend />
-                    <Bar dataKey="revenue" fill="#82ca9d" name="Receita" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Estatísticas Avançadas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(stats.averageOrderValue)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Valor médio por pedido
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taxa de Crescimento</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.growthRate > 0 ? "+" : ""}
-                {stats.growthRate.toFixed(1)}%
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Comparado ao mês anterior
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Previsão do Próximo Mês</CardTitle>
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(stats.thisMonth * (1 + stats.growthRate / 100))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Baseado na tendência atual
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Catálogo e Marcas (dados em tempo real da API) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Modelos no Catálogo</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? "..." : totalModels}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isLoading
-                  ? "Carregando dados do catálogo..."
-                  : `Distribuídos em ${brands.length} marcas`}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Modelos Premium & Populares</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-baseline gap-3">
-                <span className="text-2xl font-bold">
-                  {isLoading ? "..." : premiumModels}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  premium
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isLoading
-                  ? "Carregando..."
-                  : `${popularModels} modelos marcados como populares`}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cobertura do Catálogo</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading || catalogCoverage < 0
-                  ? "..."
-                  : `${Math.min(catalogCoverage, 100)}%`}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isLoading
-                  ? "Analisando marcas e modelos..."
-                  : "Estimativa baseada em volume médio de modelos por marca"}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recomendações Inteligentes */}
-        {recommendations.length > 0 && (
-          <ProductRecommendations recommendations={recommendations} />
-        )}
-
-        {/* Recomendações de modelos do catálogo */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Resumo de Estoque</CardTitle>
-              <CardDescription>
-                Visão rápida da disponibilidade dos modelos no catálogo
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <p className="text-sm text-muted-foreground">
-                  Carregando informações de estoque...
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Em estoque</span>
-                    <span className="font-semibold">{inStockModels}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Sob encomenda</span>
-                    <span className="font-semibold">
-                      {models.filter((m) => m.availability === "order").length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Sem estoque</span>
-                    <span className="font-semibold">
-                      {models.filter((m) => m.availability === "out_of_stock").length}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ações Rápidas</CardTitle>
-              <CardDescription>
-                Acesso rápido às principais funcionalidades
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link to="/catalogo">
-                <Button variant="outline" className="w-full justify-start" size="lg">
-                  <ShoppingCart className="w-5 h-5 mr-3" />
-                  Explorar Catálogo
-                  <ArrowRight className="w-4 h-4 ml-auto" />
-                </Button>
-              </Link>
-              <Link to="/lojista/pedidos">
-                <Button variant="outline" className="w-full justify-start" size="lg">
-                  <Package className="w-5 h-5 mr-3" />
-                  Ver Todos os Pedidos
-                  <ArrowRight className="w-4 h-4 ml-auto" />
-                </Button>
-              </Link>
-              <Link to="/lojista/perfil">
-                <Button variant="outline" className="w-full justify-start" size="lg">
-                  <Users className="w-5 h-5 mr-3" />
-                  Meu Perfil
-                  <ArrowRight className="w-4 h-4 ml-auto" />
-                </Button>
-              </Link>
-              <Link to="/lojista/relatorios">
-                <Button variant="outline" className="w-full justify-start" size="lg">
-                  <BarChart3 className="w-5 h-5 mr-3" />
-                  Ver Relatórios do Catálogo
-                  <ArrowRight className="w-4 h-4 ml-auto" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Recent Orders */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Pedidos Recentes</CardTitle>
-              <CardDescription>
-                Seus últimos pedidos realizados
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentOrders.map((order) => (
+                return (
                   <div
-                    key={order.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                    key={item.label}
+                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                   >
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-foreground">
-                          {order.id}
-                        </span>
-                        <Badge
-                          variant={
-                            order.status === "completed"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="text-xs"
-                        >
-                          {order.status === "completed"
-                            ? "Concluído"
-                            : "Pendente"}
-                        </Badge>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                          {item.label}
+                        </p>
+                        <p className="mt-3 text-lg font-semibold text-slate-900">
+                          {item.value}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-slate-500">
+                          {item.helper}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(order.date).toLocaleDateString("pt-BR")} •{" "}
-                        {order.items} {order.items === 1 ? "item" : "itens"}
-                      </p>
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+                        <Icon className="h-5 w-5" />
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-foreground">
-                        R$ {order.total.toLocaleString("pt-BR")}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+          <Card className="rounded-[24px] border-slate-200 bg-white shadow-sm">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-2xl text-slate-950">Ações rápidas</CardTitle>
+              <CardDescription className="text-sm leading-6 text-slate-500">
+                Os acessos que mais aceleram sua rotina comercial dentro da plataforma.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+
+                return (
+                  <Link key={action.href} to={action.href} className="h-full">
+                    <div className="group flex h-full min-h-48 flex-col rounded-3xl border border-slate-200 bg-slate-50 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-sky-200 hover:bg-white hover:shadow-lg hover:shadow-sky-100/70">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="mt-5 space-y-2">
+                        <h3 className="text-base font-semibold text-slate-900">
+                          {action.title}
+                        </h3>
+                        <p className="text-sm leading-6 text-slate-500">
+                          {action.description}
+                        </p>
+                      </div>
+                      <div className="mt-auto flex items-center gap-2 pt-6 text-sm font-medium text-sky-700">
+                        Acessar
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[24px] border-slate-200 bg-white shadow-sm">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-2xl text-slate-950">Próximos passos</CardTitle>
+              <CardDescription className="text-sm leading-6 text-slate-500">
+                Um fluxo simples para sair do acesso e chegar rápido ao pedido.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {journeyCards.map((step, index) => (
+                <Link
+                  key={step.title}
+                  to={step.href}
+                  className="block rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:border-sky-200 hover:bg-white"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-slate-900">
+                        {step.title}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">
+                        {step.description}
                       </p>
                     </div>
                   </div>
-                ))}
-              </div>
-              <Link to="/lojista/pedidos">
-                <Button variant="ghost" className="w-full mt-4">
-                  Ver Todos os Pedidos
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+                </Link>
+              ))}
             </CardContent>
           </Card>
-        </div>
+        </section>
       </div>
     </RetailerLayout>
   );

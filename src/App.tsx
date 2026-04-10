@@ -45,13 +45,18 @@ import AdminTickets from "./pages/admin/AdminTickets";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminEquipe from "./pages/admin/AdminEquipe";
+import AdminRetailerPriceTables from "./pages/admin/AdminRetailerPriceTables";
+import AdminRetailerTrainingVideos from "./pages/admin/AdminRetailerTrainingVideos";
 import Favorites from "./pages/Favorites";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Help from "./pages/Help";
+import Contact from "./pages/Contact";
 import ApkDownload from "./pages/ApkDownload";
 import NotFound from "./pages/NotFound";
+import RetailerPriceTables from "./pages/retailer/RetailerPriceTables";
+import RetailerTrainingVideos from "./pages/retailer/RetailerTrainingVideos";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedRouteAdmin from "./components/ProtectedRouteAdmin";
 import ProtectedRouteLojista from "./components/ProtectedRouteLojista";
@@ -98,6 +103,7 @@ const App = () => (
                   <Route path="/favoritos" element={<Favorites />} />
                   <Route path="/sobre" element={<About />} />
                   <Route path="/ajuda" element={<Help />} />
+                  <Route path="/contato" element={<Contact />} />
                   <Route path="/apk" element={<ApkDownload />} />
                   <Route path="/privacidade" element={<Privacy />} />
                   <Route path="/termos" element={<Terms />} />
@@ -166,6 +172,22 @@ const App = () => (
                       <ProtectedRoute>
                         <RetailerReports />
                       </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/lojista/tabela-precos"
+                    element={
+                      <ProtectedRoute>
+                        <RetailerPriceTables />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/lojista/videos-explicativos"
+                    element={
+                      <ProtectedRouteLojista>
+                        <RetailerTrainingVideos />
+                      </ProtectedRouteLojista>
                     }
                   />
                   
@@ -360,6 +382,22 @@ const App = () => (
                     element={
                       <ProtectedRouteAdmin>
                         <AdminEquipe />
+                      </ProtectedRouteAdmin>
+                    }
+                  />
+                  <Route
+                    path="/admin/tabela-precos"
+                    element={
+                      <ProtectedRouteAdmin>
+                        <AdminRetailerPriceTables />
+                      </ProtectedRouteAdmin>
+                    }
+                  />
+                  <Route
+                    path="/admin/videos-lojista"
+                    element={
+                      <ProtectedRouteAdmin>
+                        <AdminRetailerTrainingVideos />
                       </ProtectedRouteAdmin>
                     }
                   />

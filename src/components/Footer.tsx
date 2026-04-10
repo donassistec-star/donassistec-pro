@@ -20,10 +20,6 @@ const Footer = () => {
   const contactAddress = settings?.contactAddress || "São Paulo - SP";
   const showCompanyTradeName = (settings?.showCompanyTradeNameFooter ?? settings?.showCompanyTradeName) !== false;
   const showCompanySlogan = settings?.showCompanySloganFooter !== false;
-  const brandingLogoSrc =
-    !showCompanyTradeName && settings?.brandingLogoFavicon
-      ? settings.brandingLogoFavicon
-      : settings?.brandingLogoUrl;
 
   return (
     <footer className="bg-foreground pt-16 pb-8">
@@ -32,11 +28,11 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              {brandingLogoSrc ? (
+              {settings?.brandingLogoUrl ? (
                 <img
-                  src={brandingLogoSrc}
+                  src={settings.brandingLogoUrl}
                   alt={settings.companyTradeName || settings.siteName || "Logo"}
-                  className="h-10 w-auto object-contain"
+                  className="h-12 w-auto max-w-[180px] object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
@@ -50,7 +46,7 @@ const Footer = () => {
                   }}
                 />
               ) : (
-                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
                   <Smartphone className="w-6 h-6 text-primary-foreground" />
                 </div>
               )}
@@ -119,7 +115,7 @@ const Footer = () => {
               <li><Link to="/sobre" className="text-card/70 hover:text-primary transition-colors">Sobre Nós</Link></li>
               <li><a href="#servicos" className="text-card/70 hover:text-primary transition-colors">Serviços</a></li>
               <li><a href="#marcas" className="text-card/70 hover:text-primary transition-colors">Marcas</a></li>
-              <li><a href="#contato" className="text-card/70 hover:text-primary transition-colors">Contato</a></li>
+              <li><Link to="/contato" className="text-card/70 hover:text-primary transition-colors">Contato</Link></li>
               <li><Link to="/lojista/login" className="text-card/70 hover:text-primary transition-colors">Área do Lojista</Link></li>
               {isHome && <li><Link to="/admin/login" className="text-card/70 hover:text-primary transition-colors">Área do Administrador</Link></li>}
             </ul>

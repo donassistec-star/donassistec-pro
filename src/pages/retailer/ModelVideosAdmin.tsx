@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ImageUpload } from "@/components/ui/image-upload";
 import {
   Table,
   TableBody,
@@ -124,6 +125,32 @@ const ModelVideosAdmin = () => {
   const [itemToDelete, setItemToDelete] = useState<{ id: number; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [movingId, setMovingId] = useState<number | null>(null);
+
+  const getYoutubeThumbnail = (url: string) => {
+    const trimmedUrl = url.trim();
+
+    if (trimmedUrl.includes("youtube.com/watch?v=")) {
+      const videoId = trimmedUrl.split("v=")[1]?.split("&")[0];
+      return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
+    }
+
+    if (trimmedUrl.includes("youtu.be/")) {
+      const videoId = trimmedUrl.split("youtu.be/")[1]?.split("?")[0];
+      return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
+    }
+
+    if (trimmedUrl.includes("youtube.com/shorts/")) {
+      const videoId = trimmedUrl.split("youtube.com/shorts/")[1]?.split("?")[0];
+      return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
+    }
+
+    if (trimmedUrl.includes("youtube.com/embed/")) {
+      const videoId = trimmedUrl.split("embed/")[1]?.split("?")[0];
+      return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
+    }
+
+    return "";
+  };
 
   const getFuncaoLabel = (order?: number) => {
     const o = order ?? 0;
@@ -368,17 +395,36 @@ const ModelVideosAdmin = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="thumbnail">URL da Thumbnail (opcional)</Label>
-                <Input
-                  id="thumbnail"
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Thumbnail (opcional)</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const thumbnail = getYoutubeThumbnail(formData.url || "");
+                      if (!thumbnail) {
+                        toast.error("Use um link do YouTube para gerar a miniatura automaticamente");
+                        return;
+                      }
+                      setFormData((prev) => ({
+                        ...prev,
+                        thumbnail,
+                      }));
+                      toast.success("Miniatura preenchida automaticamente");
+                    }}
+                  >
+                    Auto YouTube
+                  </Button>
+                </div>
+                <ImageUpload
                   value={formData.thumbnail || ""}
-                  onChange={(e) =>
+                  onChange={(url) =>
                     setFormData((prev) => ({
                       ...prev,
-                      thumbnail: e.target.value,
+                      thumbnail: url,
                     }))
                   }
-                  placeholder="https://images.unsplash.com/..."
+                  label="Enviar thumbnail"
                 />
               </div>
 
@@ -609,4 +655,3 @@ const ModelVideosAdmin = () => {
 };
 
 export default ModelVideosAdmin;
-
