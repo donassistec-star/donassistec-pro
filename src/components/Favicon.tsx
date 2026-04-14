@@ -1,46 +1,56 @@
-import { useEffect } from "react";
-import { useSettings } from "@/hooks/useSettings";
-import { normalizeMediaUrl } from "@/utils/mediaUrl";
+import { useEffect, useState } from "react";
 
-/**
- * Componente para atualizar dinamicamente o favicon
- * Baseado nas configurações do sistema
- */
+const FAVICON_ENDPOINT = "/api/settings/favicon";
+const FAVICON_EVENT = "branding:favicon-updated";
+
+const ensureHeadLink = (selector: string, rel: string) => {
+  const existing = document.querySelector<HTMLLinkElement>(selector);
+  if (existing) return existing;
+
+  const link = document.createElement("link");
+  link.rel = rel;
+  document.head.appendChild(link);
+  return link;
+};
+
+const applyFavicon = (version: number) => {
+  const suffix = version ? `?v=${version}` : "";
+  const href = `${FAVICON_ENDPOINT}${suffix}`;
+
+  const iconLink = ensureHeadLink('link[rel="icon"]#dynamic-favicon', "icon");
+  iconLink.id = "dynamic-favicon";
+  iconLink.href = href;
+
+  const shortcutLink = ensureHeadLink('link[rel="shortcut icon"]', "shortcut icon");
+  shortcutLink.href = href;
+
+  const appleLink = ensureHeadLink(
+    'link[rel="apple-touch-icon"]#dynamic-apple-touch-icon',
+    "apple-touch-icon"
+  );
+  appleLink.id = "dynamic-apple-touch-icon";
+  appleLink.href = href;
+};
+
 const Favicon = () => {
-  const { settings, loading } = useSettings();
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
-    if (loading) return;
+    applyFavicon(version);
+  }, [version]);
 
-    // Remover favicons existentes
-    const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
-    existingFavicons.forEach((link) => link.remove());
+  useEffect(() => {
+    const handleFaviconUpdated = () => {
+      setVersion(Date.now());
+    };
 
-    // Adicionar novo favicon se configurado
-    if (settings?.brandingLogoFavicon) {
-      const faviconUrl = normalizeMediaUrl(settings.brandingLogoFavicon);
-      const link = document.createElement("link");
-      link.rel = "icon";
-      link.type = "image/x-icon";
-      link.href = faviconUrl;
-      document.head.appendChild(link);
+    window.addEventListener(FAVICON_EVENT, handleFaviconUpdated);
+    return () => {
+      window.removeEventListener(FAVICON_EVENT, handleFaviconUpdated);
+    };
+  }, []);
 
-      // Também adicionar apple-touch-icon
-      const appleLink = document.createElement("link");
-      appleLink.rel = "apple-touch-icon";
-      appleLink.href = faviconUrl;
-      document.head.appendChild(appleLink);
-    } else {
-      // Fallback para favicon padrão se não configurado
-      const link = document.createElement("link");
-      link.rel = "icon";
-      link.type = "image/x-icon";
-      link.href = "/favicon.ico";
-      document.head.appendChild(link);
-    }
-  }, [settings?.brandingLogoFavicon, loading]);
-
-  return null; // Componente não renderiza nada visual
+  return null;
 };
 
 export default Favicon;

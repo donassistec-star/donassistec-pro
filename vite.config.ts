@@ -17,6 +17,16 @@ export default defineConfig(({ mode }) => ({
     port: 8200,
     strictPort: true,
     allowedHosts: true,
+    proxy: {
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+      "/uploads": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
     hmr: {
       overlay: false,
       // Ao acessar o dev server por IP (ex: http://177.67.32.204:8200), defina VITE_HMR_HOST=177.67.32.204

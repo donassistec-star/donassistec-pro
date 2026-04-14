@@ -48,7 +48,9 @@ export const ImageUpload = ({ value, onChange, disabled, label = "Upload de Imag
     if (!file) return;
 
     // Validar tipo de arquivo
-    if (!file.type.startsWith("image/")) {
+    const fileName = file.name.toLowerCase();
+    const isIco = fileName.endsWith(".ico");
+    if (!file.type.startsWith("image/") && !isIco) {
       toast.error("Por favor, selecione uma imagem válida");
       return;
     }
@@ -128,7 +130,7 @@ export const ImageUpload = ({ value, onChange, disabled, label = "Upload de Imag
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.ico"
             onChange={handleFileSelect}
             disabled={disabled || uploading}
             className="hidden"

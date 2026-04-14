@@ -46,6 +46,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 - ✅ Relatórios e exportação (PDF, Excel, TXT)
 - ✅ Configurações completas do sistema
 - ✅ Branding e identidade visual (logo, favicon, cores)
+- ✅ SEO público com título, descrição, Open Graph, Twitter Card, favicon dinâmico e sitemap
 - ✅ Controle de exibição do nome fantasia no cabeçalho e rodapé da home
 - ✅ Controle de exibição do slogan no rodapé da home
 - ✅ Gerenciamento de contato e mídias sociais
@@ -70,7 +71,7 @@ DonAssistec é uma plataforma B2B completa para gerenciamento de catálogo de pe
 - ✅ Histórico de pedidos
 - ✅ Suporte e tickets
 - ✅ Relatórios básicos
-- ✅ Tabelas de preços exclusivas com busca, navegação por categorias, PDF e troca entre múltiplas tabelas
+- ✅ Tabelas de preços exclusivas com busca direta, navegação por marca, cópia rápida e troca entre múltiplas tabelas
 - ✅ Edição do Hero da home com controle dos CTAs principais e secundários
 
 ### Público Geral
@@ -232,6 +233,16 @@ Em `Admin > Configurações > Branding > Informações da Empresa`, é possível
 
 Quando essas opções são desativadas, o site mantém o logo, mas remove apenas o nome fantasia ou slogan da área pública escolhida.
 
+### SEO, Sitemap e Favicon
+
+Em `Admin > Configurações`, o sistema também suporta:
+
+- atualização de favicon público consumido por navegador e crawler via `/api/settings/favicon`
+- atualização dinâmica de metadados SEO no frontend (`title`, `description`, `keywords`, `og:*`, `twitter:*`)
+- `robots.txt` público com referência ao `sitemap.xml`
+- `sitemap.xml` estático na raiz do frontend para facilitar recrawl do Google
+- upload de favicon em `.ico`, além de formatos comuns de imagem
+
 ### 1. Executar Migrations do Banco de Dados
 
 ```bash
@@ -356,6 +367,7 @@ donassistec/
 - **Pedidos**: `/api/orders/*`
 - **Lojistas**: `/api/retailers/*`
 - **Configurações**: `/api/settings/*` (GET `/api/settings/public` é **público**, sem login)
+- **Favicon público**: `GET /api/settings/favicon` (público, usado no HTML inicial e por crawlers)
 - **Tabela de preços pública**: `/api/price-table` (público, `?brand=id` opcional)
 - **Tabelas de preços para lojistas**: `/api/retailer-price-tables/*` (autenticado)
 - **Upload**: `/api/upload/*`
@@ -376,8 +388,9 @@ Veja o guia completo de deployment em [DEPLOY.md](./DEPLOY.md)
 3. Build do backend: `cd backend && npm run build`
 4. Use PM2 para gerenciar processos: `pm2 start ecosystem.config.cjs` (ou `ecosystem.production.config.cjs`)
 5. Configure Nginx como proxy reverso (use `nginx-vps.conf` em VPS; porta 80 → frontend :8200, `/api` e `/uploads` → backend :3001)
-6. Libere portas 80 e 443 no firewall (firewalld/UFW)
-7. Configure SSL/HTTPS (recomendado em produção)
+6. Garanta a publicação dos arquivos públicos `robots.txt`, `sitemap.xml` e `favicon.ico`
+7. Libere portas 80 e 443 no firewall (firewalld/UFW)
+8. Configure SSL/HTTPS (recomendado em produção)
 
 ## 📚 Documentação Adicional
 

@@ -6,6 +6,7 @@ import { requireAdmin } from "../middleware/requireAdmin";
 const router = Router();
 
 // Público: configurações para Header, Footer, etc. (sem auth)
+router.get("/favicon", SettingsController.getFavicon);
 router.get("/public", SettingsController.getPublic);
 
 // Rotas de configurações - requerem autenticação E role admin

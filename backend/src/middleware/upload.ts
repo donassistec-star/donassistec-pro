@@ -22,14 +22,14 @@ const storage = multer.diskStorage({
 
 // Filtro de tipos de arquivo
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const allowedTypes = /jpeg|jpg|png|gif|webp|ico|x-icon|vnd\.microsoft\.icon/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 
   if (extname && mimetype) {
     cb(null, true);
   } else {
-    cb(new Error("Apenas imagens são permitidas! (jpeg, jpg, png, gif, webp)"));
+    cb(new Error("Apenas imagens são permitidas! (jpeg, jpg, png, gif, webp, ico)"));
   }
 };
 

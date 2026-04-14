@@ -64,6 +64,7 @@ import ProtectedRouteLojista from "./components/ProtectedRouteLojista";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Favicon from "./components/Favicon";
+import SiteMetadata from "./components/SiteMetadata";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -94,6 +95,7 @@ const App = () => (
                 }}
               >
                 <Favicon />
+                <SiteMetadata />
                 <ScrollToTop />
                 <Routes>
                   {/* Public Routes */}

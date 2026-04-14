@@ -188,6 +188,10 @@ const AdminSettings = () => {
       
       if (updated) {
         setSettings((prev) => ({ ...prev, ...updated }));
+        window.dispatchEvent(new CustomEvent("settings:public-updated"));
+        if (section === "branding") {
+          window.dispatchEvent(new CustomEvent("branding:favicon-updated"));
+        }
         toast.success("Configurações salvas com sucesso!");
         // Recarregar histórico após salvar
         loadHistory();

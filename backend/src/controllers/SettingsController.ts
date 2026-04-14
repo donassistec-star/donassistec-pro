@@ -25,6 +25,25 @@ class SettingsController {
     }
   }
 
+  /** Favicon público usado pelo HTML inicial e por crawlers */
+  async getFavicon(_req: Request, res: Response) {
+    try {
+      const favicon = await SettingsModel.getByKey("brandingLogoFavicon");
+      const nextUrl = favicon?.trim() || "/favicon.ico";
+
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      return res.redirect(302, nextUrl);
+    } catch (error: any) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: error.message || "Erro ao buscar favicon",
+      };
+      return res.status(500).json(response);
+    }
+  }
+
   async getAll(req: AuthRequest, res: Response) {
     try {
       const settings = await SettingsModel.getAll();

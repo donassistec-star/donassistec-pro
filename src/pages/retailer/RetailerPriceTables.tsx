@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import {
-  ArrowUp,
   Check,
   Copy,
   Cpu,
-  FileText,
   Layers3,
   PackageSearch,
   Search,
@@ -29,8 +27,6 @@ import {
 } from "@/services/retailerPriceTablesService";
 import {
   buildBrandsFromCategories,
-  countBrandDevices,
-  countBrandServices,
 } from "@/utils/retailerPriceTable";
 import { toast } from "sonner";
 
@@ -199,9 +195,7 @@ const RetailerPriceTables = () => {
   const [search, setSearch] = useState("");
   const [title, setTitle] = useState("Tabela de Precos");
   const [effectiveDate, setEffectiveDate] = useState<string | null>(null);
-  const [intro, setIntro] = useState<string[]>([]);
   const [brands, setBrands] = useState<RetailerPriceTableBrand[]>([]);
-  const [activeBrand, setActiveBrand] = useState("Todas");
   const [sortMode, setSortMode] = useState<RetailerSortMode>("relevance");
   const [copiedServiceKey, setCopiedServiceKey] = useState("");
   const [allTables, setAllTables] = useState<Array<{
@@ -255,10 +249,8 @@ const RetailerPriceTables = () => {
 
     setTitle(selectedTable.title);
     setEffectiveDate(selectedTable.effective_date);
-    setIntro(selectedTable.parsed_data.intro || []);
     setBrands(nextBrands);
     setSearch("");
-    setActiveBrand("Todas");
   }, [selectedTable]);
 
   const normalizedSearchQuery = search.trim().toLowerCase();
@@ -266,35 +258,29 @@ const RetailerPriceTables = () => {
 
   const filteredBrands = useMemo(() => {
     const query = normalizedSearchQuery;
-    const searchFiltered = !query
+    return !query
       ? brands
       : brands
-      .map((brand) => ({
-        ...brand,
-        devices: brand.devices
-          .map((device) => ({
-            ...device,
-            services: device.services.filter((service) =>
-              `${brand.name} ${device.name} ${service.name} ${service.priceText}`.toLowerCase().includes(query)
-            ),
+          .map((brand) => ({
+            ...brand,
+            devices: brand.devices
+              .map((device) => ({
+                ...device,
+                services: device.services.filter((service) =>
+                  `${brand.name} ${device.name} ${service.name} ${service.priceText}`
+                    .toLowerCase()
+                    .includes(query)
+                ),
+              }))
+              .filter(
+                (device) =>
+                  device.name.toLowerCase().includes(query) ||
+                  device.services.length > 0 ||
+                  brand.name.toLowerCase().includes(query)
+              ),
           }))
-          .filter(
-            (device) =>
-              device.name.toLowerCase().includes(query) ||
-              device.services.length > 0 ||
-              brand.name.toLowerCase().includes(query)
-          ),
-      }))
-      .filter((brand) => brand.devices.length > 0 || brand.name.toLowerCase().includes(query));
-
-    if (activeBrand === "Todas") return searchFiltered;
-    return searchFiltered.filter((brand) => brand.name === activeBrand);
-  }, [activeBrand, brands, normalizedSearchQuery]);
-
-  const brandTabs = useMemo(
-    () => ["Todas", ...brands.map((brand) => brand.name)],
-    [brands]
-  );
+          .filter((brand) => brand.devices.length > 0 || brand.name.toLowerCase().includes(query));
+  }, [brands, normalizedSearchQuery]);
 
   const deviceCatalog = useMemo(
     () =>
@@ -334,9 +320,6 @@ const RetailerPriceTables = () => {
       }),
     [filteredBrands, sortMode]
   );
-
-  const totalDevices = useMemo(() => countBrandDevices(filteredBrands), [filteredBrands]);
-  const totalServices = useMemo(() => countBrandServices(filteredBrands), [filteredBrands]);
 
   const jumpToBrandGroup = (brandName: string) => {
     const target = document.getElementById(`brand-group-${slugify(brandName)}`);
@@ -399,9 +382,9 @@ const RetailerPriceTables = () => {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)]">
           {/* Painel lateral profissional */}
-          <aside className="space-y-5 md:max-w-full xl:max-w-xs">
+          <aside className="space-y-5 md:max-w-full xl:max-w-[280px]">
             {!loading && allTables.length > 0 ? (
               <Card className="rounded-[24px] border-sky-200/70 shadow-md dark:border-sky-800/70">
                 <CardHeader className="pb-0">
@@ -445,55 +428,6 @@ const RetailerPriceTables = () => {
                 </CardContent>
               </Card>
             ) : null}
-
-            {intro.length > 0 ? (
-              <Card className="rounded-[24px] border-sky-200/70 shadow-md dark:border-sky-800/70">
-                <CardHeader className="pb-0">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-sky-700 dark:text-sky-200" />
-                    <CardTitle className="text-base text-sky-900 dark:text-sky-100">Observações</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2 pt-0 text-sm text-sky-700 dark:text-sky-200">
-                  {intro.map((line, index) => (
-                    <p key={`${line}-${index}`} className="rounded-[16px] border border-sky-200/70 bg-sky-50 p-3 leading-5 dark:border-sky-800/70 dark:bg-sky-950">
-                      {line}
-                    </p>
-                  ))}
-                </CardContent>
-              </Card>
-            ) : null}
-
-            <Card className="rounded-[24px] border-sky-200/70 shadow-md dark:border-sky-800/70">
-              <CardHeader className="pb-0">
-                <CardTitle className="text-sky-900 dark:text-sky-100">Resumo</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-0">
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <div className="rounded-[16px] border border-sky-200/70 bg-sky-50 p-3 text-center dark:border-sky-800/70 dark:bg-sky-950">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Marcas</p>
-                    <p className="mt-2 text-xl font-semibold text-sky-900 dark:text-sky-100">{filteredBrands.length}</p>
-                  </div>
-                  <div className="rounded-[16px] border border-sky-200/70 bg-sky-50 p-3 text-center dark:border-sky-800/70 dark:bg-sky-950">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Aparelhos</p>
-                    <p className="mt-2 text-xl font-semibold text-sky-900 dark:text-sky-100">{deviceCatalog.length}</p>
-                  </div>
-                  <div className="rounded-[16px] border border-sky-200/70 bg-sky-50 p-3 text-center dark:border-sky-800/70 dark:bg-sky-950">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Serviços</p>
-                    <p className="mt-2 text-xl font-semibold text-sky-900 dark:text-sky-100">{totalServices}</p>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-sky-200 text-sky-700 hover:bg-sky-50 dark:border-sky-800 dark:text-sky-100 dark:hover:bg-sky-900"
-                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                >
-                  <ArrowUp className="mr-2 h-4 w-4" />
-                  Topo
-                </Button>
-              </CardContent>
-            </Card>
           </aside>
 
           <div className="space-y-6">
@@ -512,23 +446,6 @@ const RetailerPriceTables = () => {
                     placeholder="Ex.: A15, iPhone 13, troca de vidro..."
                     className="h-11 rounded-[16px] border-sky-200 bg-white pl-10 text-base shadow-md dark:border-sky-800 dark:bg-slate-950 dark:text-sky-100"
                   />
-                </div>
-                <div className="flex flex-wrap gap-2 md:gap-1 md:justify-start">
-                  {brandTabs.map((brandName) => (
-                    <button
-                      key={brandName}
-                      type="button"
-                      onClick={() => setActiveBrand(brandName)}
-                      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                        activeBrand === brandName
-                          ? "border-sky-500 bg-sky-100 text-sky-800 dark:border-sky-700 dark:bg-sky-900 dark:text-sky-100"
-                          : "border-sky-200 bg-white text-sky-700 hover:bg-sky-50 dark:border-sky-800 dark:bg-slate-950 dark:text-sky-200 dark:hover:bg-sky-900"
-                      }`}
-                      style={{ minWidth: 90, marginBottom: 4 }}
-                    >
-                      {brandName}
-                    </button>
-                  ))}
                 </div>
                 <div className="flex flex-col gap-2 rounded-[20px] border border-sky-200/80 bg-white p-3 shadow-sm dark:border-sky-800/80 dark:bg-slate-950 md:flex-col lg:flex-row lg:items-center lg:justify-between">
                   <div className="mb-2 md:mb-0">
@@ -586,7 +503,7 @@ const RetailerPriceTables = () => {
                   </div>
                   <p className="mt-4 text-base font-medium text-foreground">Nenhum resultado encontrado</p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Ajuste a busca ou troque a marca para encontrar outro aparelho ou serviço.
+                    Ajuste a busca para encontrar outro aparelho ou serviço.
                   </p>
                 </CardContent>
               </Card>

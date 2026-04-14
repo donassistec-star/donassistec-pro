@@ -255,6 +255,32 @@ const normalizeSlug = (value: string) =>
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+const getCategoryUiKey = (categoryIndex: number) => `category-${categoryIndex}`;
+
+const getDeviceUiKey = (categoryIndex: number, deviceIndex: number) =>
+  `device-${categoryIndex}-${deviceIndex}`;
+
+const getServiceUiKey = (
+  categoryIndex: number,
+  deviceIndex: number,
+  serviceIndex: number
+) => `service-${categoryIndex}-${deviceIndex}-${serviceIndex}`;
+
+const remapIndexedRecord = <T,>(
+  record: Record<number, T>,
+  mapper: (index: number) => number | null
+) => {
+  const next: Record<number, T> = {};
+
+  Object.entries(record).forEach(([key, value]) => {
+    const mappedIndex = mapper(Number(key));
+    if (mappedIndex === null) return;
+    next[mappedIndex] = value;
+  });
+
+  return next;
+};
+
 const buildDuplicateSlug = (sourceSlug: string, existingSlugs: string[]) => {
   const baseSlug = normalizeSlug(`${sourceSlug}-copia`) || "nova-tabela-copia";
   let nextSlug = baseSlug;
@@ -2938,8 +2964,23 @@ const AdminRetailerPriceTables = () => {
                       );
                     const categoryHasIssues =
                       categoryPendingPrices > 0 || categoryInvalidPrices > 0 || categoryMissingNames > 0;
-                    const categoryKey = `${category.categoryIndex}-${category.name}`;
-                    const isCategoryCollapsed = collapsedCategories[categoryKey] ?? true;
+                    const categoryKey = getCategoryUiKey(category.categoryIndex);
+                    const isCategoryCollapsed =
+                      collapsedCategories[categoryKey] ?? defaultCatalogCollapsed;
+                    const emptyCategoryDraft = emptyCategoryDrafts[category.categoryIndex];
+                    const emptyCategoryPriceText = emptyCategoryDraft?.priceText?.trim() || "";
+                    const emptyCategoryPriceValue = emptyCategoryPriceText
+                      ? parsePriceValue(emptyCategoryPriceText)
+                      : null;
+                    const emptyCategoryPriceTone =
+                      emptyCategoryPriceText.length === 0
+                        ? "neutral"
+                        : emptyCategoryPriceValue === null
+                          ? "invalid"
+                          : "valid";
+                    const emptyCategoryServiceText =
+                      emptyCategoryDraft?.serviceName?.trim() || "";
+                    const emptyCategoryUsesBaseService = emptyCategoryServiceText.length === 0;
 
                     return (
                       <div
@@ -3164,8 +3205,12 @@ const AdminRetailerPriceTables = () => {
                             </div>
                           ) : null}
                           {category.devices.map((device) => {
-                            const deviceKey = `${category.categoryIndex}-${device.deviceIndex}-${device.name}`;
-                            const isDeviceCollapsed = collapsedDevices[deviceKey] ?? true;
+                            const deviceKey = getDeviceUiKey(
+                              category.categoryIndex,
+                              device.deviceIndex
+                            );
+                            const isDeviceCollapsed =
+                              collapsedDevices[deviceKey] ?? defaultCatalogCollapsed;
                             const devicePendingPrices = device.services.filter(
                               (service) => service.priceText.trim().length === 0
                             ).length;

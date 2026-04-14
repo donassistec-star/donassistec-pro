@@ -49,3 +49,14 @@ Veja o arquivo `DEPLOY.md` para documentação detalhada sobre:
 - Backup e restore do banco de dados
 - Troubleshooting
 - E muito mais!
+
+## 🌐 SEO Público
+
+No deploy em produção, confirme também:
+
+- `robots.txt` disponível na raiz do frontend
+- `sitemap.xml` disponível em `https://seu-dominio/sitemap.xml`
+- `favicon.ico` publicado na raiz
+- endpoint `GET /api/settings/favicon` funcionando atrás do proxy reverso
+
+Isso garante melhor leitura do favicon e dos metadados por Google e outros crawlers.
