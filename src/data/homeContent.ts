@@ -48,7 +48,9 @@ export interface HomeContent {
   heroBadge?: string;
   heroTitle: string;
   heroSubtitle: string;
-  heroImage?: string;
+  heroMediaType?: 'image' | 'video' | 'none';
+  heroImageUrl?: string;
+  heroVideoUrl?: string;
   showHeroPrimaryCta?: boolean;
   showHeroSecondaryCta?: boolean;
   heroCtaLabel: string;
@@ -89,7 +91,9 @@ export const defaultHomeContent: HomeContent = {
   heroTitle: "Reconstrução de Telas e Peças Premium para Lojistas",
   heroSubtitle:
     "A DonAssistec conecta sua loja a um catálogo completo de modelos, peças e serviços de reconstrução com qualidade de fábrica.",
-  heroImage: undefined,
+  heroMediaType: 'none',
+  heroImageUrl: undefined,
+  heroVideoUrl: undefined,
   showHeroPrimaryCta: true,
   showHeroSecondaryCta: true,
   heroCtaLabel: "Explorar Catálogo",

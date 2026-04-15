@@ -33,12 +33,14 @@ const HomeContentAdmin = () => {
       | "heroCtaLabel"
       | "heroSecondaryCtaLabel"
       | "heroBadge"
-      | "heroImage"
+      | "heroImageUrl"
+      | "heroVideoUrl"
+      | "heroMediaType"
       | "heroCtaLink"
       | "heroSecondaryCtaLink",
     value: string
   ) => {
-    await updateContent({ [field]: value });
+    await updateContent({ [field]: value as any });
   };
 
   const handleFeatureChange = async (index: number, field: "title" | "description", value: string) => {
@@ -291,47 +293,135 @@ const HomeContentAdmin = () => {
                   rows={3}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  URL da Imagem do Hero
-                </label>
-                <Input
-                  value={content.heroImage || ""}
-                  onChange={(e) => handleHeroChange("heroImage", e.target.value as any)}
-                  placeholder="https://..."
-                />
-                <p className="text-xs text-muted-foreground">
-                  Você pode colar uma URL externa ou usar o upload abaixo.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <ImageUpload
-                  value={content.heroImage || ""}
-                  onChange={(url) => {
-                    handleHeroChange("heroImage", url).catch(console.error);
-                  }}
-                  label="Upload da Imagem do Hero"
-                />
-                {content.heroImage ? (
-                  <div className="rounded-lg border border-border p-3 space-y-3">
-                    <p className="text-sm font-medium text-foreground">
-                      Preview da imagem atual
-                    </p>
-                    <img
-                      src={content.heroImage}
-                      alt="Hero atual"
-                      className="w-full max-h-56 rounded-lg object-cover"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleHeroChange("heroImage", "").catch(console.error)}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-3 block">
+                    Tipo de Mídia do Hero
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => handleHeroChange("heroMediaType", "none").catch(console.error)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        content.heroMediaType === 'none' || !content.heroMediaType
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
                     >
-                      Remover imagem do hero
-                    </Button>
+                      Nenhuma
+                    </button>
+                    <button
+                      onClick={() => handleHeroChange("heroMediaType", "image").catch(console.error)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        content.heroMediaType === 'image'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      Imagem
+                    </button>
+                    <button
+                      onClick={() => handleHeroChange("heroMediaType", "video").catch(console.error)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        content.heroMediaType === 'video'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      Vídeo
+                    </button>
                   </div>
-                ) : null}
+                </div>
               </div>
+
+              {/* Imagem do Hero */}
+              {content.heroMediaType === 'image' && (
+                <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      URL da Imagem do Hero
+                    </label>
+                    <Input
+                      value={content.heroImageUrl || ""}
+                      onChange={(e) => handleHeroChange("heroImageUrl", e.target.value as any)}
+                      placeholder="https://exemplo.com/imagem.jpg"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Você pode colar uma URL externa ou usar o upload abaixo.
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <ImageUpload
+                      value={content.heroImageUrl || ""}
+                      onChange={(url) => {
+                        handleHeroChange("heroImageUrl", url).catch(console.error);
+                      }}
+                      label="Upload da Imagem do Hero"
+                    />
+                    {content.heroImageUrl ? (
+                      <div className="rounded-lg border border-border p-3 space-y-3">
+                        <p className="text-sm font-medium text-foreground">
+                          Preview da imagem atual
+                        </p>
+                        <img
+                          src={content.heroImageUrl}
+                          alt="Hero atual"
+                          className="w-full max-h-56 rounded-lg object-cover"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleHeroChange("heroImageUrl", "").catch(console.error)}
+                        >
+                          Remover imagem
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+
+              {/* Vídeo do Hero */}
+              {content.heroMediaType === 'video' && (
+                <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      URL do Vídeo
+                    </label>
+                    <Input
+                      value={content.heroVideoUrl || ""}
+                      onChange={(e) => handleHeroChange("heroVideoUrl", e.target.value as any)}
+                      placeholder="https://youtube.com/watch?v=... ou https://youtu.be/..."
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Aceita URLs do YouTube, Instagram Reels, Vimeo e URLs diretas de vídeo.
+                    </p>
+                  </div>
+                  {content.heroVideoUrl ? (
+                    <div className="rounded-lg border border-border p-3 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            Vídeo configurado
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1 break-all">
+                            {content.heroVideoUrl}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleHeroChange("heroVideoUrl", "").catch(console.error)}
+                        >
+                          Remover
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {renderHeroButtonEditor({
                   title: "Botão principal",
