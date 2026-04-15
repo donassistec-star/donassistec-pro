@@ -7,6 +7,7 @@ import RetailerLayout from "@/components/retailer/RetailerLayout";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { VideoUpload } from "@/components/ui/video-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBrands } from "@/hooks/useBrands";
 import { ArrowDown, ArrowUp, ExternalLink } from "lucide-react";
@@ -438,7 +439,7 @@ const HomeContentAdmin = () => {
                 <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">
-                      URL do Vídeo
+                      URL do Vídeo (Externo)
                     </label>
                     <Input
                       value={content.heroVideoUrl || ""}
@@ -449,6 +450,17 @@ const HomeContentAdmin = () => {
                       Aceita URLs do YouTube, Instagram Reels, Vimeo e URLs diretas de vídeo.
                     </p>
                   </div>
+
+                  <div className="space-y-3">
+                    <VideoUpload
+                      value={content.heroVideoUrl || ""}
+                      onChange={(url) => {
+                        handleHeroChange("heroVideoUrl", url).catch(console.error);
+                      }}
+                      label="Upload do Vídeo (Máx. 100MB)"
+                    />
+                  </div>
+
                   {content.heroVideoUrl ? (
                     <div className="rounded-lg border border-border p-3 space-y-3">
                       <div className="flex items-start justify-between">

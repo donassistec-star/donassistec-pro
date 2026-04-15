@@ -40,4 +40,30 @@ export const uploadService = {
       throw new Error(error.response?.data?.error || "Erro ao fazer upload da imagem");
     }
   },
+
+  async uploadVideo(file: File): Promise<UploadResponse | null> {
+    try {
+      const formData = new FormData();
+      formData.append("video", file);
+
+      const response = await api.post<ApiResponse<UploadResponse>>(
+        "/upload/video",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.data.success && response.data.data) {
+        return response.data.data;
+      }
+
+      return null;
+    } catch (error: any) {
+      console.error("Erro ao fazer upload de vídeo:", error);
+      throw new Error(error.response?.data?.error || "Erro ao fazer upload do vídeo");
+    }
+  },
 };

@@ -46,14 +46,30 @@ const HeroSection = () => {
           <>
             {/* Vídeo Background Fullscreen */}
             <div className="absolute inset-0 w-full h-full bg-black">
-              <iframe
-                src={getEmbedUrl(content.heroVideoUrl, true)}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title="Hero Video"
-                frameBorder="0"
-              />
+              {content.heroVideoUrl.startsWith('http') && (content.heroVideoUrl.includes('youtube') || content.heroVideoUrl.includes('instagram') || content.heroVideoUrl.includes('vimeo')) ? (
+                // URLs externas (YouTube, Instagram, Vimeo) - usar iframe
+                <iframe
+                  src={getEmbedUrl(content.heroVideoUrl, true)}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Hero Video"
+                  frameBorder="0"
+                />
+              ) : (
+                // Vídeos locais - usar tag video
+                <video
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                >
+                  <source src={content.heroVideoUrl} type="video/mp4" />
+                  <source src={content.heroVideoUrl} type="video/webm" />
+                  Seu navegador não suporta a tag de vídeo.
+                </video>
+              )}
             </div>
             {/* Overlay para melhorar legibilidade do texto */}
             <div className="absolute inset-0 bg-gradient-to-r from-foreground/70 via-foreground/50 to-foreground/30" />
