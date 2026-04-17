@@ -10,7 +10,7 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { VideoUpload } from "@/components/ui/video-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBrands } from "@/hooks/useBrands";
-import { ArrowDown, ArrowUp, ExternalLink } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Trash2, Eye, EyeOff, Tag, Heading1, Type, Pointer } from "lucide-react";
 
 const HomeContentAdmin = () => {
   const { content, updateContent, resetContent } = useHomeContent();
@@ -34,12 +34,12 @@ const HomeContentAdmin = () => {
       | "heroCtaLabel"
       | "heroSecondaryCtaLabel"
       | "heroBadge"
-      | "heroImageUrl"
       | "heroVideoUrl"
       | "heroMediaType"
+      | "heroImageInterval"
       | "heroCtaLink"
       | "heroSecondaryCtaLink",
-    value: string
+    value: string | number
   ) => {
     await updateContent({ [field]: value as any });
   };
@@ -48,6 +48,36 @@ const HomeContentAdmin = () => {
     const features = [...content.features];
     features[index] = { ...features[index], [field]: value };
     await updateContent({ features });
+  };
+
+  const handleAddHeroImage = async (url: string) => {
+    const heroImages = [...(content.heroImages || [])];
+    heroImages.push({
+      id: Date.now().toString(),
+      url,
+    });
+    await updateContent({ heroImages });
+    toast.success("Imagem adicionada ao carrossel");
+  };
+
+  const handleRemoveHeroImage = async (id: string) => {
+    const heroImages = (content.heroImages || []).filter(img => img.id !== id);
+    if (heroImages.length === 0 && content.heroMediaType === 'image') {
+      toast.error("Você precisa de pelo menos uma imagem quando o tipo é 'Imagem'");
+      return;
+    }
+    await updateContent({ heroImages });
+    toast.success("Imagem removida");
+  };
+
+  const handleMoveHeroImage = async (index: number, direction: 'up' | 'down') => {
+    const heroImages = [...(content.heroImages || [])];
+    if (direction === 'up' && index > 0) {
+      [heroImages[index], heroImages[index - 1]] = [heroImages[index - 1], heroImages[index]];
+    } else if (direction === 'down' && index < heroImages.length - 1) {
+      [heroImages[index], heroImages[index + 1]] = [heroImages[index + 1], heroImages[index]];
+    }
+    await updateContent({ heroImages });
   };
 
   const handleServicesChange = async (
@@ -334,50 +364,119 @@ const HomeContentAdmin = () => {
                 </div>
               </div>
 
-              {/* Imagem do Hero */}
+              {/* Carrossel de Imagens do Hero */}
               {content.heroMediaType === 'image' && (
                 <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">
-                      URL da Imagem do Hero
-                    </label>
-                    <Input
-                      value={content.heroImageUrl || ""}
-                      onChange={(e) => handleHeroChange("heroImageUrl", e.target.value as any)}
-                      placeholder="https://exemplo.com/imagem.jpg"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Você pode colar uma URL externa ou usar o upload abaixo.
-                    </p>
-                  </div>
-                  <div className="space-y-3">
-                    <ImageUpload
-                      value={content.heroImageUrl || ""}
-                      onChange={(url) => {
-                        handleHeroChange("heroImageUrl", url).catch(console.error);
-                      }}
-                      label="Upload da Imagem do Hero"
-                    />
-                    {content.heroImageUrl ? (
-                      <div className="rounded-lg border border-border p-3 space-y-3">
-                        <p className="text-sm font-medium text-foreground">
-                          Preview da imagem atual
-                        </p>
-                        <img
-                          src={content.heroImageUrl}
-                          alt="Hero atual"
-                          className="w-full max-h-56 rounded-lg object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleHeroChange("heroImageUrl", "").catch(console.error)}
-                        >
-                          Remover imagem
-                        </Button>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground block mb-2">
+                        Imagens do Carrossel
+                      </label>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Adicione múltiplas imagens que serão exibidas em rotação automática.
+                      </p>
+                    </div>
+
+                    {/* Lista de imagens */}
+                    {(content.heroImages || []).length > 0 && (
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {content.heroImages.map((image, index) => (
+                          <div key={image.id} className="rounded-lg border border-border bg-card p-3 space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">
+                                  Imagem {index + 1}
+                                </p>
+                                <p className="text-xs text-muted-foreground break-all truncate">
+                                  {image.url}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRemoveHeroImage(image.id).catch(console.error)}
+                                className="shrink-0"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+
+                            {/* Preview */}
+                            <div className="rounded border border-border overflow-hidden">
+                              <img
+                                src={image.url}
+                                alt={`Imagem ${index + 1}`}
+                                className="w-full h-24 object-cover"
+                              />
+                            </div>
+
+                            {/* Botões de reordenação */}
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMoveHeroImage(index, 'up').catch(console.error)}
+                                disabled={index === 0}
+                                className="flex-1"
+                              >
+                                <ArrowUp className="w-4 h-4 mr-1" />
+                                Subir
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMoveHeroImage(index, 'down').catch(console.error)}
+                                disabled={index === (content.heroImages?.length || 0) - 1}
+                                className="flex-1"
+                              >
+                                <ArrowDown className="w-4 h-4 mr-1" />
+                                Descer
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ) : null}
+                    )}
+
+                    {/* Upload nova imagem */}
+                    <div className="space-y-3 pt-3 border-t border-border">
+                      <ImageUpload
+                        value=""
+                        onChange={(url) => {
+                          handleAddHeroImage(url).catch(console.error);
+                        }}
+                        label="Adicionar Imagem ao Carrossel"
+                      />
+                    </div>
+
+                    {/* Controle de velocidade do carrossel */}
+                    <div className="space-y-2 pt-3 border-t border-border">
+                      <label className="text-sm font-medium text-foreground">
+                        Velocidade de Rotação
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          min="1000"
+                          max="10000"
+                          step="500"
+                          value={content.heroImageInterval || 5000}
+                          onChange={(e) =>
+                            handleHeroChange("heroImageInterval", parseInt(e.target.value)).catch(console.error)
+                          }
+                          className="flex-1"
+                        />
+                        <span className="text-sm font-medium text-foreground min-w-fit">
+                          {((content.heroImageInterval || 5000) / 1000).toFixed(1)}s
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Tempo entre as imagens em segundos. Mínimo 1s, máximo 10s.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -493,6 +592,173 @@ const HomeContentAdmin = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Painel de Textos do Hero - Novo Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Painel de Textos do Hero
+            </CardTitle>
+            <CardDescription>
+              Controle a exibição do painel de conteúdo e seus elementos no hero.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Controle Principal do Painel */}
+            <div className="rounded-lg border border-border p-4 bg-muted/30 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <label htmlFor="showHeroPanel" className="text-sm font-semibold text-foreground cursor-pointer flex items-center gap-2">
+                    {content.showHeroPanel !== false ? (
+                      <Eye className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <EyeOff className="w-4 h-4 text-muted-foreground" />
+                    )}
+                    Painel de Textos
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Mostrar/ocultar todo o painel com conteúdo no topo da página
+                  </p>
+                </div>
+                <Checkbox
+                  id="showHeroPanel"
+                  checked={content.showHeroPanel !== false}
+                  onCheckedChange={(checked) =>
+                    updateContent({ showHeroPanel: Boolean(checked) }).catch(console.error)
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Sub-controles do Painel (aparecem quando painel está ativo) */}
+            {content.showHeroPanel !== false && (
+              <div className="space-y-3 pl-4 border-l-2 border-muted-foreground/30">
+                <div className="space-y-4">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">
+                    Elementos do Painel
+                  </p>
+
+                  {/* Badge */}
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-blue-600" />
+                        Badge/Etiqueta
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Pequeno rótulo acima do título principal
+                      </p>
+                    </div>
+                    <Checkbox
+                      id="showHeroBadge"
+                      checked={!!content.heroBadge}
+                      onCheckedChange={(checked) => {
+                        if (!checked) {
+                          updateContent({ heroBadge: "" }).catch(console.error);
+                        } else {
+                          updateContent({ heroBadge: "O Laboratório Especializado" }).catch(console.error);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Título Principal */}
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Heading1 className="w-4 h-4 text-purple-600" />
+                        Título Principal
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Texto grande no hero
+                      </p>
+                    </div>
+                    <Checkbox
+                      id="showHeroTitle"
+                      checked={!!content.heroTitle}
+                      onCheckedChange={(checked) => {
+                        if (!checked) {
+                          updateContent({ heroTitle: "" }).catch(console.error);
+                        } else {
+                          updateContent({ heroTitle: "Laboratório especializado em reparos avançados" }).catch(console.error);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Subtítulo */}
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Type className="w-4 h-4 text-indigo-600" />
+                        Subtítulo/Descrição
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Texto descritivo abaixo do título
+                      </p>
+                    </div>
+                    <Checkbox
+                      id="showHeroSubtitle"
+                      checked={!!content.heroSubtitle}
+                      onCheckedChange={(checked) => {
+                        if (!checked) {
+                          updateContent({ heroSubtitle: "" }).catch(console.error);
+                        } else {
+                          updateContent({ heroSubtitle: "Trabalhamos com técnicas de reconstrução que preservam a originalidade do seu aparelho." }).catch(console.error);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Divisor */}
+                  <div className="border-t border-border/50 my-2" />
+
+                  {/* Botões CTA */}
+                  <p className="text-xs font-medium text-muted-foreground uppercase mt-4">
+                    Botões de Ação
+                  </p>
+
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Pointer className="w-4 h-4 text-orange-600" />
+                        Botão Principal
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        CTA primária no hero
+                      </p>
+                    </div>
+                    <Checkbox
+                      checked={content.showHeroPrimaryCta !== false}
+                      onCheckedChange={(checked) =>
+                        updateContent({ showHeroPrimaryCta: Boolean(checked) }).catch(console.error)
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Pointer className="w-4 h-4 text-orange-500" />
+                        Botão Secundário
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        CTA secundária no hero
+                      </p>
+                    </div>
+                    <Checkbox
+                      checked={content.showHeroSecondaryCta !== false}
+                      onCheckedChange={(checked) =>
+                        updateContent({ showHeroSecondaryCta: Boolean(checked) }).catch(console.error)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

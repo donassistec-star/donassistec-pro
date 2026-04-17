@@ -156,6 +156,7 @@ export interface HomeContent {
   heroImage?: string;
   showHeroPrimaryCta?: boolean;
   showHeroSecondaryCta?: boolean;
+  showHeroPanel?: boolean;
   heroTitle: string;
   heroSubtitle: string;
   heroCtaLabel: string;

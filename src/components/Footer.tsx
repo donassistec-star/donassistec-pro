@@ -154,6 +154,18 @@ const Footer = () => {
                 {contactAddress}
               </li>
             </ul>
+            <div className="mt-4">
+              <iframe
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(contactAddress)}&output=embed`}
+                width="100%"
+                height="200"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Mapa da localização"
+              ></iframe>
+            </div>
           </div>
         </div>
 

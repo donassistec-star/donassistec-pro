@@ -11,6 +11,11 @@ export interface HomeStat {
   description: string;
 }
 
+export interface HeroImage {
+  id: string;
+  url: string;
+}
+
 export interface HomeStep {
   id: string;
   number: string;
@@ -49,10 +54,12 @@ export interface HomeContent {
   heroTitle: string;
   heroSubtitle: string;
   heroMediaType?: 'image' | 'video' | 'none';
-  heroImageUrl?: string;
+  heroImages?: HeroImage[];
+  heroImageInterval?: number;
   heroVideoUrl?: string;
   showHeroPrimaryCta?: boolean;
   showHeroSecondaryCta?: boolean;
+  showHeroPanel?: boolean;
   heroCtaLabel: string;
   heroCtaLink?: string;
   heroSecondaryCtaLabel: string;
@@ -92,10 +99,12 @@ export const defaultHomeContent: HomeContent = {
   heroSubtitle:
     "A DonAssistec conecta sua loja a um catálogo completo de modelos, peças e serviços de reconstrução com qualidade de fábrica.",
   heroMediaType: 'none',
-  heroImageUrl: undefined,
+  heroImages: [],
+  heroImageInterval: 5000,
   heroVideoUrl: undefined,
   showHeroPrimaryCta: true,
   showHeroSecondaryCta: true,
+  showHeroPanel: true,
   heroCtaLabel: "Explorar Catálogo",
   heroCtaLink: "/catalogo",
   heroSecondaryCtaLabel: "Área do Lojista",
