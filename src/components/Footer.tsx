@@ -1,14 +1,9 @@
 import { Smartphone, Mail, Phone, MapPin, Instagram, Facebook, Youtube, Linkedin, Twitter } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useSettings } from "@/hooks/useSettings";
-import { useAuth } from "@/contexts/AuthContext";
 
 const Footer = () => {
   const { settings, loading } = useSettings();
-  const location = useLocation();
-  const { user } = useAuth();
-  const isHome = location.pathname === "/";
-  const isLojista = user?.role === "retailer";
 
   if (loading) {
     return null; // Retorna null durante o carregamento para evitar flash de conteúdo
@@ -24,7 +19,7 @@ const Footer = () => {
   return (
     <footer className="bg-foreground pt-16 pb-8">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
@@ -103,22 +98,6 @@ const Footer = () => {
                 </a>
               )}
             </div>
-          </div>
-
-          {/* Quick Links */}
-          <div>
-            <h4 className="font-semibold text-card mb-4">Links Rápidos</h4>
-            <ul className="space-y-3">
-              <li><Link to="/" className="text-card/70 hover:text-primary transition-colors">Home</Link></li>
-              {isLojista && <li><Link to="/catalogo" className="text-card/70 hover:text-primary transition-colors">Catálogo</Link></li>}
-              <li><Link to="/favoritos" className="text-card/70 hover:text-primary transition-colors">Favoritos</Link></li>
-              <li><Link to="/sobre" className="text-card/70 hover:text-primary transition-colors">Sobre Nós</Link></li>
-              <li><a href="#servicos" className="text-card/70 hover:text-primary transition-colors">Serviços</a></li>
-              <li><a href="#marcas" className="text-card/70 hover:text-primary transition-colors">Marcas</a></li>
-              <li><Link to="/contato" className="text-card/70 hover:text-primary transition-colors">Contato</Link></li>
-              <li><Link to="/lojista/login" className="text-card/70 hover:text-primary transition-colors">Área do Lojista</Link></li>
-              {isHome && <li><Link to="/admin/login" className="text-card/70 hover:text-primary transition-colors">Área do Administrador</Link></li>}
-            </ul>
           </div>
 
           {/* Services */}

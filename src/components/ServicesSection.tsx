@@ -11,6 +11,7 @@ const highlightIcons = [Zap, Clock, Shield];
 const ServicesSection = () => {
   const { content } = useHomeContent();
   const featuredImage = content.servicesImage || screenReconstructionImage;
+  const servicesSubtitle = content.servicesSubtitle?.trim();
 
   return (
     <section id="servicos" className="py-20 bg-muted/30">
@@ -20,9 +21,11 @@ const ServicesSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             {content.servicesTitle}
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {content.servicesSubtitle}
-          </p>
+          {servicesSubtitle ? (
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {servicesSubtitle}
+            </p>
+          ) : null}
         </div>
 
         {/* Featured Image */}
@@ -44,14 +47,14 @@ const ServicesSection = () => {
         </div>
 
         {/* Service Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
+        <div className="mb-16 grid items-stretch gap-6 md:auto-rows-fr md:grid-cols-3">
           {content.servicesCards.map((service, index) => {
             const Icon = serviceIcons[index] || Package;
             const color = index === 1 ? "secondary" : "primary";
 
             return (
-            <Card key={service.title} className="group hover:shadow-lg transition-all duration-300 border-border hover:border-primary/50">
-              <CardHeader>
+            <Card key={service.title} className="group flex h-full min-h-[24rem] flex-col border-border transition-all duration-300 hover:border-primary/50 hover:shadow-lg md:min-h-[30rem]">
+              <CardHeader className="min-h-[8.5rem] flex-none">
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                     color === "primary" ? "bg-primary/10" : "bg-secondary/10"
@@ -64,22 +67,26 @@ const ServicesSection = () => {
                     {service.badge}
                   </Badge>
                 </div>
-                <CardTitle className="text-xl text-foreground">{service.title}</CardTitle>
+                <CardTitle className="text-xl leading-tight text-foreground">{service.title}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">{service.description}</p>
-                <ul className="space-y-2 mb-6">
-                  {service.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm text-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary">
-                  Ver Detalhes
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
+              <CardContent className="flex flex-1 flex-col gap-6">
+                <div className="flex flex-1 flex-col">
+                  <p className="mb-4 text-muted-foreground">{service.description}</p>
+                  <ul className="space-y-2">
+                    {service.features.map((feature) => (
+                      <li key={feature} className="flex items-center gap-2 text-sm text-foreground">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex justify-center pt-6">
+                  <Button variant="outline" className="w-full max-w-[200px] justify-center group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary">
+                    Ver Detalhes
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
             );

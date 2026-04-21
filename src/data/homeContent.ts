@@ -96,8 +96,7 @@ export const defaultHomeContent: HomeContent = {
   showCta: true,
   heroBadge: "Laboratório Premium B2B",
   heroTitle: "Reconstrução de Telas e Peças Premium para Lojistas",
-  heroSubtitle:
-    "A DonAssistec conecta sua loja a um catálogo completo de modelos, peças e serviços de reconstrução com qualidade de fábrica.",
+  heroSubtitle: "",
   heroMediaType: 'none',
   heroImages: [],
   heroImageInterval: 5000,

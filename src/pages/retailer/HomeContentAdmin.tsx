@@ -10,7 +10,7 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { VideoUpload } from "@/components/ui/video-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBrands } from "@/hooks/useBrands";
-import { ArrowDown, ArrowUp, ExternalLink, Trash2, Eye, EyeOff, Tag, Heading1, Type, Pointer } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Trash2, Eye, EyeOff, Tag, Heading1, Pointer } from "lucide-react";
 
 const HomeContentAdmin = () => {
   const { content, updateContent, resetContent } = useHomeContent();
@@ -374,7 +374,11 @@ const HomeContentAdmin = () => {
                   value={content.heroSubtitle}
                   onChange={(e) => handleHeroChange("heroSubtitle", e.target.value)}
                   rows={3}
+                  placeholder="Texto opcional abaixo do título principal"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Sincronizado com a Home. Se ficar vazio, o subtítulo não aparece no hero.
+                </p>
               </div>
               <div className="space-y-4">
                 <div>
@@ -739,33 +743,6 @@ const HomeContentAdmin = () => {
                     />
                   </div>
 
-                  {/* Subtítulo */}
-                  <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
-                    <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
-                        <Type className="w-4 h-4 text-indigo-600" />
-                        Subtítulo/Descrição
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Texto descritivo abaixo do título
-                      </p>
-                    </div>
-                    <Checkbox
-                      id="showHeroSubtitle"
-                      checked={!!content.heroSubtitle}
-                      onCheckedChange={(checked) => {
-                        if (!checked) {
-                          updateContent({ heroSubtitle: "" }).catch(console.error);
-                        } else {
-                          updateContent({ heroSubtitle: "Trabalhamos com técnicas de reconstrução que preservam a originalidade do seu aparelho." }).catch(console.error);
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {/* Divisor */}
-                  <div className="border-t border-border/50 my-2" />
-
                   {/* Botões CTA */}
                   <p className="text-xs font-medium text-muted-foreground uppercase mt-4">
                     Botões de Ação
@@ -844,6 +821,9 @@ const HomeContentAdmin = () => {
                   }
                   rows={2}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Sincronizado com a Home. Se ficar vazio, o subtítulo não aparece na seção.
+                </p>
               </div>
             </div>
 
@@ -916,6 +896,9 @@ const HomeContentAdmin = () => {
                 }
                 rows={2}
               />
+              <p className="text-xs text-muted-foreground">
+                Sincronizado com a Home. Se ficar vazio, o subtítulo não aparece na seção.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -998,6 +981,9 @@ const HomeContentAdmin = () => {
                 }
                 rows={2}
               />
+              <p className="text-xs text-muted-foreground">
+                Sincronizado com a Home. Se ficar vazio, o subtítulo não aparece na seção.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

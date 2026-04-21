@@ -24,6 +24,7 @@ const ProcessSection = () => {
   const { content } = useHomeContent();
   const { user } = useAuth();
   const isLojista = user?.role === "retailer";
+  const processSubtitle = content.processSubtitle?.trim();
 
   return (
     <section className="py-20 bg-background">
@@ -36,9 +37,11 @@ const ProcessSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             {content.processTitle}
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {content.processSubtitle}
-          </p>
+          {processSubtitle ? (
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {processSubtitle}
+            </p>
+          ) : null}
         </div>
 
         <div className="max-w-5xl mx-auto">

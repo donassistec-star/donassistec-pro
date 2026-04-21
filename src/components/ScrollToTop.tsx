@@ -34,7 +34,7 @@ const ScrollToTop = () => {
       onClick={scrollToTop}
       size="icon"
       className={cn(
-        "fixed bottom-8 right-8 z-50 rounded-full shadow-lg transition-all duration-300",
+        "fixed z-50 rounded-full shadow-lg transition-all duration-300 [right:max(1rem,env(safe-area-inset-right))] [bottom:calc(max(1rem,env(safe-area-inset-bottom))+4.5rem)] sm:right-6 sm:bottom-24",
         isVisible
           ? "opacity-100 translate-y-0"
           : "opacity-0 translate-y-4 pointer-events-none"

@@ -2,13 +2,11 @@ import RetailerLayout from "@/components/retailer/RetailerLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCart } from "@/contexts/CartContext";
 import {
   ArrowRight,
   BarChart3,
   CheckCircle2,
   LifeBuoy,
-  PackageSearch,
   PlayCircle,
   Store,
   TableProperties,
@@ -64,8 +62,6 @@ const journeyCards = [
 
 const RetailerDashboard = () => {
   const { user } = useAuth();
-  const { getTotalItems } = useCart();
-  const totalCartItems = getTotalItems();
 
   const approvalMeta = {
     approved: {
@@ -93,12 +89,6 @@ const RetailerDashboard = () => {
       value: approval.label,
       helper: "Acompanhamento do acesso lojista",
       icon: CheckCircle2,
-    },
-    {
-      label: "Itens no carrinho",
-      value: totalCartItems === 0 ? "Vazio" : `${totalCartItems} item(ns)`,
-      helper: "Resumo do orçamento em andamento",
-      icon: PackageSearch,
     },
     {
       label: "Atalhos ativos",
@@ -130,9 +120,6 @@ const RetailerDashboard = () => {
                 <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
                   Acesse rapidamente os recursos essenciais da sua área do lojista.
                 </h1>
-                <p className="max-w-xl text-sm leading-7 text-slate-200 sm:text-base">
-                  {approval.description}
-                </p>
               </div>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link to="/lojista/perfil">

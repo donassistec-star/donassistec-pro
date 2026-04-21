@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { HeroImage } from '@/data/homeContent';
+import { cn } from '@/lib/utils';
 
 interface HeroImageCarouselProps {
   images: HeroImage[];
   interval?: number;
+  imageClassName?: string;
+  overlayClassName?: string;
+  className?: string;
 }
 
-const HeroImageCarousel = ({ images, interval = 5000 }: HeroImageCarouselProps) => {
+const HeroImageCarousel = ({
+  images,
+  interval = 5000,
+  imageClassName,
+  overlayClassName,
+  className,
+}: HeroImageCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const goToPrevious = () => {
@@ -45,10 +55,10 @@ const HeroImageCarousel = ({ images, interval = 5000 }: HeroImageCarouselProps) 
     );
   }
 
-  const currentSlideOverlay = currentIndex === 1 ? 'bg-black/0' : 'bg-black/10 md:bg-black/25';
+  const currentSlideOverlay = overlayClassName || (currentIndex === 1 ? 'bg-black/0' : 'bg-black/10 md:bg-black/25');
 
   return (
-    <div className="relative w-full h-full">
+    <div className={cn("relative w-full h-full", className)}>
       {/* Imagens com transição fade */}
       {images.map((image, index) => (
         <div
@@ -61,7 +71,7 @@ const HeroImageCarousel = ({ images, interval = 5000 }: HeroImageCarouselProps) 
           <img
             src={image.url}
             alt={`Slide ${index + 1}`}
-            className="w-full h-full object-cover"
+            className={cn("w-full h-full object-cover", imageClassName)}
             loading={index === currentIndex ? "eager" : "lazy"}
           />
         </div>
@@ -75,7 +85,7 @@ const HeroImageCarousel = ({ images, interval = 5000 }: HeroImageCarouselProps) 
         <>
           <button
             onClick={goToPrevious}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            className="absolute left-4 top-1/2 z-10 hidden -translate-y-1/2 rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30 md:block"
             aria-label="Slide anterior"
           >
             <ChevronLeft className="w-6 h-6 text-white" />
@@ -83,14 +93,14 @@ const HeroImageCarousel = ({ images, interval = 5000 }: HeroImageCarouselProps) 
 
           <button
             onClick={goToNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            className="absolute right-4 top-1/2 z-10 hidden -translate-y-1/2 rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30 md:block"
             aria-label="Próximo slide"
           >
             <ChevronRight className="w-6 h-6 text-white" />
           </button>
 
           {/* Indicadores de slide (pontos) */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+          <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2 sm:bottom-6">
             {images.map((_, index) => (
               <button
                 key={index}

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS home_content (
 INSERT INTO home_content (section, content) VALUES
 ('main', JSON_OBJECT(
     'heroTitle', 'Reconstrução de Telas e Peças Premium para Lojistas',
-    'heroSubtitle', 'A DonAssistec conecta sua loja a um catálogo completo de modelos, peças e serviços de reconstrução com qualidade de fábrica.',
+    'heroSubtitle', '',
     'heroCtaLabel', 'Explorar Catálogo',
     'heroSecondaryCtaLabel', 'Área do Lojista',
     'featuresTitle', 'Por Que Escolher a DonAssistec?',

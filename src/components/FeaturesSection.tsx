@@ -21,6 +21,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 const FeaturesSection = () => {
   const { content } = useHomeContent();
+  const featuresSubtitle = content.featuresSubtitle?.trim();
 
   return (
     <section className="py-20 bg-muted/30">
@@ -36,9 +37,11 @@ const FeaturesSection = () => {
               </>
             )}
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {content.featuresSubtitle}
-          </p>
+          {featuresSubtitle ? (
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {featuresSubtitle}
+            </p>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">

@@ -21,14 +21,17 @@ const WhatsAppFloat = () => {
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-full bg-[hsl(142_70%_45%)] text-primary-foreground shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 group"
+      aria-label="Falar com a DonAssistec no WhatsApp"
+      title="Falar no WhatsApp"
+      className="fixed z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[hsl(142_70%_45%)] text-primary-foreground shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(142_70%_38%)] focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-auto sm:w-auto sm:gap-3 sm:px-5 sm:py-3 [bottom:max(1rem,env(safe-area-inset-bottom))] [right:max(1rem,env(safe-area-inset-right))] sm:bottom-6 sm:right-6"
     >
-      <MessageCircle className="w-6 h-6" />
-      <span className="hidden sm:inline font-semibold">Fale Conosco</span>
+      <MessageCircle className="h-6 w-6" />
+      <span className="hidden font-semibold sm:inline">Fale Conosco</span>
+      <span className="sr-only">Abrir conversa no WhatsApp</span>
       
       {/* Pulse Animation */}
-      <span className="absolute -top-1 -right-1 w-4 h-4 bg-secondary rounded-full animate-ping" />
-      <span className="absolute -top-1 -right-1 w-4 h-4 bg-secondary rounded-full" />
+      <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-secondary animate-ping" />
+      <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-secondary" />
     </a>
   );
 };

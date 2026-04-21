@@ -17,6 +17,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 const StatsSection = () => {
   const { content } = useHomeContent();
+  const statsSubtitle = content.statsSubtitle?.trim();
 
   return (
     <section className="py-20 bg-gradient-to-br from-primary to-primary/80">
@@ -29,9 +30,11 @@ const StatsSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
             {content.statsTitle}
           </h2>
-          <p className="text-lg text-primary-foreground/90 max-w-2xl mx-auto">
-            {content.statsSubtitle}
-          </p>
+          {statsSubtitle ? (
+            <p className="text-lg text-primary-foreground/90 max-w-2xl mx-auto">
+              {statsSubtitle}
+            </p>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 max-w-6xl mx-auto">
