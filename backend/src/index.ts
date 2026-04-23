@@ -58,6 +58,7 @@ app.use(cors({
       "http://www.donassistec.com.br",
       "https://www.donassistec.com.br",
       /^http:\/\/.*:8200$/, // Aceitar qualquer IP na porta 8200
+      /^https:\/\/.*$/, // Aceitar qualquer origem HTTPS
     ];
     
     // Verificar se a origem está permitida
