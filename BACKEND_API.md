@@ -264,6 +264,10 @@ Content-Type: application/json
 }
 ```
 
+Observações:
+- O backend aceita salvar a tabela mesmo se o banco ainda não tiver recebido as migrations de versionamento (`35_retailer_price_tables_versioning.sql` e `36_retailer_price_tables_history.sql`).
+- Nesses ambientes legados, o `PUT` continua persistindo `title`, `effectiveDate`, visibilidade, destaque, `rawText`, `parsed_data` e `service_templates`, mas os metadados de versão/histórico só ficam disponíveis após as migrations.
+
 #### Reordenar tabelas no admin
 ```http
 POST /api/retailer-price-tables/admin/reorder

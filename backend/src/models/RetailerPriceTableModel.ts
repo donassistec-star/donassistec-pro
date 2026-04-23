@@ -59,6 +59,29 @@ export interface VersionDiffInfo {
 }
 
 class RetailerPriceTableModel {
+  private async supportsVersioningColumns(): Promise<boolean> {
+    const [rows] = await pool.execute<mysql2.RowDataPacket[]>(
+      `SELECT COUNT(*) AS total
+       FROM information_schema.columns
+       WHERE table_schema = DATABASE()
+         AND table_name = 'retailer_price_tables'
+         AND column_name IN ('version', 'changed_by', 'change_reason')`
+    );
+
+    return Number(rows[0]?.total || 0) === 3;
+  }
+
+  private async supportsHistoryTable(): Promise<boolean> {
+    const [rows] = await pool.execute<mysql2.RowDataPacket[]>(
+      `SELECT COUNT(*) AS total
+       FROM information_schema.tables
+       WHERE table_schema = DATABASE()
+         AND table_name = 'retailer_price_tables_history'`
+    );
+
+    return Number(rows[0]?.total || 0) > 0;
+  }
+
   private normalizeServiceTemplates(input: unknown): RetailerPriceTableServiceTemplate[] {
     if (!Array.isArray(input)) return [];
 
@@ -215,6 +238,7 @@ class RetailerPriceTableModel {
     const title = data.title?.trim() || parsed.title || "Tabela de Preços";
     const effectiveDate = data.effectiveDate?.trim() || parsed.effectiveDate || null;
     const existing = await this.findBySlug(data.slug);
+    const supportsVersioning = await this.supportsVersioningColumns();
     const featuredToRetailers = Boolean(
       data.visibleToRetailers && (data.featuredToRetailers ?? existing?.featured_to_retailers ?? false)
     );
@@ -235,35 +259,62 @@ class RetailerPriceTableModel {
       );
     }
 
-    await pool.execute(
-      `INSERT INTO retailer_price_tables (slug, title, effective_date, visible_to_retailers, featured_to_retailers, sort_order, raw_text, parsed_data, service_templates, changed_by, change_reason)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         title = VALUES(title),
-         effective_date = VALUES(effective_date),
-         visible_to_retailers = VALUES(visible_to_retailers),
-         featured_to_retailers = VALUES(featured_to_retailers),
-         raw_text = VALUES(raw_text),
-         parsed_data = VALUES(parsed_data),
-         service_templates = VALUES(service_templates),
-         version = version + 1,
-         changed_by = VALUES(changed_by),
-         change_reason = VALUES(change_reason),
-         updated_at = CURRENT_TIMESTAMP`,
-      [
-        data.slug,
-        title,
-        effectiveDate,
-        data.visibleToRetailers,
-        featuredToRetailers,
-        sortOrder,
-        data.rawText,
-        parsedJson,
-        serviceTemplatesJson,
-        metadata?.changedBy || null,
-        metadata?.changeReason || null,
-      ]
-    );
+    if (supportsVersioning) {
+      await pool.execute(
+        `INSERT INTO retailer_price_tables (slug, title, effective_date, visible_to_retailers, featured_to_retailers, sort_order, raw_text, parsed_data, service_templates, changed_by, change_reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           title = VALUES(title),
+           effective_date = VALUES(effective_date),
+           visible_to_retailers = VALUES(visible_to_retailers),
+           featured_to_retailers = VALUES(featured_to_retailers),
+           raw_text = VALUES(raw_text),
+           parsed_data = VALUES(parsed_data),
+           service_templates = VALUES(service_templates),
+           version = version + 1,
+           changed_by = VALUES(changed_by),
+           change_reason = VALUES(change_reason),
+           updated_at = CURRENT_TIMESTAMP`,
+        [
+          data.slug,
+          title,
+          effectiveDate,
+          data.visibleToRetailers,
+          featuredToRetailers,
+          sortOrder,
+          data.rawText,
+          parsedJson,
+          serviceTemplatesJson,
+          metadata?.changedBy || null,
+          metadata?.changeReason || null,
+        ]
+      );
+    } else {
+      await pool.execute(
+        `INSERT INTO retailer_price_tables (slug, title, effective_date, visible_to_retailers, featured_to_retailers, sort_order, raw_text, parsed_data, service_templates)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           title = VALUES(title),
+           effective_date = VALUES(effective_date),
+           visible_to_retailers = VALUES(visible_to_retailers),
+           featured_to_retailers = VALUES(featured_to_retailers),
+           raw_text = VALUES(raw_text),
+           parsed_data = VALUES(parsed_data),
+           service_templates = VALUES(service_templates),
+           updated_at = CURRENT_TIMESTAMP`,
+        [
+          data.slug,
+          title,
+          effectiveDate,
+          data.visibleToRetailers,
+          featuredToRetailers,
+          sortOrder,
+          data.rawText,
+          parsedJson,
+          serviceTemplatesJson,
+        ]
+      );
+    }
 
     const updated = await this.findBySlug(data.slug);
     if (!updated) throw new Error("Erro ao carregar tabela de preços salva");
@@ -302,6 +353,8 @@ class RetailerPriceTableModel {
   }
 
   async findHistory(tableId: number, limit = 50): Promise<RetailerPriceTableHistoryRecord[]> {
+    if (!(await this.supportsHistoryTable())) return [];
+
     const [rows] = await pool.execute<mysql2.RowDataPacket[]>(
       `SELECT * FROM retailer_price_tables_history 
        WHERE table_id = ? 
@@ -320,6 +373,8 @@ class RetailerPriceTableModel {
   }
 
   async findHistoryVersion(tableId: number, version: number): Promise<RetailerPriceTableHistoryRecord | null> {
+    if (!(await this.supportsHistoryTable())) return null;
+
     const [rows] = await pool.execute<mysql2.RowDataPacket[]>(
       `SELECT * FROM retailer_price_tables_history 
        WHERE table_id = ? AND version = ? 

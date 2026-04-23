@@ -54,16 +54,24 @@ class RetailerPriceTableController {
         serviceTemplates = [],
       } = req.body || {};
 
+      console.log(`[upsert] Recebida requisição para slug: ${slug}, rawText length: ${rawText?.length || 0}`);
+
       if (!rawText || typeof rawText !== "string" || rawText.trim().length === 0) {
         return res.status(400).json({ success: false, error: "Informe o texto bruto da tabela para importar" });
       }
 
-      const validation = validateRetailerPriceTable({
-        title,
-        rawText,
-        visibleToRetailers: Boolean(visibleToRetailers),
-        featuredToRetailers: Boolean(featuredToRetailers),
-      });
+      let validation;
+      try {
+        validation = validateRetailerPriceTable({
+          title,
+          rawText,
+          visibleToRetailers: Boolean(visibleToRetailers),
+          featuredToRetailers: Boolean(featuredToRetailers),
+        });
+      } catch (validationError: any) {
+        console.error("[upsert] Erro na validação:", validationError.message);
+        return res.status(400).json({ success: false, error: "Erro ao validar tabela: " + validationError.message });
+      }
 
       if (validation.issues.length > 0) {
         return res.status(400).json({
@@ -72,31 +80,46 @@ class RetailerPriceTableController {
         });
       }
 
-      const record = await RetailerPriceTableModel.upsert({
-        slug,
-        title,
-        effectiveDate,
-        visibleToRetailers: Boolean(visibleToRetailers),
-        featuredToRetailers: Boolean(featuredToRetailers),
-        rawText,
-        serviceTemplates: Array.isArray(serviceTemplates) ? serviceTemplates : [],
-      });
+      const adminId = (req as any).user?.id ?? null;
+      const previousRecord = await RetailerPriceTableModel.findBySlug(slug);
+
+      let record;
+      try {
+        record = await RetailerPriceTableModel.upsert({
+          slug,
+          title,
+          effectiveDate,
+          visibleToRetailers: Boolean(visibleToRetailers),
+          featuredToRetailers: Boolean(featuredToRetailers),
+          rawText,
+          serviceTemplates: Array.isArray(serviceTemplates) ? serviceTemplates : [],
+        }, {
+          changedBy: adminId,
+          changeReason: previousRecord ? "Atualização manual via painel admin" : "Criação manual via painel admin",
+        });
+      } catch (upsertError: any) {
+        console.error("[upsert] Erro no upsert:", upsertError.message, upsertError.stack);
+        return res.status(500).json({ success: false, error: "Erro ao salvar tabela: " + upsertError.message });
+      }
 
       // Track price changes for analytics
       try {
-        const oldRecord = await RetailerPriceTableModel.findBySlug(slug);
-        if (oldRecord && record.id) {
-          const oldPrices = oldRecord.parsed_data
-            ? extractPricesFromParsed(oldRecord.parsed_data)
+        if (previousRecord && record.id) {
+          const oldPrices = previousRecord.parsed_data
+            ? extractPricesFromParsed(previousRecord.parsed_data)
             : new Map();
           const newPrices = record.parsed_data
             ? extractPricesFromParsed(record.parsed_data)
             : new Map();
 
-          const changes = compareSnapshots(oldPrices, newPrices, oldRecord.parsed_data || null, record.parsed_data);
+          const changes = compareSnapshots(
+            oldPrices,
+            newPrices,
+            previousRecord.parsed_data || null,
+            record.parsed_data
+          );
 
           if (changes.length > 0) {
-            const adminId = (req as any).user?.id;
             await Promise.all(
               changes.map((change) =>
                 RetailerPriceHistoryModel.recordPriceChanges([

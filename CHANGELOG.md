@@ -5,6 +5,17 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### 🐛 Corrigido
+
+- **Salvar tabela de preços no admin**: `PUT /api/retailer-price-tables/admin/:slug` volta a funcionar em ambientes onde as migrations de versionamento ainda não criaram `version`, `changed_by` e `change_reason`
+- **Histórico de preços**: comparação de snapshots no salvamento passa a usar o estado anterior correto da tabela antes do update
+
+### 📚 Documentação
+
+- **BACKEND_API.md**: observação sobre compatibilidade do `PUT /api/retailer-price-tables/admin/:slug` com bancos ainda sem migrations 35/36 aplicadas
+
 ## [1.5.0] - 2026-03-27
 
 ### ✨ Adicionado
