@@ -8,6 +8,7 @@ import { LoadingSkeleton } from "@/components/ui/loading";
 import { useHomeContent } from "@/contexts/HomeContentContext";
 import { useSettings } from "@/hooks/useSettings";
 import { validation } from "@/utils/validation";
+import { getPublicContactInfo } from "@/utils/publicContact";
 
 const BrandsSection = () => {
   const { brands: apiBrands, loading } = useBrands();
@@ -17,8 +18,7 @@ const BrandsSection = () => {
   const brands = apiBrands && apiBrands.length > 0 ? apiBrands : staticBrands;
   const loadingData = loading || loadingModels;
   const selectedBrandIds = content.homeBrandIds || [];
-  const rawWhatsAppNumber =
-    settings?.contactWhatsApp || settings?.whatsappNumber || "5511999999999";
+  const { contactWhatsappRaw, hasWhatsApp } = getPublicContactInfo(settings);
 
   const brandsWithStats = brands
     .map((brand) => {
@@ -40,7 +40,7 @@ const BrandsSection = () => {
 
   if (loadingData) {
     return (
-      <section id="marcas" className="py-20 bg-background">
+      <section id="marcas" className="bg-transparent py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <Badge variant="outline" className="mb-4">Catálogo</Badge>
@@ -57,7 +57,7 @@ const BrandsSection = () => {
   }
 
   return (
-    <section id="marcas" className="py-20 bg-background">
+    <section id="marcas" className="bg-transparent py-20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <Badge variant="outline" className="mb-4">Catálogo</Badge>
@@ -74,15 +74,19 @@ const BrandsSection = () => {
           {orderedBrands.map((brand) => (
             <a
               key={brand.id}
-              href={validation.generateWhatsAppUrl(
-                rawWhatsAppNumber,
-                `Olá! Gostaria de ver mais modelos da marca ${brand.name}.`
-              )}
-              target="_blank"
-              rel="noreferrer"
+              href={
+                hasWhatsApp
+                  ? validation.generateWhatsAppUrl(
+                      contactWhatsappRaw,
+                      `Olá! Gostaria de ver mais modelos da marca ${brand.name}.`
+                    )
+                  : "/contato"
+              }
+              target={hasWhatsApp ? "_blank" : undefined}
+              rel={hasWhatsApp ? "noreferrer" : undefined}
             >
                 <Card
-                  className="group relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-2 border-border hover:border-primary/50 bg-gradient-to-br from-card to-muted/30 hover:from-card hover:to-muted/50"
+                  className="group relative cursor-pointer overflow-hidden border border-white/10 bg-gradient-to-br from-card via-card to-muted/60 shadow-[0_18px_50px_rgba(2,8,23,0.18)] backdrop-blur-sm transition-all duration-500 hover:-translate-y-2 hover:border-primary/40 hover:shadow-[0_28px_70px_rgba(14,165,233,0.16)]"
                 >
                   {/* Gradient Background */}
                   <div 

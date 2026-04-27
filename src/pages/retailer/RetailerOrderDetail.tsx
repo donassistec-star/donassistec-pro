@@ -23,11 +23,16 @@ import { formatPrePedidoNumero } from "@/utils/format";
 import { Loading } from "@/components/ui/loading";
 import RetailerLayout from "@/components/retailer/RetailerLayout";
 import { toast } from "sonner";
+import { useSettings } from "@/hooks/useSettings";
+import { validation } from "@/utils/validation";
+import { getPublicContactInfo } from "@/utils/publicContact";
 
 const RetailerOrderDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { settings } = useSettings();
+  const { contactWhatsappRaw, hasWhatsApp } = getPublicContactInfo(settings);
   const [order, setOrder] = useState<OrderWithItems | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -123,10 +128,12 @@ const RetailerOrderDetail = () => {
   });
 
   const handleWhatsApp = () => {
-    const message = encodeURIComponent(
-      `Olá! Gostaria de informações sobre o pedido ${order.id}. Empresa: ${user?.companyName || ""}`
-    );
-    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
+    if (!hasWhatsApp || !order) {
+      toast.error("WhatsApp comercial não configurado.");
+      return;
+    }
+    const message = `Olá! Gostaria de informações sobre o pedido ${order.id}. Empresa: ${user?.companyName || ""}`;
+    window.open(validation.generateWhatsAppUrl(contactWhatsappRaw, message), "_blank");
   };
 
   return (

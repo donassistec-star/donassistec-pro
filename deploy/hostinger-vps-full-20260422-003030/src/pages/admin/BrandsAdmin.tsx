@@ -1,0 +1,428 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Tag,
+  X,
+} from "lucide-react";
+import AdminLayout from "@/components/admin/AdminLayout";
+import { brandsService, modelsService } from "@/services/modelsService";
+import { Brand } from "@/data/models";
+import { toast } from "sonner";
+import { LoadingSkeleton } from "@/components/ui/loading";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+const BrandsAdmin = () => {
+  const navigate = useNavigate();
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [modelsCount, setModelsCount] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [transferTargetBrandId, setTransferTargetBrandId] = useState("");
+  const [movingModels, setMovingModels] = useState(false);
+  const pageSize = 10;
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const brandsData = await brandsService.getAll();
+      setBrands(brandsData);
+
+      // Contar modelos por marca
+      const counts: Record<string, number> = {};
+      for (const brand of brandsData) {
+        const models = await modelsService.getByBrand(brand.id);
+        counts[brand.id] = models.length;
+      }
+      setModelsCount(counts);
+    } catch (error) {
+      toast.error("Erro ao carregar dados");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (id: string, name: string) => {
+    setItemToDelete({ id, name });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
+
+    const linkedModelsCount = modelsCount[itemToDelete.id] || 0;
+    if (linkedModelsCount > 0) {
+      setDeleteDialogOpen(false);
+      const fallbackTarget = brands.find((brand) => brand.id !== itemToDelete.id)?.id || "";
+      setTransferTargetBrandId(fallbackTarget);
+      setTransferDialogOpen(true);
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await brandsService.delete(itemToDelete.id);
+      toast.success("Marca deletada com sucesso!");
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao deletar marca");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleTransferAndDelete = async () => {
+    if (!itemToDelete || !transferTargetBrandId) {
+      toast.error("Selecione a marca de destino");
+      return;
+    }
+
+    try {
+      setMovingModels(true);
+      const modelsToMove = await modelsService.getByBrand(itemToDelete.id);
+
+      for (const model of modelsToMove) {
+        await modelsService.update(model.id, { ...model, brand: transferTargetBrandId });
+      }
+
+      await brandsService.delete(itemToDelete.id);
+      toast.success("Modelos movidos e marca excluida com sucesso!");
+      setTransferDialogOpen(false);
+      setItemToDelete(null);
+      setTransferTargetBrandId("");
+      await loadData();
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao mover modelos e excluir marca");
+    } finally {
+      setMovingModels(false);
+    }
+  };
+
+  const filteredBrands = brands.filter((brand) =>
+    !searchQuery ||
+    brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    brand.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredBrands.length / pageSize));
+  const paginatedBrands = filteredBrands.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+  const availableTransferBrands = brands.filter((brand) => brand.id !== itemToDelete?.id);
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              Administração de Marcas
+            </h1>
+            <p className="text-muted-foreground">
+              Gerencie as marcas do catálogo: criar, editar e remover
+            </p>
+          </div>
+          <Button onClick={() => navigate("/admin/marcas/nova")}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Marca
+          </Button>
+        </div>
+
+        {/* Busca */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="w-5 h-5" />
+              Buscar
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {searchQuery && (
+              <div className="mt-4 flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCurrentPage(1);
+                  }}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Limpar busca
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {filteredBrands.length} marca(s) encontrada(s)
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Tabela de Marcas */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Marcas ({filteredBrands.length})</CardTitle>
+            <CardDescription>
+              Lista completa de marcas cadastradas no catálogo
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <LoadingSkeleton count={5} className="h-16" />
+            ) : filteredBrands.length === 0 ? (
+              <EmptyState
+                icon={Tag}
+                title={searchQuery ? "Nenhuma marca encontrada" : "Nenhuma marca cadastrada"}
+                description={
+                  searchQuery
+                    ? "Tente ajustar a busca para encontrar o que procura."
+                    : "Comece adicionando sua primeira marca ao catálogo."
+                }
+                action={
+                  !searchQuery
+                    ? {
+                        label: "Criar Primeira Marca",
+                        onClick: () => navigate("/admin/marcas/nova"),
+                        variant: "default",
+                      }
+                    : undefined
+                }
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Marca</TableHead>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Logo</TableHead>
+                      <TableHead>Modelos</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedBrands.map((brand) => (
+                      <TableRow key={brand.id}>
+                        <TableCell>
+                          <div className="font-medium">{brand.name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {brand.id}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {brand.logo ? (
+                            <img
+                              src={brand.logo}
+                              alt={brand.name}
+                              className="w-12 h-12 object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                              {brand.name.charAt(0)}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {modelsCount[brand.id] || 0} modelo(s)
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => navigate(`/admin/marcas/${brand.id}/editar`)}
+                              title="Editar"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteClick(brand.id, brand.name)}
+                              title="Deletar"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+                    <span>
+                      Página {currentPage} de {totalPages}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === totalPages}
+                        onClick={() =>
+                          setCurrentPage((p) => Math.min(totalPages, p + 1))
+                        }
+                      >
+                        Próxima
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja deletar a marca <strong>"{itemToDelete?.name}"</strong>?
+              <br />
+              <br />
+              <span className="text-destructive font-medium">
+                Atenção: {itemToDelete ? (modelsCount[itemToDelete.id] || 0) : 0} modelo(s) estao associados a esta marca.
+              </span>
+              <br />
+              <br />
+              Se houver modelos vinculados, exclua ou mova esses modelos antes de remover a marca.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deletando..." : "Deletar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mover modelos antes de excluir</DialogTitle>
+            <DialogDescription>
+              A marca <strong>{itemToDelete?.name}</strong> possui{" "}
+              <strong>{itemToDelete ? modelsCount[itemToDelete.id] || 0 : 0} modelo(s)</strong> vinculado(s).
+              Escolha a marca de destino para mover esses modelos e concluir a exclusao.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <label className="text-sm font-medium text-foreground">Marca de destino</label>
+            <select
+              value={transferTargetBrandId}
+              onChange={(e) => setTransferTargetBrandId(e.target.value)}
+              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+            >
+              <option value="">Selecione a marca</option>
+              {availableTransferBrands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setTransferDialogOpen(false);
+                setTransferTargetBrandId("");
+              }}
+              disabled={movingModels}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleTransferAndDelete} disabled={movingModels || !transferTargetBrandId}>
+              {movingModels ? "Movendo..." : "Mover e excluir marca"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </AdminLayout>
+  );
+};
+
+export default BrandsAdmin;

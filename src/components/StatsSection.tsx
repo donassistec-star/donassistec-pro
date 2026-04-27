@@ -43,7 +43,7 @@ const StatsSection = () => {
             return (
               <Card
                 key={stat.id}
-                className="bg-card/90 backdrop-blur-sm border-card/20 hover:shadow-lg transition-all duração-300 hover:-translate-y-1 group text-center"
+                className="group text-center border-white/10 bg-card/88 shadow-[0_18px_48px_rgba(2,8,23,0.18)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(14,165,233,0.16)]"
               >
                 <CardContent className="p-6">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">

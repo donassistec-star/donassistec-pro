@@ -1,0 +1,474 @@
+# Documentação de Rotas da API - DonAssistec
+
+Todas as rotas da API REST do DonAssistec.
+
+**Base URL**: `http://localhost:3001/api` (desenvolvimento)  
+**Produção**: `http://donassistec.com.br/api` (via Nginx) ou `http://seu-servidor:3001/api`
+
+## 📋 Índice
+
+- [Autenticação](#autenticação)
+- [Marcas](#marcas)
+- [Modelos](#modelos)
+- [Pedidos](#pedidos)
+- [Pré-pedidos](#pré-pedidos)
+- [Lojistas](#lojistas)
+- [Configurações](#configurações)
+- [Tabela de Preços](#tabela-de-preços)
+- [Serviços](#serviços)
+- [Upload](#upload)
+- [Visualizações](#visualizações)
+- [Cupons](#cupons)
+- [Avaliações](#avaliações)
+- [Tickets](#tickets)
+- [Preços Dinâmicos](#preços-dinâmicos)
+- [Logs de Auditoria](#logs-de-auditoria)
+- [Conteúdo da Home](#conteúdo-da-home)
+
+---
+
+## 🔐 Autenticação
+
+### POST `/api/auth/login`
+Login de administrador ou lojista.
+
+**Body:**
+```json
+{
+  "email": "admin@donassistec.com",
+  "password": "senha123",
+  "role": "admin" // ou "retailer"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "token": "jwt_token_here",
+    "user": { ... }
+  }
+}
+```
+
+### POST `/api/auth/register`
+Registro de novo lojista.
+
+**Body:**
+```json
+{
+  "email": "lojista@email.com",
+  "password": "senha123",
+  "companyName": "Nome da Empresa",
+  "contactName": "Nome do Contato",
+  "phone": "(11) 99999-9999",
+  "cnpj": "00.000.000/0000-00"
+}
+```
+
+---
+
+## 🏷 Marcas
+
+### GET `/api/brands`
+Lista todas as marcas (público).
+
+### GET `/api/brands/:id`
+Detalhes de uma marca (público).
+
+### POST `/api/brands`
+Criar nova marca (admin).
+
+### PUT `/api/brands/:id`
+Atualizar marca (admin).
+
+### DELETE `/api/brands/:id`
+Deletar marca (admin).
+
+---
+
+## 📱 Modelos
+
+### GET `/api/models`
+Lista todos os modelos (público).
+
+**Query Params:**
+- `brandId`: Filtrar por marca
+- `search`: Busca por nome
+- `availability`: Filtrar por disponibilidade
+
+### GET `/api/models/:id`
+Detalhes de um modelo (público).
+
+### GET `/api/models/brand/:brandId`
+Modelos por marca (público).
+
+### POST `/api/models`
+Criar novo modelo (admin).
+
+### PUT `/api/models/:id`
+Atualizar modelo (admin).
+
+### DELETE `/api/models/:id`
+Deletar modelo (admin).
+
+---
+
+## 📦 Pedidos
+
+### GET `/api/orders`
+Lista pedidos (autenticado).
+- Admin: Todos os pedidos
+- Lojista: Apenas seus pedidos
+
+### GET `/api/orders/:id`
+Detalhes de um pedido (autenticado).
+
+### POST `/api/orders`
+Criar novo pedido (lojista).
+
+### POST `/api/orders/from-pre-pedido`
+Converte um pré-pedido em pedido. **Requer autenticação.** Admin: qualquer pré-pedido; lojista: apenas os seus.  
+**Body:** `{ "pre_pedido_id": "id-do-pre-pedido" }`. Retorna o pedido criado com `pre_pedido_id` e `numero` (PED-0001…). Se o pré-pedido já foi convertido, retorna 400.
+
+### PUT `/api/orders/:id/status`
+Atualizar status do pedido (admin).
+
+---
+
+## 📋 Pré-pedidos
+
+Registros de pré-pedidos enviados pelo fluxo "Finalizar e enviar pré-pedido" no pré-orçamento.
+
+### GET `/api/pre-pedidos`
+Lista pré-pedidos. **Requer autenticação.** Admin: todos; lojista: apenas os seus (`retailer_id` = id ou email).
+
+### GET `/api/pre-pedidos/:id`
+Detalhes de um pré-pedido. **Requer autenticação.** Admin: qualquer; lojista: apenas os seus. Inclui `order_id` e `order_numero` quando já convertido em pedido.
+
+### POST `/api/pre-pedidos`
+Registra um pré-pedido (público). Chamado pelo frontend ao finalizar o pré-orçamento (formulário de contato + itens).
+
+**Body:**
+```json
+{
+  "items": [
+    {
+      "model_id": "uuid",
+      "model_name": "iPhone 15",
+      "brand_name": "Apple",
+      "quantity": 1,
+      "selected_services": [
+        { "service_id": "service_glass", "name": "Troca de Tela", "price": 800 }
+      ]
+    }
+  ],
+  "session_id": "opcional",
+  "contact_name": "opcional",
+  "contact_company": "opcional",
+  "contact_phone": "opcional",
+  "contact_email": "opcional",
+  "notes": "opcional",
+  "is_urgent": false,
+  "retailer_id": "id do lojista quando logado"
+}
+```
+
+Campos opcionais: `contact_name`, `contact_company`, `contact_phone`, `contact_email`, `notes`, `is_urgent` (boolean), `retailer_id`.
+
+---
+
+## 👥 Lojistas
+
+### GET `/api/retailers`
+Lista todos os lojistas (admin).
+
+### GET `/api/retailers/:id`
+Detalhes de um lojista (admin).
+
+### PUT `/api/retailers/:id/status`
+Atualizar status do lojista (admin).
+
+---
+
+## ⚙️ Configurações
+
+### GET `/api/settings/public`
+Obter configurações **públicas** (contato, branding, redes sociais, etc.) para Header, Footer e páginas públicas. **Não exige autenticação.**
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "contactPhone": "...",
+    "contactEmail": "...",
+    "brandingLogoUrl": "...",
+    "companyTradeName": "...",
+    ...
+  }
+}
+```
+
+### GET `/api/settings`
+Obter todas as configurações (admin).
+
+### PUT `/api/settings`
+Atualizar configurações (admin).
+
+### GET `/api/settings/history`
+Histórico de mudanças nas configurações (admin).
+
+**Query Params:**
+- `settingKey`: Filtrar por chave específica
+- `limit`: Limite de resultados (padrão: 50)
+
+---
+
+## 📊 Tabela de Preços
+
+### GET `/api/price-table`
+Tabela de valores: modelos × serviços × preços. **Público.**
+
+**Query Params:**
+- `brand`: (opcional) ID da marca para filtrar
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "services": [{ "id": "...", "name": "..." }],
+    "models": [{
+      "id": "...",
+      "name": "...",
+      "brand_id": "...",
+      "brand_name": "...",
+      "prices": [{ "service_id": "...", "price": 100, "available": true }]
+    }]
+  }
+}
+```
+
+---
+
+## 🔧 Serviços
+
+### GET `/api/services`
+Lista todos os serviços (público).
+
+### GET `/api/services/:id`
+Detalhes de um serviço (público).
+
+### POST `/api/services`
+Criar novo serviço (admin).
+
+### PUT `/api/services/:id`
+Atualizar serviço (admin).
+
+### DELETE `/api/services/:id`
+Deletar serviço (admin).
+
+### GET `/api/services/model/:modelId`
+Serviços de um modelo específico (público).
+
+### POST `/api/services/model/:modelId/:serviceId`
+Associar serviço a modelo com preço (admin).
+
+**Body:**
+```json
+{
+  "price": 150.00,
+  "available": true
+}
+```
+
+### DELETE `/api/services/model/:modelId/:serviceId`
+Remover serviço de modelo (admin).
+
+---
+
+## 📤 Upload
+
+### POST `/api/upload/image`
+Upload de imagem (admin).
+
+**Form Data:**
+- `image`: Arquivo de imagem (multipart/form-data)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "filename": "image-xxx.jpg",
+    "url": "/uploads/image-xxx.jpg",
+    "size": 123456
+  }
+}
+```
+
+---
+
+## 👁 Visualizações
+
+### POST `/api/product-views`
+Registrar visualização de produto (público).
+
+**Body:**
+```json
+{
+  "modelId": "iphone-15-pro",
+  "userId": "user_id_optional"
+}
+```
+
+### GET `/api/product-views/model/:modelId/stats`
+Estatísticas de visualização de um modelo (público).
+
+### GET `/api/product-views/most-viewed`
+Produtos mais visualizados (público).
+
+**Query Params:**
+- `limit`: Número de resultados (padrão: 10)
+
+### GET `/api/product-views/history`
+Histórico de visualizações do usuário (autenticado).
+
+---
+
+## 🎫 Cupons
+
+### GET `/api/coupons`
+Lista todos os cupons (admin).
+
+### GET `/api/coupons/:id`
+Detalhes de um cupom (admin).
+
+### POST `/api/coupons`
+Criar novo cupom (admin).
+
+### PUT `/api/coupons/:id`
+Atualizar cupom (admin).
+
+### DELETE `/api/coupons/:id`
+Deletar cupom (admin).
+
+### POST `/api/coupons/validate`
+Validar cupom (público).
+
+**Body:**
+```json
+{
+  "code": "DESCONTO10",
+  "orderValue": 1000.00
+}
+```
+
+---
+
+## ⭐ Avaliações
+
+### GET `/api/reviews`
+Lista avaliações (público).
+
+### GET `/api/reviews/:id`
+Detalhes de uma avaliação (público).
+
+### POST `/api/reviews`
+Criar nova avaliação (autenticado).
+
+### PUT `/api/reviews/:id`
+Atualizar avaliação (autenticado/owner).
+
+### DELETE `/api/reviews/:id`
+Deletar avaliação (admin).
+
+---
+
+## 🎫 Tickets
+
+### GET `/api/tickets`
+Lista tickets (autenticado).
+- Admin: Todos os tickets
+- Lojista: Apenas seus tickets
+
+### GET `/api/tickets/:id`
+Detalhes de um ticket (autenticado).
+
+### POST `/api/tickets`
+Criar novo ticket (autenticado).
+
+### POST `/api/tickets/:id/reply`
+Responder a um ticket (autenticado).
+
+---
+
+## 💰 Preços Dinâmicos
+
+### GET `/api/dynamic-pricing`
+Lista preços dinâmicos (admin).
+
+### POST `/api/dynamic-pricing`
+Criar preço dinâmico (admin).
+
+### PUT `/api/dynamic-pricing/:id`
+Atualizar preço dinâmico (admin).
+
+### DELETE `/api/dynamic-pricing/:id`
+Deletar preço dinâmico (admin).
+
+---
+
+## 📋 Logs de Auditoria
+
+### GET `/api/audit-logs`
+Lista logs de auditoria (admin).
+
+**Query Params:**
+- `userId`: Filtrar por usuário
+- `action`: Filtrar por ação
+- `startDate`: Data inicial
+- `endDate`: Data final
+- `limit`: Limite de resultados
+
+---
+
+## 🏠 Conteúdo da Home
+
+### GET `/api/home-content`
+Obter conteúdo da home (público).
+
+### PUT `/api/home-content`
+Atualizar conteúdo da home (admin).
+
+---
+
+## 🔒 Autenticação
+
+Todas as rotas protegidas requerem:
+
+**Header:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+### Roles
+
+- **admin**: Acesso completo ao sistema
+- **retailer**: Acesso à área do lojista
+
+### Códigos de Resposta
+
+- `200` - Sucesso
+- `201` - Criado com sucesso
+- `400` - Requisição inválida
+- `401` - Não autenticado
+- `403` - Sem permissão
+- `404` - Não encontrado
+- `500` - Erro do servidor
+
+---
+
+Para documentação mais detalhada, veja [BACKEND_API.md](./BACKEND_API.md)

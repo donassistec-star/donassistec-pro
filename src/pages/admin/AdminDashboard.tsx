@@ -17,7 +17,8 @@ import {
   Wrench,
   ClipboardList
   ,
-  PlayCircle
+  PlayCircle,
+  HelpCircle
 } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -196,6 +197,12 @@ const AdminDashboard = () => {
       description: "Visualize relatórios e estatísticas",
       href: "/admin/relatorios",
       icon: BarChart3,
+    },
+    {
+      title: "Página Ajuda",
+      description: "Edite o conteúdo e as FAQs da página de ajuda",
+      href: "/admin/ajuda",
+      icon: HelpCircle,
     },
     {
       title: "Configurações",

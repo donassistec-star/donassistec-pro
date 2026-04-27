@@ -170,7 +170,11 @@ const Catalog = () => {
   const handleContact = (model: PhoneModel) => {
     const brand = brands.find((b) => b.id === model.brand);
     const rawMessage = `Olá! Sou lojista e gostaria de um orçamento para o modelo ${model.name} (${brand?.name}). Tenho interesse em saber mais sobre os serviços disponíveis.`;
-    const wa = validation.cleanWhatsAppNumber(settings?.contactWhatsApp || settings?.contactPhoneRaw || "5511999999999") || "5511999999999";
+    const wa = validation.cleanWhatsAppNumber(settings?.contactWhatsApp || settings?.contactPhoneRaw || "");
+    if (!wa) {
+      toast.error("WhatsApp comercial não configurado.");
+      return;
+    }
     const w = window.open(validation.generateWhatsAppUrl(wa, rawMessage), "_blank");
     if (!w) {
       toast.error("Permita pop-ups para abrir o WhatsApp e tente novamente.");
@@ -417,17 +421,17 @@ const Catalog = () => {
         )}
 
         {/* Page Header */}
-        <section className="bg-foreground py-16">
+        <section className="bg-foreground py-12 sm:py-16">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl">
               <Badge className="mb-4 bg-primary/20 text-primary border-primary/30">
                 <Smartphone className="w-3 h-3 mr-1" />
                 Catálogo B2B
               </Badge>
-              <h1 className="text-3xl md:text-4xl font-bold text-card mb-4">
+              <h1 className="mb-4 text-3xl font-bold text-card sm:text-4xl">
                 Catálogo de <span className="text-secondary">Modelos</span>
               </h1>
-              <p className="text-lg text-card/70">
+              <p className="text-base text-card/70 sm:text-lg">
                 Encontre peças, serviços de reconstrução e troca de vidro para todos os modelos.
                 Filtre por marca, serviço ou disponibilidade.
               </p>
@@ -438,9 +442,9 @@ const Catalog = () => {
         {/* Featured Videos Section */}
         {filteredModels.length > 0 && filteredModels.some(m => m.videos && m.videos.length > 0) && (
           <section className="py-12 bg-muted/30">
-            <div className="container mx-auto px-4">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
+          <div className="container mx-auto px-4">
+            <div className="mb-6">
+                <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-foreground sm:text-2xl">
                   <Video className="w-6 h-6 text-primary" />
                   Vídeos Tutoriais em Destaque
                 </h2>
@@ -448,7 +452,7 @@ const Catalog = () => {
                   Aprenda com nossos tutoriais de reparo e reconstrução
                 </p>
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6">
+              <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-2 md:gap-6 md:px-0 md:overflow-visible lg:grid-cols-3">
                 {filteredModels
                   .filter((m) => m.videos && m.videos.length > 0)
                   .slice(0, 6)
@@ -456,7 +460,7 @@ const Catalog = () => {
                     const brand = brands.find((b) => b.id === model.brand);
                     return (
                       model.videos?.[0] && (
-                        <div key={`${model.id}-${model.videos[0].id}`} className="relative min-w-[260px] md:min-w-0 shrink-0 md:shrink">
+                        <div key={`${model.id}-${model.videos[0].id}`} className="relative min-w-[240px] shrink-0 md:min-w-0 md:shrink">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                             {brand?.logo && (
                               <img
@@ -485,7 +489,7 @@ const Catalog = () => {
         )}
 
         {/* Catalog Content */}
-        <section className="py-12">
+        <section className="py-10 sm:py-12">
           <div className="container mx-auto px-4">
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Sidebar Filters - Desktop */}
@@ -516,8 +520,8 @@ const Catalog = () => {
               {/* Main Content */}
               <div className="flex-1">
                 {/* Search & Controls */}
-                <div className="flex flex-col gap-4 mb-8">
-                  <div className="flex flex-col sm:flex-row gap-4">
+                <div className="mb-8 flex flex-col gap-4">
+                  <div className="flex flex-col gap-3 sm:gap-4">
                   {/* Mobile Filters */}
                   <MobileFiltersSheet
                     open={mobileFiltersOpen}
@@ -553,7 +557,7 @@ const Catalog = () => {
                         setShowSearchSuggestions(true);
                       }}
                       onFocus={() => setShowSearchSuggestions(true)}
-                      className="pl-10 pr-10"
+                      className="h-11 pl-10 pr-10 sm:h-10"
                     />
                     {searchInput && (
                       <button
@@ -562,7 +566,7 @@ const Catalog = () => {
                           setSearchQuery("");
                           setShowSearchSuggestions(false);
                         }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xl leading-none w-5 h-5 flex items-center justify-center"
+                        className="absolute right-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center text-xl leading-none text-muted-foreground hover:text-foreground"
                         aria-label="Limpar busca"
                       >
                         ×
@@ -585,37 +589,39 @@ const Catalog = () => {
                     />
                   </div>
 
-                  {/* Sort */}
-                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <SelectValue placeholder="Ordenar por" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card z-50">
-                      <SelectItem value="popular">Mais Populares</SelectItem>
-                      <SelectItem value="name">Nome A-Z</SelectItem>
-                      <SelectItem value="brand">Marca</SelectItem>
-                      <SelectItem value="stock_first">Em estoque primeiro</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    {/* Sort */}
+                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+                      <SelectTrigger className="h-11 w-full sm:h-10 sm:w-48">
+                        <SelectValue placeholder="Ordenar por" />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-card">
+                        <SelectItem value="popular">Mais Populares</SelectItem>
+                        <SelectItem value="name">Nome A-Z</SelectItem>
+                        <SelectItem value="brand">Marca</SelectItem>
+                        <SelectItem value="stock_first">Em estoque primeiro</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-                  {/* View Mode Toggle */}
-                  <div className="hidden sm:flex border border-border rounded-lg overflow-hidden">
-                    <Button
-                      variant={viewMode === "grid" ? "default" : "ghost"}
-                      size="icon"
-                      onClick={() => setViewMode("grid")}
-                      className="rounded-none"
-                    >
-                      <LayoutGrid className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant={viewMode === "list" ? "default" : "ghost"}
-                      size="icon"
-                      onClick={() => setViewMode("list")}
-                      className="rounded-none"
-                    >
-                      <List className="w-4 h-4" />
-                    </Button>
+                    {/* View Mode Toggle */}
+                    <div className="hidden overflow-hidden rounded-lg border border-border sm:flex">
+                      <Button
+                        variant={viewMode === "grid" ? "default" : "ghost"}
+                        size="icon"
+                        onClick={() => setViewMode("grid")}
+                        className="rounded-none"
+                      >
+                        <LayoutGrid className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === "list" ? "default" : "ghost"}
+                        size="icon"
+                        onClick={() => setViewMode("list")}
+                        className="rounded-none"
+                      >
+                        <List className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                   </div>
 
@@ -655,13 +661,13 @@ const Catalog = () => {
                 </div>
 
                 {/* Results Count & Comparison */}
-                <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                   <p className="text-muted-foreground">
                     <span className="font-semibold text-foreground">{filteredModels.length}</span>{" "}
                     modelos encontrados
                   </p>
                   {comparisonModels.length > 0 && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline" className="text-sm">
                         {comparisonModels.length} selecionado(s) para comparação
                       </Badge>
@@ -733,7 +739,7 @@ const Catalog = () => {
                         variant="outline"
                         size="lg"
                         onClick={() => setPage((p) => p + 1)}
-                        className="min-w-[200px]"
+                        className="w-full sm:w-auto sm:min-w-[200px]"
                       >
                         Carregar mais
                       </Button>

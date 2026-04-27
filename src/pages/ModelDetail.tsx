@@ -207,7 +207,11 @@ const ModelDetail = () => {
   const subtotalLabel = hasConsultPrice ? "Sob consulta" : formatCurrency(subtotal * quantity);
 
   const handleOrcamento = () => {
-    const wa = validation.cleanWhatsAppNumber(settings?.contactWhatsApp || settings?.contactPhoneRaw || "5511999999999") || "5511999999999";
+    const wa = validation.cleanWhatsAppNumber(settings?.contactWhatsApp || settings?.contactPhoneRaw || "");
+    if (!wa) {
+      toast.error("WhatsApp comercial não configurado.");
+      return;
+    }
     const msg = buildPreOrcamentoMessageModel(model, brand, selectedServices, quantity, subtotalLabel);
     const w = window.open(validation.generateWhatsAppUrl(wa, msg), "_blank");
     if (!w) {
@@ -252,12 +256,12 @@ const ModelDetail = () => {
         </section>
 
         {/* Product Detail */}
-        <section className="py-12">
+        <section className="py-10 sm:py-12">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
               {/* Image & Video */}
               <div className="space-y-4">
-                <div className="relative aspect-square bg-muted/30 rounded-lg overflow-hidden group">
+                <div className="group relative aspect-square overflow-hidden rounded-lg bg-muted/30">
                   {imageError ? (
                     <div className="flex flex-col items-center justify-center w-full h-full bg-muted/50 text-muted-foreground">
                       <Smartphone className="w-16 h-16 mb-2" />
@@ -271,7 +275,7 @@ const ModelDetail = () => {
                       onError={() => setImageError(true)}
                     />
                   )}
-                  <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  <div className="absolute left-3 top-3 flex flex-col gap-2 sm:left-4 sm:top-4">
                     {model.premium && (
                       <Badge className="bg-secondary text-secondary-foreground">
                         <Star className="w-3 h-3 mr-1 fill-current" />
@@ -284,7 +288,7 @@ const ModelDetail = () => {
                       </Badge>
                     )}
                   </div>
-                  <div className="absolute top-4 right-4">
+                  <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
                     <Badge className={availability.className}>
                       {availability.label}
                     </Badge>
@@ -292,14 +296,14 @@ const ModelDetail = () => {
                   
                   {/* Vídeo de capa (principal) na área da imagem */}
                   {videoCapaUrl && (
-                    <div className="absolute bottom-4 left-4">
+                    <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4">
                       <VideoPlayer
                         videoUrl={videoCapaUrl}
                         title={videoCapaTitle}
                         trigger={
                           <Button
                             size="lg"
-                            className="bg-primary/90 hover:bg-primary text-primary-foreground shadow-lg backdrop-blur-sm"
+                            className="bg-primary/90 text-primary-foreground shadow-lg backdrop-blur-sm hover:bg-primary sm:h-11"
                           >
                             <Play className="w-5 h-5 mr-2 fill-current" />
                             Ver vídeo
@@ -312,7 +316,7 @@ const ModelDetail = () => {
               </div>
 
               {/* Details */}
-              <div className="space-y-6">
+              <div className="space-y-6 min-w-0">
                 <div>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
                     {brand.logo ? (
@@ -330,10 +334,10 @@ const ModelDetail = () => {
                     )}
                     <span className="font-semibold text-base">{brand.name}</span>
                   </div>
-                  <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                  <h1 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">
                     {model.name}
                   </h1>
-                  <p className="text-lg text-muted-foreground">
+                  <p className="text-base text-muted-foreground sm:text-lg">
                     Produto B2B para lojistas. Solicite um orçamento personalizado para seus clientes.
                   </p>
                 </div>
@@ -362,7 +366,7 @@ const ModelDetail = () => {
                       </div>
                     )}
                     {model.videos && model.videos.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                         {model.videos.map((video) => (
                           <VideoThumbnail key={video.id} video={video} />
                         ))}
@@ -378,7 +382,7 @@ const ModelDetail = () => {
                   {loadingServices ? (
                     <p className="text-muted-foreground">Carregando serviços...</p>
                   ) : availableServices.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                       {availableServices.map((service) => {
                         const price = (service as any).price ?? 0;
                         const selected = isServiceSelected(service.id);
@@ -439,8 +443,8 @@ const ModelDetail = () => {
                 <Separator />
 
                 {/* Resumo do seu orçamento */}
-                <Card className="border-primary/30 bg-primary/5 sticky top-24 self-start">
-                  <CardContent className="p-6">
+                <Card className="border-primary/30 bg-primary/5 lg:sticky lg:top-24 lg:self-start">
+                  <CardContent className="p-4 sm:p-6">
                     <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                       <FileText className="w-5 h-5 text-primary" />
                       Resumo do seu orçamento
@@ -453,8 +457,8 @@ const ModelDetail = () => {
                             <span>{s.price > 0 ? formatCurrency(s.price) : "Sob consulta"}</span>
                           </div>
                         ))}
-                        <div className="flex justify-between gap-4 items-center pt-3 border-t">
-                          <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center justify-between gap-2 sm:justify-start">
                             <span className="text-sm text-muted-foreground">Quantidade:</span>
                             <div className="flex items-center gap-1 border border-border rounded-lg">
                               <Button
@@ -476,7 +480,7 @@ const ModelDetail = () => {
                               </Button>
                             </div>
                           </div>
-                          <span className="font-semibold">{subtotalLabel}</span>
+                          <span className="font-semibold sm:text-right">{subtotalLabel}</span>
                         </div>
                       </div>
                     ) : (
@@ -484,7 +488,7 @@ const ModelDetail = () => {
                         <p className="text-sm text-muted-foreground">
                           Selecione os serviços ou peças acima para montar seu orçamento. Você também pode adicionar sem seleção para orçamento sob consulta.
                         </p>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between gap-2 sm:justify-start">
                           <span className="text-sm text-muted-foreground">Quantidade:</span>
                           <div className="flex items-center gap-1 border border-border rounded-lg">
                             <Button
@@ -509,10 +513,10 @@ const ModelDetail = () => {
                       </div>
                     )}
 
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                       <Button
                         size="lg"
-                        className="flex-1 min-w-[200px]"
+                        className="w-full flex-1 sm:min-w-[200px] sm:w-auto"
                         onClick={handleOrcamento}
                         disabled={model.availability === "out_of_stock"}
                       >
@@ -523,6 +527,7 @@ const ModelDetail = () => {
                         size="lg"
                         variant="outline"
                         onClick={handleAddToPreOrcamento}
+                        className="w-full sm:w-auto"
                         disabled={model.availability === "out_of_stock"}
                       >
                         <FileText className="w-5 h-5 mr-2" />
@@ -532,7 +537,7 @@ const ModelDetail = () => {
                         size="lg"
                         variant="outline"
                         onClick={handleToggleFavorite}
-                        className={favorite ? "border-red-500 text-red-500 hover:bg-red-50" : ""}
+                        className={`w-full sm:w-auto ${favorite ? "border-red-500 text-red-500 hover:bg-red-50" : ""}`}
                       >
                         <Heart className={`w-5 h-5 ${favorite ? "fill-red-500 text-red-500" : ""}`} />
                       </Button>
@@ -563,13 +568,13 @@ const ModelDetail = () => {
         </section>
 
         {/* Additional Info */}
-        <section className="bg-muted/30 py-12">
+        <section className="bg-muted/30 py-10 sm:py-12">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-2xl font-bold mb-6">Informações Importantes</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <h2 className="mb-6 text-2xl font-bold">Informações Importantes</h2>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
                 <Card>
-                  <CardContent className="p-6">
+                  <CardContent className="p-5 sm:p-6">
                     <div className="flex items-start gap-4">
                       <div className="text-3xl">📦</div>
                       <div>
@@ -587,7 +592,7 @@ const ModelDetail = () => {
                 </Card>
 
                 <Card>
-                  <CardContent className="p-6">
+                  <CardContent className="p-5 sm:p-6">
                     <div className="flex items-start gap-4">
                       <div className="text-3xl">🛡️</div>
                       <div>

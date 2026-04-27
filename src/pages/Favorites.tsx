@@ -11,18 +11,25 @@ import ModelCard from "@/components/catalog/ModelCard";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { phoneModels, brands, PhoneModel } from "@/data/models";
 import { toast } from "sonner";
+import { useSettings } from "@/hooks/useSettings";
+import { validation } from "@/utils/validation";
+import { getPublicContactInfo } from "@/utils/publicContact";
 
 const Favorites = () => {
   const { favorites, clearFavorites, removeFavorite } = useFavorites();
+  const { settings } = useSettings();
+  const { contactWhatsappRaw, hasWhatsApp } = getPublicContactInfo(settings);
 
   const favoriteModels = phoneModels.filter((model) => favorites.includes(model.id));
 
   const handleContact = (model: PhoneModel) => {
+    if (!hasWhatsApp) {
+      toast.error("WhatsApp comercial não configurado.");
+      return;
+    }
     const brand = brands.find((b) => b.id === model.brand);
-    const message = encodeURIComponent(
-      `Olá! Sou lojista e gostaria de um orçamento para o modelo ${model.name} (${brand?.name}). Tenho interesse em saber mais sobre os serviços disponíveis.`
-    );
-    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
+    const message = `Olá! Sou lojista e gostaria de um orçamento para o modelo ${model.name} (${brand?.name}). Tenho interesse em saber mais sobre os serviços disponíveis.`;
+    window.open(validation.generateWhatsAppUrl(contactWhatsappRaw, message), "_blank");
   };
 
   const handleRemoveAll = () => {
@@ -34,8 +41,8 @@ const Favorites = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="pt-20 pb-16">
-          <section className="container mx-auto px-4 py-16">
+        <main id="main-content" className="pt-20 pb-16">
+          <section className="container mx-auto px-4 py-12 sm:py-16">
             <div className="max-w-2xl mx-auto text-center">
               <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted/50 flex items-center justify-center">
                 <Heart className="w-12 h-12 text-muted-foreground" />
@@ -44,15 +51,15 @@ const Favorites = () => {
               <p className="text-muted-foreground mb-8">
                 Adicione modelos aos favoritos para encontrá-los rapidamente depois.
               </p>
-              <div className="flex gap-4 justify-center">
+              <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
                 <Link to="/catalogo">
-                  <Button>
+                  <Button className="w-full sm:w-auto">
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Explorar Catálogo
                   </Button>
                 </Link>
                 <Link to="/">
-                  <Button variant="outline">Ir para Home</Button>
+                  <Button variant="outline" className="w-full sm:w-auto">Ir para Home</Button>
                 </Link>
               </div>
             </div>
@@ -81,12 +88,12 @@ const Favorites = () => {
         </section>
 
         {/* Header */}
-        <section className="bg-foreground py-12">
+        <section className="bg-foreground py-10 sm:py-12">
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-card mb-2 flex items-center gap-3">
-                  <Heart className="w-8 h-8 text-red-500 fill-red-500" />
+                <h1 className="mb-2 flex items-center gap-3 text-3xl font-bold text-card sm:text-4xl">
+                  <Heart className="h-7 w-7 fill-red-500 text-red-500 sm:h-8 sm:w-8" />
                   Meus Favoritos
                 </h1>
                 <p className="text-card/70">
@@ -97,7 +104,7 @@ const Favorites = () => {
                 <Button
                   variant="outline"
                   onClick={handleRemoveAll}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Limpar Favoritos
@@ -110,7 +117,7 @@ const Favorites = () => {
         {/* Favorites Grid */}
         <section className="py-12">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 sm:gap-6">
               {favoriteModels.map((model) => (
                 <ModelCard
                   key={model.id}

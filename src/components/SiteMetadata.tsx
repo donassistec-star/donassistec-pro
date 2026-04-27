@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { useSettings } from "@/hooks/useSettings";
 
 const DEFAULT_TITLE = "DonAssistec - Reconstrução de Telas e Peças para Lojistas";
@@ -47,6 +48,7 @@ const ensureCanonical = (href: string) => {
 const SiteMetadata = () => {
   const location = useLocation();
   const { settings } = useSettings();
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     const title = settings?.seoTitle?.trim() || settings?.siteName?.trim() || DEFAULT_TITLE;
@@ -56,12 +58,20 @@ const SiteMetadata = () => {
     const pageUrl = new URL(location.pathname, origin).toString();
     const imageUrl =
       settings?.seoOgImage?.trim() || settings?.brandingLogoUrl?.trim() || `${origin}/favicon.ico`;
+    const isWorkspaceRoute =
+      location.pathname.startsWith("/lojista") || location.pathname.startsWith("/admin");
+    const surfaceTheme = isWorkspaceRoute ? resolvedTheme || "light" : "light";
+    const themeColor = surfaceTheme === "dark" ? "#0f172a" : "#f7f9fc";
 
     document.title = title;
     ensureCanonical(pageUrl);
+    document.documentElement.dataset.appSurface = isWorkspaceRoute ? "workspace" : "public";
+    document.documentElement.style.colorScheme = surfaceTheme;
 
     upsertMetaByName("description", description);
     upsertMetaByName("keywords", keywords);
+    upsertMetaByName("color-scheme", isWorkspaceRoute ? "light dark" : "light");
+    upsertMetaByName("theme-color", themeColor);
     upsertMetaByName("twitter:card", "summary_large_image");
     upsertMetaByName("twitter:url", pageUrl);
     upsertMetaByName("twitter:title", title);
@@ -83,6 +93,7 @@ const SiteMetadata = () => {
     settings?.seoTitle,
     settings?.siteName,
     settings?.siteUrl,
+    resolvedTheme,
   ]);
 
   return null;

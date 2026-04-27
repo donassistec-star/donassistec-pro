@@ -57,7 +57,7 @@ const Cart = () => {
 
   const allBrands = apiBrands?.length ? apiBrands : brands;
   const totalItems = getTotalItems();
-  const wa = validation.cleanWhatsAppNumber(settings?.contactWhatsApp || settings?.contactPhoneRaw || "5511999999999") || "5511999999999";
+  const wa = validation.cleanWhatsAppNumber(settings?.contactWhatsApp || settings?.contactPhoneRaw || "");
 
   const handleEditItem = (modelId: string) => {
     removeItem(modelId);
@@ -71,6 +71,10 @@ const Cart = () => {
   };
 
   const handleOrcamentoWhatsApp = () => {
+    if (!wa) {
+      toast.error("WhatsApp comercial não configurado.");
+      return;
+    }
     const list = items.map((item) => ({
       model: item.model,
       brand: allBrands.find((b) => b.id === item.model.brand),
@@ -210,7 +214,7 @@ const Cart = () => {
               />
             </div>
           </section>
-          <section className="container mx-auto px-4 py-16">
+          <section className="container mx-auto px-4 py-12 sm:py-16">
             <div className="max-w-2xl mx-auto text-center">
               <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted/50 flex items-center justify-center">
                 <FileText className="w-12 h-12 text-muted-foreground" />
@@ -219,7 +223,7 @@ const Cart = () => {
               <p className="text-muted-foreground mb-8">
                 Adicione itens ao pré-orçamento a partir do catálogo e envie por WhatsApp.
               </p>
-              <div className="flex gap-4 justify-center">
+              <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
                 <Button onClick={() => navigate("/catalogo")}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Voltar ao Catálogo
@@ -254,11 +258,11 @@ const Cart = () => {
         </section>
 
         {/* Header */}
-        <section className="bg-foreground py-12">
+        <section className="bg-foreground py-10 sm:py-12">
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-card mb-2">
+                <h1 className="mb-2 text-3xl font-bold text-card sm:text-4xl">
                   Pré-orçamento
                 </h1>
                 <p className="text-card/70">
@@ -266,7 +270,7 @@ const Cart = () => {
                 </p>
               </div>
               {items.length > 0 && (
-                <Button variant="outline" onClick={handleClearPreOrcamento}>
+                <Button variant="outline" onClick={handleClearPreOrcamento} className="w-full sm:w-auto">
                   <Trash2 className="w-4 h-4 mr-2" />
                   Limpar pré-orçamento
                 </Button>
@@ -278,7 +282,7 @@ const Cart = () => {
         {/* Pré-orçamento Content */}
         <section className="py-12">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
               {/* Itens do pré-orçamento */}
               <div className="lg:col-span-2 space-y-4">
                 {items.map((item) => {
@@ -286,8 +290,8 @@ const Cart = () => {
                   const imgError = imageErrors[item.model.id];
                   return (
                     <Card key={item.model.id} className="border-border">
-                      <CardContent className="p-6">
-                        <div className="flex flex-col sm:flex-row gap-6">
+                      <CardContent className="p-4 sm:p-6">
+                        <div className="flex flex-col gap-5 sm:flex-row sm:gap-6">
                           {/* Image */}
                           <div className="relative w-full sm:w-32 h-32 bg-muted/30 rounded-lg overflow-hidden shrink-0">
                             {imgError ? (
@@ -306,7 +310,7 @@ const Cart = () => {
                           </div>
 
                           {/* Details */}
-                          <div className="flex-1 space-y-4">
+                          <div className="flex-1 space-y-4 min-w-0">
                             <div>
                               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                                 {brand?.logo ? (
@@ -324,7 +328,7 @@ const Cart = () => {
                                 )}
                                 <span className="font-medium">{brand?.name}</span>
                               </div>
-                              <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                 <Link
                                   to={`/modelo/${item.model.id}`}
                                   className="text-lg font-semibold text-foreground hover:text-primary hover:underline underline-offset-2"
@@ -334,7 +338,7 @@ const Cart = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="shrink-0"
+                                  className="w-full shrink-0 sm:w-auto"
                                   onClick={() => handleEditItem(item.model.id)}
                                   title="Alterar serviços e quantidade"
                                 >
@@ -383,8 +387,8 @@ const Cart = () => {
                             </div>
 
                             {/* Quantity Controls */}
-                            <div className="flex items-center justify-between pt-4 border-t border-border">
-                              <div className="flex items-center gap-3">
+                            <div className="flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="flex items-center justify-between gap-3 sm:justify-start">
                                 <span className="text-sm text-muted-foreground">Quantidade:</span>
                                 <div className="flex items-center gap-2 border border-border rounded-lg">
                                   <Button
@@ -411,11 +415,12 @@ const Cart = () => {
 
                               <Button
                                 variant="ghost"
-                                size="icon"
+                                size="sm"
                                 onClick={() => handleRemove(item.model.id)}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="justify-start text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Remover item
                               </Button>
                             </div>
 
@@ -435,8 +440,8 @@ const Cart = () => {
 
               {/* Resumo e Orçamento */}
               <div className="lg:col-span-1">
-                <Card className="sticky top-24 border-border">
-                  <CardContent className="p-6">
+                <Card className="border-border lg:sticky lg:top-24">
+                  <CardContent className="p-4 sm:p-6">
                     <h2 className="text-xl font-semibold mb-6">Resumo do pré-orçamento</h2>
 
                     <div className="space-y-4 mb-6">
@@ -489,15 +494,15 @@ const Cart = () => {
                         Finalizar e enviar pré-pedido
                       </Button>
                       <Dialog open={showFinalizarConfirm} onOpenChange={(open) => { if (!isFinalizando) setShowFinalizarConfirm(open); }}>
-                        <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
+                        <DialogContent className="flex max-h-[92vh] flex-col overflow-hidden sm:max-h-[90vh]">
                           <DialogHeader>
                             <DialogTitle>Finalizar pré-orçamento</DialogTitle>
                             <DialogDescription>
                               Informe seu contato (opcional) e observações. O pré-pedido será enviado por WhatsApp e o carrinho será esvaziado.
                             </DialogDescription>
                           </DialogHeader>
-                          <ScrollArea className="flex-1 max-h-[50vh] pr-4">
-                            <div className="space-y-4 py-2">
+                          <ScrollArea className="max-h-[55vh] flex-1 pr-0 sm:max-h-[50vh] sm:pr-4">
+                            <div className="space-y-4 py-2 pr-1 sm:pr-0">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                   <Label htmlFor="finalizar-name">Nome</Label>
@@ -569,10 +574,10 @@ const Cart = () => {
                             </div>
                           </ScrollArea>
                           <DialogFooter className="gap-2 sm:gap-0">
-                            <Button variant="outline" onClick={() => setShowFinalizarConfirm(false)} disabled={isFinalizando}>
+                            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowFinalizarConfirm(false)} disabled={isFinalizando}>
                               Cancelar
                             </Button>
-                            <Button onClick={handleFinalizar} disabled={isFinalizando}>
+                            <Button className="w-full sm:w-auto" onClick={handleFinalizar} disabled={isFinalizando}>
                               {isFinalizando ? "Enviando..." : "Enviar pré-pedido"}
                             </Button>
                           </DialogFooter>

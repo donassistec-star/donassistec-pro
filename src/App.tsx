@@ -1,7 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
@@ -37,6 +36,7 @@ import AdminPrePedidos from "./pages/admin/AdminPrePedidos";
 import AdminPrePedidoDetail from "./pages/admin/AdminPrePedidoDetail";
 import AdminRetailers from "./pages/admin/AdminRetailers";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminHelpPage from "./pages/admin/AdminHelpPage";
 import AdminReports from "./pages/admin/AdminReports";
 import ServicesAdmin from "./pages/admin/ServicesAdmin";
 import AdminAuditLogs from "./pages/admin/AdminAuditLogs";
@@ -65,6 +65,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Favicon from "./components/Favicon";
 import SiteMetadata from "./components/SiteMetadata";
+import RouteThemeProvider from "./components/RouteThemeProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,26 +79,26 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <ErrorBoundary>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <FavoritesProvider>
-            <CartProvider>
-              <HomeContentProvider>
-                <NotificationsProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <FavoritesProvider>
+          <CartProvider>
+            <HomeContentProvider>
+              <NotificationsProvider>
                 <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter
-                future={{
-                  v7_startTransition: true,
-                  v7_relativeSplatPath: true,
-                }}
-              >
-                <Favicon />
-                <SiteMetadata />
-                <ScrollToTop />
-                <Routes>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter
+                    future={{
+                      v7_startTransition: true,
+                      v7_relativeSplatPath: true,
+                    }}
+                  >
+                    <RouteThemeProvider>
+                      <Favicon />
+                      <SiteMetadata />
+                      <ScrollToTop />
+                      <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<Index />} />
                   <Route path="/catalogo" element={<ProtectedRouteLojista><Catalog /></ProtectedRouteLojista>} />
@@ -318,6 +319,14 @@ const App = () => (
                     }
                   />
                   <Route
+                    path="/admin/ajuda"
+                    element={
+                      <ProtectedRouteAdmin>
+                        <AdminHelpPage />
+                      </ProtectedRouteAdmin>
+                    }
+                  />
+                  <Route
                     path="/admin/configuracoes"
                     element={
                       <ProtectedRouteAdmin>
@@ -413,16 +422,16 @@ const App = () => (
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
+                      </Routes>
+                    </RouteThemeProvider>
+                  </BrowserRouter>
+                </TooltipProvider>
               </NotificationsProvider>
-          </HomeContentProvider>
-        </CartProvider>
-      </FavoritesProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-    </ThemeProvider>
+            </HomeContentProvider>
+          </CartProvider>
+        </FavoritesProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   </ErrorBoundary>
 );
 

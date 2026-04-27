@@ -6,8 +6,12 @@ import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import { useSettings } from "@/hooks/useSettings";
+import { getPublicContactInfo } from "@/utils/publicContact";
 
 const Terms = () => {
+  const { settings } = useSettings();
+  const { contactPhone, contactPhoneRaw, hasPhone } = getPublicContactInfo(settings);
   const sections = [
     {
       icon: CheckCircle2,
@@ -149,12 +153,14 @@ const Terms = () => {
                       juridico@donassistec.com.br
                     </a>
                   </div>
-                  <div>
-                    <p className="font-medium mb-1">Telefone</p>
-                    <a href="tel:+5511999999999" className="text-secondary hover:underline">
-                      (11) 99999-9999
-                    </a>
-                  </div>
+                  {hasPhone ? (
+                    <div>
+                      <p className="font-medium mb-1">Telefone</p>
+                      <a href={`tel:${contactPhoneRaw}`} className="text-secondary hover:underline">
+                        {contactPhone}
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>

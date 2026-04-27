@@ -18,27 +18,34 @@ import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { useSettings } from "@/hooks/useSettings";
 import { validation } from "@/utils/validation";
+import { getPublicContactInfo } from "@/utils/publicContact";
 
 const Contact = () => {
   const { settings } = useSettings();
 
   const companyName = settings?.companyTradeName || settings?.siteName || "DonAssistec";
-  const contactPhone = settings?.contactPhone || "(11) 99999-9999";
-  const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
-  const contactEmail = settings?.contactEmail || "contato@donassistec.com.br";
-  const contactAddress = settings?.contactAddress || "Sao Paulo - SP";
-  const contactCityState = [settings?.contactCity, settings?.contactState].filter(Boolean).join(" - ");
-  const contactWhatsappRaw = settings?.contactWhatsApp || settings?.whatsappNumber || "5511999999999";
-  const cleanWhatsappNumber = validation.cleanWhatsAppNumber(contactWhatsappRaw);
-  const whatsappUrl = validation.generateWhatsAppUrl(
+  const {
+    contactPhone,
+    contactPhoneRaw,
+    contactEmail,
+    contactAddress,
+    contactCityState,
+    contactCep,
     contactWhatsappRaw,
-    settings?.whatsappContactMessage || "Ola! Gostaria de falar com a equipe da DonAssistec."
-  );
-  const mapQuery = [contactAddress, settings?.contactCity, settings?.contactState, settings?.contactCep]
-    .filter(Boolean)
-    .join(", ");
-  const mapsEmbedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery || contactAddress)}&output=embed`;
-  const mapsExternalUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery || contactAddress)}`;
+    mapsQuery,
+    whatsappMessage,
+    hasPhone,
+    hasAddress,
+    hasWhatsApp,
+  } = getPublicContactInfo(settings);
+  const cleanWhatsappNumber = validation.cleanWhatsAppNumber(contactWhatsappRaw);
+  const whatsappUrl = validation.generateWhatsAppUrl(contactWhatsappRaw, whatsappMessage);
+  const mapsEmbedUrl = hasAddress
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(mapsQuery || contactAddress)}&output=embed`
+    : "";
+  const mapsExternalUrl = hasAddress
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery || contactAddress)}`
+    : "";
 
   const handleCopy = async (label: string, value: string) => {
     try {
@@ -71,14 +78,14 @@ const Contact = () => {
           <div className="absolute -left-24 top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-sky-300/20 blur-3xl" />
 
-          <div className="container relative mx-auto px-4 py-16 md:py-24">
+          <div className="container relative mx-auto px-4 py-12 sm:py-16 md:py-24">
             <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
               <div className="max-w-3xl">
                 <Badge className="mb-5 border-white/25 bg-white/12 px-4 py-1 text-primary-foreground backdrop-blur-sm">
                   {settings?.contactPageBadge || "Contato"}
                 </Badge>
 
-                <h1 className="max-w-[15ch] text-4xl font-bold leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
+                <h1 className="max-w-[15ch] text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
                   {settings?.contactPageTitle || `Fale com a ${companyName}`}
                 </h1>
 
@@ -88,31 +95,35 @@ const Contact = () => {
                 </p>
 
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  <Button
-                    asChild
-                    size="lg"
-                    className="h-auto min-h-12 bg-white px-6 py-3 text-sm font-semibold text-primary shadow-xl hover:bg-white/90 hover:text-primary"
-                  >
-                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                      <MessageCircle className="h-5 w-5" />
-                      {settings?.contactPageWhatsappButtonLabel || "Abrir WhatsApp"}
-                    </a>
-                  </Button>
+                  {hasWhatsApp ? (
+                    <Button
+                      asChild
+                      size="lg"
+                      className="h-auto min-h-12 bg-white px-6 py-3 text-sm font-semibold text-primary shadow-xl hover:bg-white/90 hover:text-primary"
+                    >
+                      <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                        <MessageCircle className="h-5 w-5" />
+                        {settings?.contactPageWhatsappButtonLabel || "Abrir WhatsApp"}
+                      </a>
+                    </Button>
+                  ) : null}
 
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="outline"
-                    className="h-auto min-h-12 border-white/35 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white hover:text-primary"
-                  >
-                    <a href={`tel:${contactPhoneRaw}`}>
-                      <Phone className="h-5 w-5" />
-                      {settings?.contactPagePhoneButtonLabel || "Ligar Agora"}
-                    </a>
-                  </Button>
+                  {hasPhone ? (
+                    <Button
+                      asChild
+                      size="lg"
+                      variant="outline"
+                      className="h-auto min-h-12 border-white/35 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white hover:text-primary"
+                    >
+                      <a href={`tel:${contactPhoneRaw}`}>
+                        <Phone className="h-5 w-5" />
+                        {settings?.contactPagePhoneButtonLabel || "Ligar Agora"}
+                      </a>
+                    </Button>
+                  ) : null}
                 </div>
 
-                <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {heroHighlights.map((item) => (
                     <div key={item} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white/92 shadow-lg backdrop-blur-sm">
                       {item}
@@ -126,7 +137,7 @@ const Contact = () => {
                   <Badge className="w-fit border-emerald-300/30 bg-emerald-400/15 px-3 py-1 text-emerald-100">
                     Atendimento multicanal
                   </Badge>
-                  <CardTitle className="text-2xl font-bold text-white">
+                  <CardTitle className="text-xl font-bold text-white sm:text-2xl">
                     Canais prontos para te atender
                   </CardTitle>
                   <CardDescription className="text-sm leading-relaxed text-white/74">
@@ -159,18 +170,20 @@ const Contact = () => {
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <button
-                      type="button"
-                      onClick={() => handleCopy("telefone", contactPhoneRaw)}
-                      className="rounded-2xl border border-white/12 bg-white/8 p-4 text-left transition-colors hover:bg-white/12"
-                    >
-                      <div className="mb-2 flex items-center gap-3">
-                        <Phone className="h-4 w-4 text-sky-200" />
-                        <span className="text-sm font-medium text-white/70">Telefone</span>
-                      </div>
-                      <p className="font-semibold text-white">{contactPhone}</p>
-                      <p className="mt-2 text-xs text-white/60">Toque para copiar o numero</p>
-                    </button>
+                    {hasPhone ? (
+                      <button
+                        type="button"
+                        onClick={() => handleCopy("telefone", contactPhoneRaw)}
+                        className="rounded-2xl border border-white/12 bg-white/8 p-4 text-left transition-colors hover:bg-white/12"
+                      >
+                        <div className="mb-2 flex items-center gap-3">
+                          <Phone className="h-4 w-4 text-sky-200" />
+                          <span className="text-sm font-medium text-white/70">Telefone</span>
+                        </div>
+                        <p className="font-semibold text-white">{contactPhone}</p>
+                        <p className="mt-2 text-xs text-white/60">Toque para copiar o numero</p>
+                      </button>
+                    ) : null}
 
                     <button
                       type="button"
@@ -186,24 +199,26 @@ const Contact = () => {
                     </button>
                   </div>
 
-                  <div className="rounded-2xl border border-white/12 bg-white/8 p-4">
-                    <div className="flex items-start gap-3">
-                      <MapPin className="mt-1 h-4 w-4 text-sky-200" />
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-white/70">Localizacao</p>
-                        <p className="font-semibold text-white">{contactAddress}</p>
-                        {contactCityState ? <p className="text-sm text-white/72">{contactCityState}</p> : null}
-                        {settings?.contactCep ? <p className="text-sm text-white/72">CEP: {settings.contactCep}</p> : null}
+                  {hasAddress ? (
+                    <div className="rounded-2xl border border-white/12 bg-white/8 p-4">
+                      <div className="flex items-start gap-3">
+                        <MapPin className="mt-1 h-4 w-4 text-sky-200" />
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-white/70">Localizacao</p>
+                          <p className="font-semibold text-white">{contactAddress}</p>
+                          {contactCityState ? <p className="text-sm text-white/72">{contactCityState}</p> : null}
+                          {contactCep ? <p className="text-sm text-white/72">CEP: {contactCep}</p> : null}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : null}
                 </CardContent>
               </Card>
             </div>
           </div>
         </section>
 
-        <section className="relative z-10 -mt-8 pb-8 md:-mt-12 md:pb-12">
+        <section className="relative z-10 -mt-6 pb-8 md:-mt-12 md:pb-12">
           <div className="container mx-auto px-4">
             <div className="grid gap-6 lg:grid-cols-12">
               <Card className="overflow-hidden border-0 bg-[linear-gradient(135deg,hsl(142_70%_45%)_0%,hsl(146_64%_36%)_100%)] text-white shadow-2xl lg:col-span-5">
@@ -213,7 +228,7 @@ const Contact = () => {
                       <MessageCircle className="h-7 w-7" />
                     </div>
                     <div>
-                      <CardTitle className="text-3xl font-bold">
+                      <CardTitle className="text-2xl font-bold sm:text-3xl">
                         {settings?.contactPageWhatsappTitle || "WhatsApp"}
                       </CardTitle>
                       <CardDescription className="text-white/80">
@@ -267,13 +282,14 @@ const Contact = () => {
                 </CardContent>
               </Card>
 
+              {hasPhone ? (
               <Card className="border-border/80 shadow-lg lg:col-span-3">
                 <CardHeader className="space-y-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                     <Phone className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-2xl">
+                    <CardTitle className="text-xl sm:text-2xl">
                       {settings?.contactPagePhoneTitle || "Telefone"}
                     </CardTitle>
                     <CardDescription className="mt-2 leading-relaxed">
@@ -284,7 +300,7 @@ const Contact = () => {
                 </CardHeader>
 
                 <CardContent className="space-y-5">
-                  <p className="text-2xl font-bold tracking-tight text-foreground">{contactPhone}</p>
+                  <p className="break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl">{contactPhone}</p>
                   <div className="flex flex-col gap-3">
                     <Button asChild variant="outline" className="w-full">
                       <a href={`tel:${contactPhoneRaw}`}>
@@ -298,6 +314,7 @@ const Contact = () => {
                   </div>
                 </CardContent>
               </Card>
+              ) : null}
 
               <Card className="border-border/80 shadow-lg lg:col-span-4">
                 <CardHeader className="space-y-4">
@@ -305,7 +322,7 @@ const Contact = () => {
                     <Mail className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-2xl">
+                    <CardTitle className="text-xl sm:text-2xl">
                       {settings?.contactPageEmailTitle || "E-mail"}
                     </CardTitle>
                     <CardDescription className="mt-2 leading-relaxed">
@@ -316,7 +333,7 @@ const Contact = () => {
                 </CardHeader>
 
                 <CardContent className="space-y-5">
-                  <p className="break-all text-xl font-bold tracking-tight text-foreground">{contactEmail}</p>
+                  <p className="break-all text-lg font-bold tracking-tight text-foreground sm:text-xl">{contactEmail}</p>
                   <div className="flex flex-col gap-3">
                     <Button asChild variant="outline" className="w-full">
                       <a href={`mailto:${contactEmail}`}>
@@ -343,7 +360,7 @@ const Contact = () => {
                     Como podemos ajudar
                   </Badge>
                   <div>
-                    <CardTitle className="text-3xl font-bold tracking-tight">
+                    <CardTitle className="text-2xl font-bold tracking-tight sm:text-3xl">
                       Atendimento pensado para resolver rapido
                     </CardTitle>
                     <CardDescription className="mt-3 max-w-2xl text-base leading-relaxed">
@@ -380,19 +397,22 @@ const Contact = () => {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-border/70 bg-card p-5">
-                      <div className="mb-3 flex items-center gap-3">
-                        <Phone className="h-5 w-5 text-primary" />
-                        <p className="font-semibold text-foreground">Telefone direto</p>
+                    {hasPhone ? (
+                      <div className="rounded-2xl border border-border/70 bg-card p-5">
+                        <div className="mb-3 flex items-center gap-3">
+                          <Phone className="h-5 w-5 text-primary" />
+                          <p className="font-semibold text-foreground">Telefone direto</p>
+                        </div>
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          Para falar agora com a equipe, ligue em {contactPhone} ou toque no botao de chamada.
+                        </p>
                       </div>
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        Para falar agora com a equipe, ligue em {contactPhone} ou toque no botao de chamada.
-                      </p>
-                    </div>
+                    ) : null}
                   </div>
                 </CardContent>
               </Card>
 
+              {hasAddress ? (
               <Card className="overflow-hidden border-border/80 shadow-xl">
                 <div className="border-b border-border/70 bg-muted/35 px-6 py-5">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -400,7 +420,7 @@ const Contact = () => {
                       <Badge variant="outline" className="mb-3 px-3 py-1">
                         {settings?.contactPageAddressTitle || "Endereco"}
                       </Badge>
-                      <h2 className="text-3xl font-bold tracking-tight text-foreground">
+                      <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                         {settings?.contactPageAddressDescription || "Nossa base de atendimento e operacao."}
                       </h2>
                     </div>
@@ -424,8 +444,8 @@ const Contact = () => {
                           {contactCityState ? (
                             <p className="mt-1 text-sm text-muted-foreground">{contactCityState}</p>
                           ) : null}
-                          {settings?.contactCep ? (
-                            <p className="mt-1 text-sm text-muted-foreground">CEP: {settings.contactCep}</p>
+                          {contactCep ? (
+                            <p className="mt-1 text-sm text-muted-foreground">CEP: {contactCep}</p>
                           ) : null}
                         </div>
                       </div>
@@ -455,6 +475,7 @@ const Contact = () => {
                   </div>
                 </div>
               </Card>
+              ) : null}
             </div>
           </div>
         </section>

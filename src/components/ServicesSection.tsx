@@ -14,7 +14,7 @@ const ServicesSection = () => {
   const servicesSubtitle = content.servicesSubtitle?.trim();
 
   return (
-    <section id="servicos" className="py-20 bg-muted/30">
+    <section id="servicos" className="bg-transparent py-16 sm:py-20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <Badge variant="outline" className="mb-4">{content.servicesBadge}</Badge>
@@ -29,20 +29,23 @@ const ServicesSection = () => {
         </div>
 
         {/* Featured Image */}
-        <div className="mb-16 relative rounded-2xl overflow-hidden shadow-xl">
+        <div className="relative mb-16 overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-950 shadow-[0_25px_80px_rgba(2,8,23,0.48)] sm:rounded-[2rem]">
           <img
             src={featuredImage}
             alt="Processo de reconstrução de tela"
-            className="w-full h-64 md:h-96 object-cover"
+            className="h-[18rem] w-full object-cover sm:h-[22rem] md:h-[26rem] lg:h-[30rem]"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
-            <h3 className="text-2xl md:text-3xl font-bold text-card mb-2">
-              {content.servicesImageTitle}
-            </h3>
-            <p className="text-card/80 max-w-lg">
-              {content.servicesImageDescription}
-            </p>
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(2,6,23,0.94)_0%,rgba(15,23,42,0.76)_45%,rgba(15,23,42,0.28)_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/30 to-slate-950/15" />
+          <div className="absolute inset-0 flex items-center justify-center p-5 sm:p-8 lg:p-12">
+            <div className="w-full max-w-3xl rounded-[1.5rem] border border-white/10 bg-slate-950/30 px-5 py-6 text-center shadow-xl backdrop-blur-[3px] sm:px-8 sm:py-8 lg:px-10 lg:py-10">
+              <h3 className="mx-auto mb-3 max-w-2xl text-2xl font-bold leading-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.55)] sm:text-3xl lg:text-4xl">
+                {content.servicesImageTitle}
+              </h3>
+              <p className="mx-auto max-w-2xl text-sm leading-relaxed text-white/90 sm:text-base lg:text-lg">
+                {content.servicesImageDescription}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -53,7 +56,7 @@ const ServicesSection = () => {
             const color = index === 1 ? "secondary" : "primary";
 
             return (
-            <Card key={service.title} className="group flex h-full min-h-[24rem] flex-col border-border transition-all duration-300 hover:border-primary/50 hover:shadow-lg md:min-h-[30rem]">
+            <Card key={service.title} className="group flex h-full min-h-[24rem] flex-col border-white/10 bg-card/85 shadow-[0_18px_50px_rgba(2,8,23,0.18)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_24px_60px_rgba(14,165,233,0.16)] md:min-h-[30rem]">
               <CardHeader className="min-h-[8.5rem] flex-none">
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
@@ -101,7 +104,7 @@ const ServicesSection = () => {
             return (
             <div
               key={highlight.label}
-              className="flex items-center gap-4 p-6 bg-card rounded-xl border border-border"
+              className="flex items-center gap-4 rounded-2xl border border-white/10 bg-card/80 p-6 shadow-[0_16px_42px_rgba(2,8,23,0.16)] backdrop-blur-sm"
             >
               <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <Icon className="w-7 h-7 text-primary" />

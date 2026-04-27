@@ -10,6 +10,11 @@ html {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 body,
@@ -222,4 +227,42 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.home-dark-preview {
+  --background: 220 49% 10%;
+  --foreground: 210 40% 96%;
+
+  --card: 219 34% 15%;
+  --card-foreground: 210 40% 96%;
+
+  --popover: 219 34% 15%;
+  --popover-foreground: 210 40% 96%;
+
+  --primary: 205 100% 56%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 32 96% 58%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 218 28% 18%;
+  --muted-foreground: 214 18% 76%;
+
+  --accent: 201 76% 20%;
+  --accent-foreground: 200 100% 94%;
+
+  --border: 217 24% 24%;
+  --input: 217 24% 24%;
+  --ring: 205 100% 56%;
+
+  background-image:
+    radial-gradient(circle at top, hsl(203 100% 24% / 0.30), transparent 34%),
+    radial-gradient(circle at 88% 16%, hsl(193 100% 42% / 0.12), transparent 18%),
+    linear-gradient(180deg, hsl(221 51% 13%) 0%, hsl(220 46% 10%) 44%, hsl(222 50% 8%) 100%);
+  color: hsl(var(--foreground));
+}
+
+.home-dark-preview footer iframe {
+  border-radius: 1rem;
+  filter: saturate(0.82) contrast(1.05);
 }

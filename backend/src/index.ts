@@ -90,8 +90,10 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Health check
 app.get("/health", async (req: Request, res: Response) => {
+  let connection;
   try {
-    await pool.getConnection();
+    connection = await pool.getConnection();
+    await connection.query("SELECT 1");
     res.json({
       success: true,
       message: "API está funcionando e conectada ao banco de dados",
@@ -103,6 +105,8 @@ app.get("/health", async (req: Request, res: Response) => {
       error: "Erro ao conectar ao banco de dados",
       message: error.message,
     });
+  } finally {
+    connection?.release();
   }
 });
 

@@ -14,7 +14,7 @@ INSERT INTO system_settings (id, setting_key, setting_value, description) VALUES
 ('site-description', 'siteDescription', 'Catálogo B2B de peças e serviços para celulares', 'Descrição do site'),
 ('site-url', 'siteUrl', 'https://donassistec.com', 'URL do site'),
 ('support-email', 'supportEmail', 'suporte@donassistec.com', 'Email de suporte'),
-('support-phone', 'supportPhone', '(11) 99999-9999', 'Telefone de suporte'),
+('support-phone', 'supportPhone', '', 'Telefone de suporte'),
 ('maintenance-mode', 'maintenanceMode', 'false', 'Modo de manutenção (true/false)'),
 ('allow-retailer-registration', 'allowRetailerRegistration', 'true', 'Permitir cadastro de lojistas (true/false)'),
 ('max-orders-per-day', 'maxOrdersPerDay', '100', 'Máximo de pedidos por dia'),

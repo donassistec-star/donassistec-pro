@@ -26,6 +26,7 @@ import {
   PlayCircle,
   PanelLeftClose,
   PanelLeftOpen,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
@@ -118,6 +119,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { label: "Preços Dinâmicos", href: "/admin/precos-dinamicos", icon: DollarSign, moduleKey: "precos-dinamicos" },
     { label: "Tabela de Preços", href: "/admin/tabela-precos", icon: TableProperties, moduleKey: "tabela-precos" },
     { label: "Logs de Auditoria", href: "/admin/logs", icon: FileText, moduleKey: "logs" },
+    { label: "Página Ajuda", href: "/admin/ajuda", icon: HelpCircle, moduleKey: "configuracoes" },
     { label: "Configurações", href: "/admin/configuracoes", icon: Settings, moduleKey: "configuracoes" },
     { label: "Vídeos do Lojista", href: "/admin/videos-lojista", icon: PlayCircle, moduleKey: "videos-lojista" },
     { label: "Usuarios", href: "/admin/equipe", icon: Users, moduleKey: "equipe" },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import { Menu, X, Phone, Smartphone, Heart, Shield } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/contexts/AuthContext";
+import { getPublicContactInfo } from "@/utils/publicContact";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -17,13 +18,16 @@ const Header = () => {
   const favoritesCount = favorites.length;
   const isLojista = user?.role === "retailer";
 
-  const contactPhone = settings?.contactPhone || "(11) 99999-9999";
-  const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
+  const { contactPhone, contactPhoneRaw, hasPhone } = getPublicContactInfo(settings);
   const showFavorites = settings?.showNavFavorites !== false;
   const showAdminAccessButton = settings?.showAdminAccessButton !== false;
   const showHeaderPhone = settings?.showHeaderPhone !== false;
   const showRetailerAreaButton = settings?.showRetailerAreaButton !== false;
   const showCompanyTradeName = (settings?.showCompanyTradeNameHeader ?? settings?.showCompanyTradeName) !== false;
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   const navLinks = [
     { label: "Home", href: "/", visible: settings?.showNavHome !== false },
@@ -41,16 +45,16 @@ const Header = () => {
       <a href="#main-content" className="skip-to-content">
         Pular para o conteúdo principal
       </a>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-card/95 backdrop-blur-md">
+      <div className="container mx-auto px-3 sm:px-4">
+        <div className="flex h-16 items-center justify-between gap-3 lg:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex min-w-0 items-center gap-2">
             {settings?.brandingLogoUrl ? (
               <img
                 src={settings.brandingLogoUrl}
                 alt={settings.companyTradeName || settings.siteName || "Logo"}
-                className="h-12 lg:h-14 w-auto max-w-[180px] object-contain"
+                className="h-10 w-auto max-w-[124px] object-contain sm:h-11 sm:max-w-[148px] lg:h-14 lg:max-w-[180px]"
                 onError={(e) => {
                   // Fallback para ícone se logo não carregar
                   const target = e.target as HTMLImageElement;
@@ -65,22 +69,22 @@ const Header = () => {
                 }}
               />
             ) : (
-              <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-lg bg-primary flex items-center justify-center">
-                <Smartphone className="w-6 h-6 text-primary-foreground" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary sm:h-11 sm:w-11 lg:h-14 lg:w-14">
+                <Smartphone className="h-5 w-5 text-primary-foreground sm:h-6 sm:w-6" />
               </div>
             )}
             {showCompanyTradeName ? (
-              <div>
+              <div className="hidden min-[360px]:block min-w-0">
                 {(() => {
                   const name = settings?.companyTradeName || 'Don Assistec';
                   const words = name.split(' ').filter(Boolean);
                   const first = words[0] || 'Don';
                   const rest = words.slice(1).join(' ');
                   return (
-                    <>
-                      <span className="text-xl font-bold text-foreground">{first}</span>
-                      {rest ? <span className="text-xl font-bold text-primary"> {rest}</span> : null}
-                    </>
+                    <div className="truncate">
+                      <span className="text-base font-bold text-foreground sm:text-lg lg:text-xl">{first}</span>
+                      {rest ? <span className="text-base font-bold text-primary sm:text-lg lg:text-xl"> {rest}</span> : null}
+                    </div>
                   );
                 })()}
               </div>
@@ -122,7 +126,7 @@ const Header = () => {
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center gap-4">
-            {showHeaderPhone && (
+            {showHeaderPhone && hasPhone && (
               <a href={`tel:${contactPhoneRaw}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Phone className="w-4 h-4" />
                 {contactPhone}
@@ -156,8 +160,9 @@ const Header = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden p-2 text-foreground"
+            className="rounded-xl p-2 text-foreground transition-colors hover:bg-muted/60 lg:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label={isMenuOpen ? "Fechar menu" : "Abrir menu"}
           >
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -166,14 +171,14 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="lg:hidden bg-card border-t border-border">
-          <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+        <div className="max-h-[calc(100svh-4rem)] overflow-y-auto border-t border-border bg-card lg:hidden">
+          <nav className="container mx-auto flex flex-col gap-2 px-4 py-4">
             {navLinks.map((link) => (
               link.href.startsWith("/") ? (
                 <Link
                   key={link.label}
                   to={link.href}
-                  className="text-base font-medium text-foreground hover:text-primary transition-colors py-2"
+                  className="rounded-xl px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {link.label}
@@ -182,7 +187,7 @@ const Header = () => {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="text-base font-medium text-foreground hover:text-primary transition-colors py-2"
+                  className="rounded-xl px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {link.label}
@@ -192,7 +197,7 @@ const Header = () => {
             {showAdminAccessButton && (
               <Link
                 to="/admin"
-                className="text-base font-medium text-foreground hover:text-primary transition-colors py-2 inline-flex items-center"
+                className="inline-flex items-center rounded-xl px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted/60 hover:text-primary"
                 onClick={() => setIsMenuOpen(false)}
                 title="Admin"
                 aria-label="Admin"
@@ -203,7 +208,7 @@ const Header = () => {
             {showFavorites && (
               <Button 
                 variant="outline" 
-                className="mt-2 relative justify-start"
+                className="mt-3 h-11 justify-start rounded-xl"
                 onClick={() => {
                   navigate("/favoritos");
                   setIsMenuOpen(false);
@@ -221,7 +226,7 @@ const Header = () => {
             {showRetailerAreaButton && (
               <Button 
                 variant="secondary"
-                className="mt-2"
+                className="mt-2 h-11 rounded-xl"
                 onClick={() => {
                   navigate("/lojista/dashboard");
                   setIsMenuOpen(false);

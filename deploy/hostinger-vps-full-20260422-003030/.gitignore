@@ -1,0 +1,48 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files
+.env
+.env.local
+.env.database
+.env.*.local
+
+# Uploads (conteúdo, mas manter estrutura)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Docker volumes (se necessário)
+# mysql_data/
+
+# Build outputs
+dist/
+backend/dist/
+build/
+# APK na pasta public (gerado no deploy; não versionar)
+public/DonAssistec.apk
+*.tsbuildinfo
+
+# PM2
+.pm2/

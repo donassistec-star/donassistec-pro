@@ -1,0 +1,1054 @@
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { useHomeContent } from "@/contexts/HomeContentContext";
+import RetailerLayout from "@/components/retailer/RetailerLayout";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { VideoUpload } from "@/components/ui/video-upload";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useBrands } from "@/hooks/useBrands";
+import { ArrowDown, ArrowUp, ExternalLink, Trash2, Eye, EyeOff, Tag, Heading1, Pointer } from "lucide-react";
+
+const HomeContentAdmin = () => {
+  const { content, updateContent, resetContent } = useHomeContent();
+  const { brands } = useBrands();
+  const homeModules = [
+    { key: "showHero", label: "Hero", description: "Seção principal no topo da home." },
+    { key: "showBrands", label: "Marcas", description: "Bloco com marcas atendidas." },
+    { key: "showServices", label: "Serviços", description: "Bloco com serviços oferecidos." },
+    { key: "showFeatures", label: "Diferenciais", description: "Seção de diferenciais da home." },
+    { key: "showStats", label: "Números", description: "Seção com indicadores e resultados." },
+    { key: "showProcess", label: "Processo", description: "Passo a passo de funcionamento." },
+    { key: "showTestimonials", label: "Depoimentos", description: "Seção de depoimentos." },
+    { key: "showDifferentials", label: "Diferenciais Extras", description: "Bloco complementar de benefícios." },
+    { key: "showCta", label: "CTA Final", description: "Chamada final para ação." },
+  ] as const;
+
+  const handleHeroChange = async (
+    field:
+      | "heroTitle"
+      | "heroSubtitle"
+      | "heroCtaLabel"
+      | "heroSecondaryCtaLabel"
+      | "heroBadge"
+      | "heroVideoUrl"
+      | "heroMediaType"
+      | "heroImageInterval"
+      | "heroCtaLink"
+      | "heroSecondaryCtaLink",
+    value: string | number
+  ) => {
+    await updateContent({ [field]: value as any });
+  };
+
+  const handleFeatureChange = async (index: number, field: "title" | "description", value: string) => {
+    const features = [...content.features];
+    features[index] = { ...features[index], [field]: value };
+    await updateContent({ features });
+  };
+
+  const handleAddHeroImage = async (url: string) => {
+    const heroImages = [...(content.heroImages || [])];
+    heroImages.push({
+      id: Date.now().toString(),
+      url,
+    });
+    await updateContent({ heroImages });
+    toast.success("Imagem adicionada ao carrossel");
+  };
+
+  const handleRemoveHeroImage = async (id: string) => {
+    const heroImages = (content.heroImages || []).filter(img => img.id !== id);
+    if (heroImages.length === 0 && content.heroMediaType === 'image') {
+      toast.error("Você precisa de pelo menos uma imagem quando o tipo é 'Imagem'");
+      return;
+    }
+    await updateContent({ heroImages });
+    toast.success("Imagem removida");
+  };
+
+  const handleMoveHeroImage = async (index: number, direction: 'up' | 'down') => {
+    const heroImages = [...(content.heroImages || [])];
+    if (direction === 'up' && index > 0) {
+      [heroImages[index], heroImages[index - 1]] = [heroImages[index - 1], heroImages[index]];
+    } else if (direction === 'down' && index < heroImages.length - 1) {
+      [heroImages[index], heroImages[index + 1]] = [heroImages[index + 1], heroImages[index]];
+    }
+    await updateContent({ heroImages });
+  };
+
+  const handleStatChange = async (
+    index: number,
+    field: "value" | "label" | "description",
+    value: string
+  ) => {
+    const stats = [...content.stats];
+    stats[index] = { ...stats[index], [field]: value };
+    await updateContent({ stats });
+  };
+
+  const handleStepChange = async (
+    index: number,
+    field: "title" | "description" | "action" | "href",
+    value: string
+  ) => {
+    const steps = [...content.steps];
+    steps[index] = { ...steps[index], [field]: value };
+    await updateContent({ steps });
+  };
+
+  const handleSave = async () => {
+    await updateContent({}); // Força uma atualização completa
+    toast.success("Conteúdo da home salvo com sucesso!");
+  };
+
+  const selectedHomeBrandIds = content.homeBrandIds || brands.map((brand) => brand.id);
+
+  const handleToggleHomeBrand = async (brandId: string, checked: boolean) => {
+    const current = content.homeBrandIds || [];
+    const next = checked
+      ? [...current, brandId]
+      : current.filter((id) => id !== brandId);
+    await updateContent({ homeBrandIds: next });
+  };
+
+  const handleMoveHomeBrand = async (brandId: string, direction: "up" | "down") => {
+    const current = [...selectedHomeBrandIds];
+    const index = current.indexOf(brandId);
+    if (index === -1) return;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= current.length) return;
+
+    [current[index], current[targetIndex]] = [current[targetIndex], current[index]];
+    await updateContent({ homeBrandIds: current });
+  };
+
+  const handleReset = async () => {
+    await resetContent();
+    toast.success("Conteúdo da home restaurado para o padrão.");
+  };
+
+  const getLinkState = (value: string, fallback: string) => {
+    const resolved = (value || fallback).trim();
+    const isExternal = /^https?:\/\//i.test(resolved);
+    const isWhatsapp = /^https?:\/\/(wa\.me|api\.whatsapp\.com)\//i.test(resolved);
+    const isInternal = resolved.startsWith("/");
+    const isValid = Boolean(resolved) && (isExternal || isInternal);
+
+    return {
+      resolved,
+      isValid,
+      typeLabel: isWhatsapp ? "WhatsApp" : isExternal ? "Externo" : isInternal ? "Interno" : "Inválido",
+    };
+  };
+
+  const renderHeroButtonEditor = ({
+    title,
+    description,
+    visible,
+    onToggle,
+    labelValue,
+    onLabelChange,
+    labelPlaceholder,
+    linkValue,
+    onLinkChange,
+    linkPlaceholder,
+  }: {
+    title: string;
+    description: string;
+    visible: boolean;
+    onToggle: (checked: boolean) => void;
+    labelValue: string;
+    onLabelChange: (value: string) => void;
+    labelPlaceholder: string;
+    linkValue: string;
+    onLinkChange: (value: string) => void;
+    linkPlaceholder: string;
+  }) => (
+    <div className="rounded-xl border border-border p-4 space-y-4 bg-muted/20">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground">{title}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+        <Checkbox checked={visible} onCheckedChange={(checked) => onToggle(checked as boolean)} />
+      </div>
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-foreground">Texto do botão</label>
+        <Input
+          value={labelValue}
+          onChange={(e) => onLabelChange(e.target.value)}
+          placeholder={labelPlaceholder}
+          disabled={!visible}
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-foreground">Link de redirecionamento</label>
+        <Input
+          value={linkValue}
+          onChange={(e) => onLinkChange(e.target.value)}
+          placeholder={linkPlaceholder}
+          disabled={!visible}
+        />
+        {(() => {
+          const linkState = getLinkState(linkValue, linkPlaceholder);
+          return (
+            <div className="rounded-lg border border-dashed border-border p-3 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  Preview: <span className="font-medium text-foreground">{linkState.resolved}</span>
+                </p>
+                <Badge variant={linkState.isValid ? "outline" : "destructive"}>
+                  {linkState.typeLabel}
+                </Badge>
+              </div>
+              <p className={`text-xs ${linkState.isValid ? "text-muted-foreground" : "text-destructive"}`}>
+                {linkState.isValid
+                  ? "Link válido para redirecionamento."
+                  : "Use um caminho interno (/pagina) ou URL completa (https://...)."}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!visible || !linkState.isValid}
+                onClick={() => window.open(linkState.resolved, "_blank", "noopener,noreferrer")}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Testar link
+              </Button>
+            </div>
+          );
+        })()}
+      </div>
+    </div>
+  );
+
+  return (
+    <RetailerLayout>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Conteúdo da Página Inicial
+          </h1>
+          <p className="text-muted-foreground">
+            Administre os textos principais da home sem precisar alterar o código.
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Módulos da Home</CardTitle>
+            <CardDescription>
+              Escolha quais seções da página inicial ficam visíveis no site.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {homeModules.map((module) => (
+              <div
+                key={module.key}
+                className="flex items-start justify-between gap-4 rounded-lg border border-border p-4"
+              >
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">
+                    {module.label}
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    {module.description}
+                  </p>
+                </div>
+                <Checkbox
+                  checked={content[module.key] !== false}
+                  onCheckedChange={(checked) =>
+                    updateContent({ [module.key]: checked as boolean }).catch(console.error)
+                  }
+                />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Marcas da Home</CardTitle>
+            <CardDescription>
+              Escolha quais marcas aparecem na home e organize a ordem de exibição.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {brands.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Cadastre marcas para gerenciar esta seção.
+              </p>
+            ) : (
+              brands.map((brand) => {
+                const isSelected = selectedHomeBrandIds.includes(brand.id);
+                const position = selectedHomeBrandIds.indexOf(brand.id);
+                return (
+                  <div
+                    key={brand.id}
+                    className="flex items-center justify-between gap-4 rounded-lg border border-border p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) =>
+                          handleToggleHomeBrand(brand.id, checked as boolean).catch(console.error)
+                        }
+                      />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">{brand.name}</p>
+                        <p className="text-xs text-muted-foreground">ID: {brand.id}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isSelected ? (
+                        <Badge variant="outline">Posição {position + 1}</Badge>
+                      ) : (
+                        <Badge variant="secondary">Oculta</Badge>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disabled={!isSelected || position <= 0}
+                        onClick={() => handleMoveHomeBrand(brand.id, "up").catch(console.error)}
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disabled={!isSelected || position === -1 || position >= selectedHomeBrandIds.length - 1}
+                        onClick={() => handleMoveHomeBrand(brand.id, "down").catch(console.error)}
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Hero + Ações */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Hero */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Hero (Seção Principal)</CardTitle>
+              <CardDescription>
+                Título, subtítulo e CTAs exibidos no topo da página inicial.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Badge (Etiqueta)
+                </label>
+                <Input
+                  value={content.heroBadge || ""}
+                  onChange={(e) => handleHeroChange("heroBadge", e.target.value as any)}
+                  placeholder="Laboratório Premium B2B"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Título principal
+                </label>
+                <Input
+                  value={content.heroTitle}
+                  onChange={(e) => handleHeroChange("heroTitle", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Subtítulo
+                </label>
+                <Textarea
+                  value={content.heroSubtitle}
+                  onChange={(e) => handleHeroChange("heroSubtitle", e.target.value)}
+                  rows={3}
+                  placeholder="Texto opcional abaixo do título principal"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Sincronizado com a Home. Se ficar vazio, o subtítulo não aparece no hero.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-3 block">
+                    Tipo de Mídia do Hero
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => handleHeroChange("heroMediaType", "none").catch(console.error)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        content.heroMediaType === 'none' || !content.heroMediaType
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      Nenhuma
+                    </button>
+                    <button
+                      onClick={() => handleHeroChange("heroMediaType", "image").catch(console.error)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        content.heroMediaType === 'image'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      Imagem
+                    </button>
+                    <button
+                      onClick={() => handleHeroChange("heroMediaType", "video").catch(console.error)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        content.heroMediaType === 'video'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      Vídeo
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Carrossel de Imagens do Hero */}
+              {content.heroMediaType === 'image' && (
+                <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground block mb-2">
+                        Imagens do Carrossel
+                      </label>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Adicione múltiplas imagens que serão exibidas em rotação automática.
+                      </p>
+                    </div>
+
+                    {/* Lista de imagens */}
+                    {(content.heroImages || []).length > 0 && (
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {content.heroImages.map((image, index) => (
+                          <div key={image.id} className="rounded-lg border border-border bg-card p-3 space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">
+                                  Imagem {index + 1}
+                                </p>
+                                <p className="text-xs text-muted-foreground break-all truncate">
+                                  {image.url}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRemoveHeroImage(image.id).catch(console.error)}
+                                className="shrink-0"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+
+                            {/* Preview */}
+                            <div className="rounded border border-border overflow-hidden">
+                              <img
+                                src={image.url}
+                                alt={`Imagem ${index + 1}`}
+                                className="w-full h-24 object-cover"
+                              />
+                            </div>
+
+                            {/* Botões de reordenação */}
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMoveHeroImage(index, 'up').catch(console.error)}
+                                disabled={index === 0}
+                                className="flex-1"
+                              >
+                                <ArrowUp className="w-4 h-4 mr-1" />
+                                Subir
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMoveHeroImage(index, 'down').catch(console.error)}
+                                disabled={index === (content.heroImages?.length || 0) - 1}
+                                className="flex-1"
+                              >
+                                <ArrowDown className="w-4 h-4 mr-1" />
+                                Descer
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload nova imagem */}
+                    <div className="space-y-3 pt-3 border-t border-border">
+                      <ImageUpload
+                        value=""
+                        onChange={(url) => {
+                          handleAddHeroImage(url).catch(console.error);
+                        }}
+                        label="Adicionar Imagem ao Carrossel"
+                      />
+                    </div>
+
+                    {/* Controle de velocidade do carrossel */}
+                    <div className="space-y-2 pt-3 border-t border-border">
+                      <label className="text-sm font-medium text-foreground">
+                        Velocidade de Rotação
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          min="1000"
+                          max="10000"
+                          step="500"
+                          value={content.heroImageInterval || 5000}
+                          onChange={(e) =>
+                            handleHeroChange("heroImageInterval", parseInt(e.target.value)).catch(console.error)
+                          }
+                          className="flex-1"
+                        />
+                        <span className="text-sm font-medium text-foreground min-w-fit">
+                          {((content.heroImageInterval || 5000) / 1000).toFixed(1)}s
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Tempo entre as imagens em segundos. Mínimo 1s, máximo 10s.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Vídeo do Hero */}
+              {content.heroMediaType === 'video' && (
+                <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      URL do Vídeo (Externo)
+                    </label>
+                    <Input
+                      value={content.heroVideoUrl || ""}
+                      onChange={(e) => handleHeroChange("heroVideoUrl", e.target.value as any)}
+                      placeholder="https://youtube.com/watch?v=... ou https://youtu.be/..."
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Aceita URLs do YouTube, Instagram Reels, Vimeo e URLs diretas de vídeo.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <VideoUpload
+                      value={content.heroVideoUrl || ""}
+                      onChange={(url) => {
+                        handleHeroChange("heroVideoUrl", url).catch(console.error);
+                      }}
+                      label="Upload do Vídeo (Máx. 100MB)"
+                    />
+                  </div>
+
+                  {content.heroVideoUrl ? (
+                    <div className="rounded-lg border border-border p-3 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            Vídeo configurado
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1 break-all">
+                            {content.heroVideoUrl}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleHeroChange("heroVideoUrl", "").catch(console.error)}
+                        >
+                          Remover
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {renderHeroButtonEditor({
+                  title: "Botão principal",
+                  description: "Controle o CTA principal exibido no hero.",
+                  visible: content.showHeroPrimaryCta !== false,
+                  onToggle: (checked) =>
+                    updateContent({ showHeroPrimaryCta: checked }).catch(console.error),
+                  labelValue: content.heroCtaLabel,
+                  onLabelChange: (value) =>
+                    handleHeroChange("heroCtaLabel", value).catch(console.error),
+                  labelPlaceholder: "Explorar Catálogo",
+                  linkValue: content.heroCtaLink || "",
+                  onLinkChange: (value) =>
+                    handleHeroChange("heroCtaLink", value).catch(console.error),
+                  linkPlaceholder: "/catalogo",
+                })}
+                {renderHeroButtonEditor({
+                  title: "Botão secundário",
+                  description: "Controle o CTA secundário exibido no hero.",
+                  visible: content.showHeroSecondaryCta !== false,
+                  onToggle: (checked) =>
+                    updateContent({ showHeroSecondaryCta: checked }).catch(console.error),
+                  labelValue: content.heroSecondaryCtaLabel,
+                  onLabelChange: (value) =>
+                    handleHeroChange("heroSecondaryCtaLabel", value).catch(console.error),
+                  labelPlaceholder: "Área do Lojista",
+                  linkValue: content.heroSecondaryCtaLink || "",
+                  onLinkChange: (value) =>
+                    handleHeroChange("heroSecondaryCtaLink", value).catch(console.error),
+                  linkPlaceholder: "/lojista/login",
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Ações */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ações</CardTitle>
+              <CardDescription>
+                Salve ou restaure o conteúdo padrão da home.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button className="w-full" onClick={handleSave}>
+                Salvar alterações
+              </Button>
+              <Button variant="outline" className="w-full" onClick={handleReset}>
+                Restaurar conteúdo padrão
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                As alterações são salvas localmente neste navegador. Em produção, este módulo pode
+                ser conectado a uma API para salvar em banco de dados.
+              </p>
+              <Badge variant="outline" className="text-xs">
+                Módulo CMS leve
+              </Badge>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Painel de Textos do Hero - Novo Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Painel de Textos do Hero
+            </CardTitle>
+            <CardDescription>
+              Controle a exibição do painel de conteúdo e seus elementos no hero.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Controle Principal do Painel */}
+            <div className="rounded-lg border border-border p-4 bg-muted/30 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <label htmlFor="showHeroPanel" className="text-sm font-semibold text-foreground cursor-pointer flex items-center gap-2">
+                    {content.showHeroPanel !== false ? (
+                      <Eye className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <EyeOff className="w-4 h-4 text-muted-foreground" />
+                    )}
+                    Painel de Textos
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Mostrar/ocultar todo o painel com conteúdo no topo da página
+                  </p>
+                </div>
+                <Checkbox
+                  id="showHeroPanel"
+                  checked={content.showHeroPanel !== false}
+                  onCheckedChange={(checked) =>
+                    updateContent({ showHeroPanel: Boolean(checked) }).catch(console.error)
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Sub-controles do Painel (aparecem quando painel está ativo) */}
+            {content.showHeroPanel !== false && (
+              <div className="space-y-3 pl-4 border-l-2 border-muted-foreground/30">
+                <div className="space-y-4">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">
+                    Elementos do Painel
+                  </p>
+
+                  {/* Badge */}
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-blue-600" />
+                        Badge/Etiqueta
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Pequeno rótulo acima do título principal
+                      </p>
+                    </div>
+                    <Checkbox
+                      id="showHeroBadge"
+                      checked={!!content.heroBadge}
+                      onCheckedChange={(checked) => {
+                        if (!checked) {
+                          updateContent({ heroBadge: "" }).catch(console.error);
+                        } else {
+                          updateContent({ heroBadge: "O Laboratório Especializado" }).catch(console.error);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Título Principal */}
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Heading1 className="w-4 h-4 text-purple-600" />
+                        Título Principal
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Texto grande no hero
+                      </p>
+                    </div>
+                    <Checkbox
+                      id="showHeroTitle"
+                      checked={!!content.heroTitle}
+                      onCheckedChange={(checked) => {
+                        if (!checked) {
+                          updateContent({ heroTitle: "" }).catch(console.error);
+                        } else {
+                          updateContent({ heroTitle: "Laboratório especializado em reparos avançados" }).catch(console.error);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Botões CTA */}
+                  <p className="text-xs font-medium text-muted-foreground uppercase mt-4">
+                    Botões de Ação
+                  </p>
+
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Pointer className="w-4 h-4 text-orange-600" />
+                        Botão Principal
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        CTA primária no hero
+                      </p>
+                    </div>
+                    <Checkbox
+                      checked={content.showHeroPrimaryCta !== false}
+                      onCheckedChange={(checked) =>
+                        updateContent({ showHeroPrimaryCta: Boolean(checked) }).catch(console.error)
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Pointer className="w-4 h-4 text-orange-500" />
+                        Botão Secundário
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        CTA secundária no hero
+                      </p>
+                    </div>
+                    <Checkbox
+                      checked={content.showHeroSecondaryCta !== false}
+                      onCheckedChange={(checked) =>
+                        updateContent({ showHeroSecondaryCta: Boolean(checked) }).catch(console.error)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Diferenciais (Features) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Diferenciais (Features)</CardTitle>
+            <CardDescription>
+              Texto da seção e cards de diferenciais exibidos na home.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Título da seção
+                </label>
+                <Input
+                  value={content.featuresTitle}
+                  onChange={(e) =>
+                    updateContent({ featuresTitle: e.target.value }).catch(console.error)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Subtítulo da seção
+                </label>
+                <Textarea
+                  value={content.featuresSubtitle}
+                  onChange={(e) =>
+                    updateContent({ featuresSubtitle: e.target.value }).catch(console.error)
+                  }
+                  rows={2}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Sincronizado com a Home. Se ficar vazio, o subtítulo não aparece na seção.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {content.features.map((feature, index) => (
+                <div
+                  key={feature.id}
+                  className="rounded-lg border border-border p-4 space-y-3"
+                >
+                  <Badge variant="outline" className="text-xs mb-1">
+                    ID: {feature.id}
+                  </Badge>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Título
+                    </label>
+                    <Input
+                      value={feature.title}
+                      onChange={(e) =>
+                        handleFeatureChange(index, "title", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Descrição
+                    </label>
+                    <Textarea
+                      value={feature.description}
+                      onChange={(e) =>
+                        handleFeatureChange(index, "description", e.target.value)
+                      }
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Números (Stats) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Números (Stats)</CardTitle>
+            <CardDescription>
+              Valores e descrições mostrados na seção de resultados.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Título da seção
+              </label>
+              <Input
+                value={content.statsTitle}
+                onChange={(e) =>
+                  updateContent({ statsTitle: e.target.value }).catch(console.error)
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Subtítulo da seção
+              </label>
+              <Textarea
+                value={content.statsSubtitle}
+                onChange={(e) =>
+                  updateContent({ statsSubtitle: e.target.value }).catch(console.error)
+                }
+                rows={2}
+              />
+              <p className="text-xs text-muted-foreground">
+                Sincronizado com a Home. Se ficar vazio, o subtítulo não aparece na seção.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {content.stats.map((stat, index) => (
+                <div
+                  key={stat.id}
+                  className="rounded-lg border border-border p-4 space-y-3"
+                >
+                  <Badge variant="outline" className="text-xs mb-1">
+                    ID: {stat.id}
+                  </Badge>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Valor
+                    </label>
+                    <Input
+                      value={stat.value}
+                      onChange={(e) =>
+                        handleStatChange(index, "value", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Rótulo
+                    </label>
+                    <Input
+                      value={stat.label}
+                      onChange={(e) =>
+                        handleStatChange(index, "label", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Descrição
+                    </label>
+                    <Textarea
+                      value={stat.description}
+                      onChange={(e) =>
+                        handleStatChange(index, "description", e.target.value)
+                      }
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Processo (Steps) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Processo (Passos)</CardTitle>
+            <CardDescription>
+              Passos exibidos na seção &quot;Como funciona o processo?&quot;.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Título da seção
+              </label>
+              <Input
+                value={content.processTitle}
+                onChange={(e) =>
+                  updateContent({ processTitle: e.target.value }).catch(console.error)
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Subtítulo da seção
+              </label>
+              <Textarea
+                value={content.processSubtitle}
+                onChange={(e) =>
+                  updateContent({ processSubtitle: e.target.value }).catch(console.error)
+                }
+                rows={2}
+              />
+              <p className="text-xs text-muted-foreground">
+                Sincronizado com a Home. Se ficar vazio, o subtítulo não aparece na seção.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {content.steps.map((step, index) => (
+                <div
+                  key={step.id}
+                  className="rounded-lg border border-border p-4 space-y-3"
+                >
+                  <Badge variant="outline" className="text-xs mb-1">
+                    Passo {step.number} • ID: {step.id}
+                  </Badge>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Título
+                    </label>
+                    <Input
+                      value={step.title}
+                      onChange={(e) =>
+                        handleStepChange(index, "title", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Descrição
+                    </label>
+                    <Textarea
+                      value={step.description}
+                      onChange={(e) =>
+                        handleStepChange(index, "description", e.target.value)
+                      }
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Texto do botão (opcional)
+                    </label>
+                    <Input
+                      value={step.action || ""}
+                      onChange={(e) =>
+                        handleStepChange(index, "action", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">
+                      Link do botão (opcional)
+                    </label>
+                    <Input
+                      value={step.href || ""}
+                      onChange={(e) =>
+                        handleStepChange(index, "href", e.target.value)
+                      }
+                      placeholder="/catalogo, /lojista/login, /contato..."
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </RetailerLayout>
+  );
+};
+
+export default HomeContentAdmin;

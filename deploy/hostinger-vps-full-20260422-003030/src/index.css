@@ -1,0 +1,225 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.5s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus visible styles */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 8px 16px;
+  text-decoration: none;
+  z-index: 100;
+  border-radius: 4px;
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 210 17% 98%;
+    --foreground: 210 29% 24%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 29% 24%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 29% 24%;
+
+    --primary: 210 100% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 29% 24%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 14% 96%;
+    --muted-foreground: 210 18% 45%;
+
+    --accent: 210 40% 93%;
+    --accent-foreground: 210 100% 35%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 18% 87%;
+    --input: 210 18% 87%;
+    --ring: 210 100% 35%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 210 29% 24%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 210 100% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 93%;
+    --sidebar-accent-foreground: 210 29% 24%;
+    --sidebar-border: 210 25% 35%;
+    --sidebar-ring: 210 100% 35%;
+
+    --chart-1: 210 100% 35%;
+    --chart-2: 142 72% 40%;
+    --chart-3: 210 80% 55%;
+    --chart-4: 142 50% 55%;
+    --chart-5: 210 18% 45%;
+
+    --sidebar: 210 29% 24%;
+
+    --font-heading: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+    --shadow-sm: 0 2px 8px 0 hsl(210 100% 35% / 0.06);
+    --shadow-md: 0 4px 16px 0 hsl(210 100% 35% / 0.10);
+    --shadow-lg: 0 8px 32px 0 hsl(210 100% 35% / 0.14);
+    --shadow-xl: 0 16px 48px 0 hsl(210 100% 35% / 0.18);
+
+    --gradient-hero: linear-gradient(135deg, hsl(210 100% 35%) 0%, hsl(210 100% 25%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(142 72% 40%) 0%, hsl(142 72% 35%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(210 17% 98%) 0%, hsl(210 14% 96%) 100%);
+  }
+
+  .dark {
+    --background: 215 50% 10%;
+    --foreground: 210 50% 98%;
+
+    --card: 215 45% 14%;
+    --card-foreground: 210 50% 98%;
+
+    --popover: 215 45% 14%;
+    --popover-foreground: 210 50% 98%;
+
+    --primary: 210 100% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 95% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 215 40% 20%;
+    --muted-foreground: 210 30% 70%;
+
+    --accent: 210 60% 25%;
+    --accent-foreground: 210 100% 75%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 40% 25%;
+    --input: 215 40% 25%;
+    --ring: 210 100% 55%;
+
+    --sidebar-background: 215 55% 8%;
+    --sidebar-foreground: 210 50% 98%;
+    --sidebar-primary: 30 95% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 60% 25%;
+    --sidebar-accent-foreground: 210 100% 75%;
+    --sidebar-border: 215 40% 20%;
+    --sidebar-ring: 210 100% 55%;
+
+    --chart-1: 210 100% 55%;
+    --chart-2: 30 95% 55%;
+    --chart-3: 210 80% 65%;
+    --chart-4: 30 80% 65%;
+    --chart-5: 210 30% 70%;
+
+    --sidebar: 215 55% 8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

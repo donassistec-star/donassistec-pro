@@ -1,6 +1,7 @@
 import { Smartphone, Mail, Phone, MapPin, Instagram, Facebook, Youtube, Linkedin, Twitter } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSettings } from "@/hooks/useSettings";
+import { getPublicContactInfo } from "@/utils/publicContact";
 
 const Footer = () => {
   const { settings, loading } = useSettings();
@@ -9,20 +10,33 @@ const Footer = () => {
     return null; // Retorna null durante o carregamento para evitar flash de conteúdo
   }
 
-  const contactPhone = settings?.contactPhone || "(11) 99999-9999";
-  const contactPhoneRaw = settings?.contactPhoneRaw || "5511999999999";
-  const contactEmail = settings?.contactEmail || "contato@donassistec.com.br";
-  const contactAddress = settings?.contactAddress || "São Paulo - SP";
+  const {
+    contactPhone,
+    contactPhoneRaw,
+    contactEmail,
+    contactAddress,
+    contactCityState,
+    contactCep,
+    mapsQuery,
+    hasPhone,
+    hasAddress,
+  } = getPublicContactInfo(settings);
+  const mapsEmbedUrl = hasAddress
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(mapsQuery || contactAddress)}&output=embed`
+    : "";
+  const mapsExternalUrl = hasAddress
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery || contactAddress)}`
+    : "";
   const showCompanyTradeName = (settings?.showCompanyTradeNameFooter ?? settings?.showCompanyTradeName) !== false;
   const showCompanySlogan = settings?.showCompanySloganFooter !== false;
 
   return (
-    <footer className="bg-foreground pt-16 pb-8">
+    <footer className="border-t border-white/10 bg-slate-950/95 pb-8 pt-12 sm:pt-16 text-slate-100">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        <div className="mb-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3 lg:gap-10">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="mb-4 flex items-center gap-2">
               {settings?.brandingLogoUrl ? (
                 <img
                   src={settings.brandingLogoUrl}
@@ -54,7 +68,7 @@ const Footer = () => {
                     const rest = words.slice(1).join(' ');
                     return (
                       <>
-                        <span className="text-xl font-bold text-card">{first}</span>
+                        <span className="text-xl font-bold text-white">{first}</span>
                         {rest ? <span className="text-xl font-bold text-primary"> {rest}</span> : null}
                       </>
                     );
@@ -62,7 +76,7 @@ const Footer = () => {
                 </div>
               ) : null}
             </div>
-            <p className="text-card/70 mb-4">
+            <p className="mb-4 text-slate-300">
               {settings?.companyDescription || 
                 "Laboratório premium de reconstrução de telas e revenda de peças para lojistas e assistências técnicas."}
             </p>
@@ -71,29 +85,29 @@ const Footer = () => {
                 {settings.companySlogan}
               </p>
             )}
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               {settings?.socialInstagram && (
-                <a href={settings.socialInstagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors">
+                <a href={settings.socialInstagram} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-primary hover:text-primary-foreground">
                   <Instagram className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialFacebook && (
-                <a href={settings.socialFacebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors">
+                <a href={settings.socialFacebook} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-primary hover:text-primary-foreground">
                   <Facebook className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialYoutube && (
-                <a href={settings.socialYoutube} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors">
+                <a href={settings.socialYoutube} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-primary hover:text-primary-foreground">
                   <Youtube className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialLinkedin && (
-                <a href={settings.socialLinkedin} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors">
+                <a href={settings.socialLinkedin} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-primary hover:text-primary-foreground">
                   <Linkedin className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialTwitter && (
-                <a href={settings.socialTwitter} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-card/10 flex items-center justify-center text-card/70 hover:bg-primary hover:text-primary-foreground transition-colors">
+                <a href={settings.socialTwitter} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-primary hover:text-primary-foreground">
                   <Twitter className="w-5 h-5" />
                 </a>
               )}
@@ -102,61 +116,78 @@ const Footer = () => {
 
           {/* Services */}
           <div>
-            <h4 className="font-semibold text-card mb-4">Serviços</h4>
+            <h4 className="mb-4 font-semibold text-white">Serviços</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-card/70 hover:text-primary transition-colors">Reconstrução de Telas</a></li>
-              <li><a href="#" className="text-card/70 hover:text-primary transition-colors">Troca de Vidro</a></li>
-              <li><a href="#" className="text-card/70 hover:text-primary transition-colors">Revenda de Peças</a></li>
-              <li><a href="#" className="text-card/70 hover:text-primary transition-colors">Peças Apple</a></li>
-              <li><a href="#" className="text-card/70 hover:text-primary transition-colors">Peças Samsung</a></li>
+              <li><a href="#" className="text-slate-300 transition-colors hover:text-primary">Reconstrução de Telas</a></li>
+              <li><a href="#" className="text-slate-300 transition-colors hover:text-primary">Troca de Vidro</a></li>
+              <li><a href="#" className="text-slate-300 transition-colors hover:text-primary">Revenda de Peças</a></li>
+              <li><a href="#" className="text-slate-300 transition-colors hover:text-primary">Peças Apple</a></li>
+              <li><a href="#" className="text-slate-300 transition-colors hover:text-primary">Peças Samsung</a></li>
             </ul>
           </div>
 
           {/* Contact */}
           <div>
-            <h4 className="font-semibold text-card mb-4">Contato</h4>
+            <h4 className="mb-4 font-semibold text-white">Contato</h4>
             <ul className="space-y-4">
-              <li className="flex items-center gap-3 text-card/70">
-                <Phone className="w-5 h-5 text-primary" />
-                <a href={`tel:${contactPhoneRaw}`} className="hover:text-primary transition-colors">
-                  {contactPhone}
-                </a>
-              </li>
-              <li className="flex items-center gap-3 text-card/70">
+              {hasPhone ? (
+                <li className="flex items-center gap-3 text-slate-300">
+                  <Phone className="w-5 h-5 text-primary" />
+                  <a href={`tel:${contactPhoneRaw}`} className="hover:text-primary transition-colors">
+                    {contactPhone}
+                  </a>
+                </li>
+              ) : null}
+              <li className="flex items-center gap-3 text-slate-300">
                 <Mail className="w-5 h-5 text-primary" />
                 <a href={`mailto:${contactEmail}`} className="hover:text-primary transition-colors">
                   {contactEmail}
                 </a>
               </li>
-              <li className="flex items-start gap-3 text-card/70">
-                <MapPin className="w-5 h-5 text-primary shrink-0" />
-                {contactAddress}
-              </li>
+              {hasAddress ? (
+                <li className="flex items-start gap-3 text-slate-300">
+                  <MapPin className="w-5 h-5 text-primary shrink-0" />
+                  <a
+                    href={mapsExternalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary transition-colors"
+                  >
+                    <span className="block">{contactAddress}</span>
+                    {contactCityState ? <span className="block text-sm text-slate-400">{contactCityState}</span> : null}
+                    {contactCep ? (
+                      <span className="block text-sm text-slate-400">CEP: {contactCep}</span>
+                    ) : null}
+                  </a>
+                </li>
+              ) : null}
             </ul>
-            <div className="mt-4">
-              <iframe
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(contactAddress)}&output=embed`}
-                width="100%"
-                height="200"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Mapa da localização"
-              ></iframe>
-            </div>
+            {hasAddress ? (
+              <div className="mt-4">
+                <iframe
+                  src={mapsEmbedUrl}
+                  width="100%"
+                  height="180"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Mapa da localização"
+                ></iframe>
+              </div>
+            ) : null}
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-card/10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-card/50 text-sm">
+        <div className="border-t border-white/10 pt-8">
+          <div className="flex flex-col items-start justify-between gap-4 text-left md:flex-row md:items-center">
+            <p className="text-sm text-slate-400">
               © 2025 DonAssistec. Todos os direitos reservados.
             </p>
-            <div className="flex gap-6 text-sm">
-              <Link to="/privacidade" className="text-card/50 hover:text-primary transition-colors">Política de Privacidade</Link>
-              <Link to="/termos" className="text-card/50 hover:text-primary transition-colors">Termos de Uso</Link>
+            <div className="flex flex-col gap-3 text-sm sm:flex-row sm:gap-6">
+              <Link to="/privacidade" className="text-slate-400 transition-colors hover:text-primary">Política de Privacidade</Link>
+              <Link to="/termos" className="text-slate-400 transition-colors hover:text-primary">Termos de Uso</Link>
             </div>
           </div>
         </div>

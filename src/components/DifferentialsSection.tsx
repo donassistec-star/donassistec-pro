@@ -36,16 +36,16 @@ const differentials = [
 
 const DifferentialsSection = () => {
   return (
-    <section id="diferenciais" className="py-20 bg-foreground">
+    <section id="diferenciais" className="bg-transparent py-20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <Badge className="mb-4 bg-primary/20 text-primary border-primary/30">
+          <Badge className="mb-4 border-sky-400/30 bg-sky-500/15 text-sky-100">
             Por que a DonAssistec?
           </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold text-card mb-4">
+          <h2 className="mb-4 text-3xl font-bold text-slate-50 md:text-4xl">
             Diferenciais que <span className="text-secondary">Fazem a Diferença</span>
           </h2>
-          <p className="text-lg text-card/70 max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-lg text-slate-300">
             Infraestrutura completa e atendimento exclusivo para lojistas 
             e assistências técnicas parceiras.
           </p>
@@ -55,13 +55,13 @@ const DifferentialsSection = () => {
           {differentials.map((item) => (
             <div
               key={item.title}
-              className="group p-6 rounded-2xl bg-card/5 border border-card/10 hover:bg-card/10 hover:border-primary/30 transition-all duration-300"
+              className="group rounded-2xl border border-white/10 bg-white/[0.04] p-6 shadow-[0_18px_48px_rgba(2,8,23,0.18)] backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-primary/30"
             >
               <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/30 transition-colors">
                 <item.icon className="w-7 h-7 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold text-card mb-2">{item.title}</h3>
-              <p className="text-card/70">{item.description}</p>
+              <h3 className="mb-2 text-xl font-semibold text-slate-50">{item.title}</h3>
+              <p className="text-slate-300">{item.description}</p>
             </div>
           ))}
         </div>

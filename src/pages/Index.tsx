@@ -16,7 +16,7 @@ const Index = () => {
   const { content } = useHomeContent();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="home-dark-preview min-h-screen bg-background text-foreground">
       <Header />
       <main id="main-content">
         {content.showHero !== false && <HeroSection />}

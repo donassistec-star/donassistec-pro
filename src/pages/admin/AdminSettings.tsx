@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { 
+import {
   Settings as SettingsIcon, 
   Save,
   Mail,
@@ -122,7 +123,6 @@ const AdminSettings = () => {
     settings.companyDescription?.trim() ||
     "Laboratório premium de reconstrução de telas e revenda de peças para lojistas e assistências técnicas.";
   const companySloganPreview = settings.companySlogan?.trim() || "";
-
   useEffect(() => {
     loadSettings();
   }, []);
@@ -1543,240 +1543,33 @@ const AdminSettings = () => {
                       Página Ajuda
                     </CardTitle>
                     <CardDescription>
-                      Edite o conteúdo da página <code>/ajuda</code> e a lista de FAQs.
+                      A edição da página <code>/ajuda</code> agora fica em uma tela própria para facilitar a gestão de FAQs e conteúdos.
                     </CardDescription>
                   </div>
                   <Button variant="outline" asChild>
-                    <a href="/ajuda" target="_blank" rel="noopener noreferrer">
-                      Abrir Página
-                    </a>
+                    <Link to="/admin/ajuda">Abrir Editor da Ajuda</Link>
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="helpHeroBadge">Badge</Label>
-                    <Input
-                      id="helpHeroBadge"
-                      value={settings.helpHeroBadge || ""}
-                      onChange={(e) => setSettings({ ...settings, helpHeroBadge: e.target.value })}
-                      placeholder="Central de Ajuda"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="helpHeroTitle">Título Principal</Label>
-                    <Input
-                      id="helpHeroTitle"
-                      value={settings.helpHeroTitle || ""}
-                      onChange={(e) => setSettings({ ...settings, helpHeroTitle: e.target.value })}
-                      placeholder="Como Podemos Ajudar?"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="helpHeroDescription">Descrição Principal</Label>
-                  <Textarea
-                    id="helpHeroDescription"
-                    value={settings.helpHeroDescription || ""}
-                    onChange={(e) => setSettings({ ...settings, helpHeroDescription: e.target.value })}
-                    rows={2}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="helpSearchPlaceholder">Placeholder da Busca</Label>
-                  <Input
-                    id="helpSearchPlaceholder"
-                    value={settings.helpSearchPlaceholder || ""}
-                    onChange={(e) => setSettings({ ...settings, helpSearchPlaceholder: e.target.value })}
-                    placeholder="Buscar perguntas frequentes..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="helpBackLabel">Texto do botão voltar</Label>
-                  <Input
-                    id="helpBackLabel"
-                    value={settings.helpBackLabel || ""}
-                    onChange={(e) => setSettings({ ...settings, helpBackLabel: e.target.value })}
-                    placeholder="Voltar para Home"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="helpFaqItems">Perguntas Frequentes</Label>
-                  <Textarea
-                    id="helpFaqItems"
-                    value={settings.helpFaqItems || ""}
-                    onChange={(e) => setSettings({ ...settings, helpFaqItems: e.target.value })}
-                    placeholder={"Geral|Como faço um pedido?|Acesse o catálogo e envie seu orçamento.\nLojistas|Como acompanho meu pedido?|Na área do lojista, acesse Pedidos."}
-                    rows={8}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Uma FAQ por linha no formato <code>Categoria|Pergunta|Resposta</code>.
+                <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+                  <p className="text-sm font-medium text-foreground">
+                    O conteúdo da Ajuda foi movido para uma tela especializada.
                   </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="helpNoResultsTitle">Título sem resultado</Label>
-                    <Input
-                      id="helpNoResultsTitle"
-                      value={settings.helpNoResultsTitle || ""}
-                      onChange={(e) => setSettings({ ...settings, helpNoResultsTitle: e.target.value })}
-                      placeholder="Nenhum resultado encontrado"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="helpNoResultsDescription">Descrição sem resultado</Label>
-                    <Textarea
-                      id="helpNoResultsDescription"
-                      value={settings.helpNoResultsDescription || ""}
-                      onChange={(e) => setSettings({ ...settings, helpNoResultsDescription: e.target.value })}
-                      rows={2}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="helpNoResultsButtonLabel">Botão sem resultado</Label>
-                    <Input
-                      id="helpNoResultsButtonLabel"
-                      value={settings.helpNoResultsButtonLabel || ""}
-                      onChange={(e) => setSettings({ ...settings, helpNoResultsButtonLabel: e.target.value })}
-                      placeholder="Falar no WhatsApp"
-                    />
+                  <p className="text-sm text-muted-foreground">
+                    Agora você pode gerenciar hero, mensagens sem resultado, cards de contato e FAQs em um editor dedicado, com organização melhor e menos ruído dentro de Configurações.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button asChild>
+                      <Link to="/admin/ajuda">Abrir Editor da Ajuda</Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <a href="/ajuda" target="_blank" rel="noopener noreferrer">
+                        Visualizar Página Pública
+                      </a>
+                    </Button>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="helpContactTitle">Título do bloco final</Label>
-                    <Input
-                      id="helpContactTitle"
-                      value={settings.helpContactTitle || ""}
-                      onChange={(e) => setSettings({ ...settings, helpContactTitle: e.target.value })}
-                      placeholder="Ainda Precisa de Ajuda?"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="helpContactDescription">Descrição do bloco final</Label>
-                    <Textarea
-                      id="helpContactDescription"
-                      value={settings.helpContactDescription || ""}
-                      onChange={(e) => setSettings({ ...settings, helpContactDescription: e.target.value })}
-                      rows={2}
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-border p-4 space-y-4">
-                  <div className="space-y-1">
-                    <Label className="text-sm font-medium text-foreground">
-                      Cards de suporte
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Controle os títulos, descrições e textos dos botões exibidos no final da página Ajuda.
-                    </p>
-                  </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="helpWhatsappTitle">Título do card WhatsApp</Label>
-                    <Input
-                      id="helpWhatsappTitle"
-                      value={settings.helpWhatsappTitle || ""}
-                      onChange={(e) => setSettings({ ...settings, helpWhatsappTitle: e.target.value })}
-                      placeholder="WhatsApp"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="helpPhoneTitle">Título do card Telefone</Label>
-                    <Input
-                      id="helpPhoneTitle"
-                      value={settings.helpPhoneTitle || ""}
-                      onChange={(e) => setSettings({ ...settings, helpPhoneTitle: e.target.value })}
-                      placeholder="Telefone"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="helpEmailTitle">Título do card E-mail</Label>
-                    <Input
-                      id="helpEmailTitle"
-                      value={settings.helpEmailTitle || ""}
-                      onChange={(e) => setSettings({ ...settings, helpEmailTitle: e.target.value })}
-                      placeholder="E-mail"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="helpWhatsappDescription">Descrição do card WhatsApp</Label>
-                    <Textarea
-                      id="helpWhatsappDescription"
-                      value={settings.helpWhatsappDescription || ""}
-                      onChange={(e) => setSettings({ ...settings, helpWhatsappDescription: e.target.value })}
-                      rows={2}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="helpWhatsappLabel">Botão WhatsApp</Label>
-                    <Input
-                      id="helpWhatsappLabel"
-                      value={settings.helpWhatsappLabel || ""}
-                      onChange={(e) => setSettings({ ...settings, helpWhatsappLabel: e.target.value })}
-                      placeholder="Abrir Chat"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="helpPhoneLabel">Botão Telefone</Label>
-                    <Input
-                      id="helpPhoneLabel"
-                      value={settings.helpPhoneLabel || ""}
-                      onChange={(e) => setSettings({ ...settings, helpPhoneLabel: e.target.value })}
-                      placeholder="Ligar Agora"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="helpEmailLabel">Botão E-mail</Label>
-                    <Input
-                      id="helpEmailLabel"
-                      value={settings.helpEmailLabel || ""}
-                      onChange={(e) => setSettings({ ...settings, helpEmailLabel: e.target.value })}
-                      placeholder="Enviar E-mail"
-                    />
-                  </div>
-                </div>
-                </div>
-
-                <Button
-                  onClick={() =>
-                    handleSave("help-page", {
-                      helpHeroBadge: settings.helpHeroBadge,
-                      helpHeroTitle: settings.helpHeroTitle,
-                      helpHeroDescription: settings.helpHeroDescription,
-                      helpSearchPlaceholder: settings.helpSearchPlaceholder,
-                      helpFaqItems: settings.helpFaqItems,
-                      helpBackLabel: settings.helpBackLabel,
-                      helpNoResultsTitle: settings.helpNoResultsTitle,
-                      helpNoResultsDescription: settings.helpNoResultsDescription,
-                      helpNoResultsButtonLabel: settings.helpNoResultsButtonLabel,
-                      helpContactTitle: settings.helpContactTitle,
-                      helpContactDescription: settings.helpContactDescription,
-                      helpWhatsappTitle: settings.helpWhatsappTitle,
-                      helpWhatsappDescription: settings.helpWhatsappDescription,
-                      helpWhatsappLabel: settings.helpWhatsappLabel,
-                      helpPhoneTitle: settings.helpPhoneTitle,
-                      helpPhoneLabel: settings.helpPhoneLabel,
-                      helpEmailTitle: settings.helpEmailTitle,
-                      helpEmailLabel: settings.helpEmailLabel,
-                    })
-                  }
-                  disabled={saving}
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {saving ? "Salvando..." : "Salvar Página Ajuda"}
-                </Button>
               </CardContent>
             </Card>
 

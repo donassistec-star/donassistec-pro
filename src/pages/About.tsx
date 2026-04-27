@@ -18,6 +18,7 @@ import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { useSettings } from "@/hooks/useSettings";
 import { validation } from "@/utils/validation";
+import { getPublicContactInfo } from "@/utils/publicContact";
 
 const About = () => {
   const { settings } = useSettings();
@@ -95,37 +96,35 @@ const About = () => {
   const aboutValues = values.length > 0 ? values : defaultValues;
   const aboutStats = stats.length > 0 ? stats : defaultStats;
   const aboutAchievements = achievements.length > 0 ? achievements : defaultAchievements;
-  const aboutWhatsappUrl = validation.generateWhatsAppUrl(
-    settings?.contactWhatsApp || settings?.whatsappNumber || "5511999999999",
-    settings?.whatsappContactMessage || "Olá! Gostaria de falar com a equipe da DonAssistec."
-  );
+  const { contactWhatsappRaw, whatsappMessage, hasWhatsApp } = getPublicContactInfo(settings);
+  const aboutWhatsappUrl = validation.generateWhatsAppUrl(contactWhatsappRaw, whatsappMessage);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="pt-20">
+      <main id="main-content" className="pt-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary to-primary/80 py-20">
+        <section className="bg-gradient-to-br from-primary to-primary/80 py-14 sm:py-20">
           <div className="container mx-auto px-4 text-center">
             <Badge className="mb-4 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">
               {settings?.aboutHeroBadge || "Sobre Nós"}
             </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6">
+            <h1 className="mb-6 text-3xl font-bold text-primary-foreground sm:text-4xl md:text-5xl">
               {settings?.aboutHeroTitle || "DonAssistec"}
             </h1>
-            <p className="text-xl text-primary-foreground/90 max-w-3xl mx-auto mb-8">
+            <p className="mx-auto mb-8 max-w-3xl text-base text-primary-foreground/90 sm:text-lg md:text-xl">
               {settings?.aboutHeroDescription ||
                 "Especialistas em reconstrução de telas e revenda de peças para lojistas e assistências técnicas. Transformando desafios técnicos em soluções de alta qualidade."}
             </p>
-            <div className="flex gap-4 justify-center">
+            <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
               <Link to="/catalogo">
-                <Button size="lg" variant="secondary">
+                <Button size="lg" variant="secondary" className="w-full sm:w-auto">
                   {settings?.aboutHeroPrimaryLabel || "Explorar Catálogo"}
                 </Button>
               </Link>
               <Link to="/contato">
-                <Button size="lg" variant="outline" className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground hover:text-primary gap-2">
+                <Button size="lg" variant="outline" className="w-full gap-2 border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground hover:text-primary sm:w-auto">
                   <MessageCircle className="w-5 h-5" />
                   {settings?.aboutHeroSecondaryLabel || "Falar Conosco"}
                 </Button>
@@ -135,11 +134,11 @@ const About = () => {
         </section>
 
         {/* Mission & Vision */}
-        <section className="py-20">
+        <section className="py-12 sm:py-20">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 md:gap-12">
               <Card>
-                <CardContent className="p-8">
+                <CardContent className="p-6 sm:p-8">
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
                     <Target className="w-8 h-8 text-primary" />
                   </div>
@@ -152,7 +151,7 @@ const About = () => {
               </Card>
 
               <Card>
-                <CardContent className="p-8">
+                <CardContent className="p-6 sm:p-8">
                   <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mb-6">
                     <TrendingUp className="w-8 h-8 text-secondary" />
                   </div>
@@ -168,18 +167,18 @@ const About = () => {
         </section>
 
         {/* Stats */}
-        <section className="py-20 bg-muted/30">
+        <section className="bg-muted/30 py-12 sm:py-20">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+            <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4 md:gap-8">
               {aboutStats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
                   <Card key={index} className="text-center">
-                    <CardContent className="p-6">
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                        <Icon className="w-8 h-8 text-primary" />
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 sm:h-16 sm:w-16">
+                        <Icon className="h-6 w-6 text-primary sm:h-8 sm:w-8" />
                       </div>
-                      <div className="text-4xl font-bold text-foreground mb-2">
+                      <div className="mb-2 text-2xl font-bold text-foreground sm:text-4xl">
                         {stat.value}
                       </div>
                       <p className="text-sm text-muted-foreground">{stat.label}</p>
@@ -192,7 +191,7 @@ const About = () => {
         </section>
 
         {/* Values */}
-        <section className="py-20">
+        <section className="py-12 sm:py-20">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -203,12 +202,12 @@ const About = () => {
                   "Princípios que guiam nosso trabalho diário e nossa relação com parceiros e clientes."}
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
               {aboutValues.map((value, index) => {
                 const Icon = value.icon;
                 return (
                   <Card key={index} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6 text-center">
+                    <CardContent className="p-5 text-center sm:p-6">
                       <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                         <Icon className="w-7 h-7 text-primary" />
                       </div>
@@ -223,13 +222,13 @@ const About = () => {
         </section>
 
         {/* Achievements */}
-        <section className="py-20 bg-gradient-to-br from-muted/50 to-background">
+        <section className="bg-gradient-to-br from-muted/50 to-background py-12 sm:py-20">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
               <Card>
-                <CardContent className="p-8">
+                <CardContent className="p-5 sm:p-8">
                   <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-foreground mb-4 flex items-center justify-center gap-2">
+                    <h2 className="mb-4 flex flex-col items-center justify-center gap-2 text-2xl font-bold text-foreground sm:flex-row sm:text-3xl">
                       <Award className="w-8 h-8 text-primary" />
                       {settings?.aboutAchievementsTitle || "Reconhecimentos e Certificações"}
                     </h2>
@@ -237,7 +236,7 @@ const About = () => {
                       {settings?.aboutAchievementsDescription || "Comprometidos com qualidade e excelência em tudo que fazemos"}
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {aboutAchievements.map((achievement, index) => (
                       <div
                         key={index}
@@ -255,28 +254,30 @@ const About = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 bg-primary text-primary-foreground">
+        <section className="bg-primary py-12 sm:py-20 text-primary-foreground">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               {settings?.aboutCtaTitle || "Quer Ser Nosso Parceiro?"}
             </h2>
-            <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
+            <p className="mx-auto mb-8 max-w-2xl text-base opacity-90 sm:text-xl">
               {settings?.aboutCtaDescription ||
                 "Junte-se a centenas de lojistas que confiam na DonAssistec para suas necessidades de reparo e peças."}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/lojista/login">
-                <Button size="lg" variant="secondary" className="gap-2">
+                <Button size="lg" variant="secondary" className="w-full gap-2 sm:w-auto">
                   {settings?.aboutCtaPrimaryLabel || "Criar Conta de Lojista"}
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <a href={aboutWhatsappUrl} target="_blank" rel="noopener noreferrer">
-                <Button size="lg" variant="outline" className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground hover:text-primary gap-2">
-                  <MessageCircle className="w-5 h-5" />
-                  {settings?.aboutCtaSecondaryLabel || "Falar no WhatsApp"}
-                </Button>
-              </a>
+              {hasWhatsApp ? (
+                <a href={aboutWhatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <Button size="lg" variant="outline" className="w-full gap-2 border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground hover:text-primary sm:w-auto">
+                    <MessageCircle className="w-5 h-5" />
+                    {settings?.aboutCtaSecondaryLabel || "Falar no WhatsApp"}
+                  </Button>
+                </a>
+              ) : null}
             </div>
           </div>
         </section>

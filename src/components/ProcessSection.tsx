@@ -27,7 +27,7 @@ const ProcessSection = () => {
   const processSubtitle = content.processSubtitle?.trim();
 
   return (
-    <section className="py-20 bg-background">
+    <section className="bg-transparent py-20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <Badge variant="outline" className="mb-4">
@@ -52,7 +52,7 @@ const ProcessSection = () => {
               
               return (
                 <div key={step.id} className="relative">
-                  <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border group">
+                  <Card className="group h-full border-white/10 bg-card/82 shadow-[0_18px_48px_rgba(2,8,23,0.16)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-[0_24px_60px_rgba(14,165,233,0.14)]">
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4 mb-4">
                         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
