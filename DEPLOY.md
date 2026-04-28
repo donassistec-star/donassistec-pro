@@ -99,15 +99,37 @@ Após o deploy, você pode acessar:
 - **Frontend**: http://localhost:8200
 - **Backend API**: http://localhost:3001
 - **Health Check**: http://localhost:3001/health
-- **phpMyAdmin**: http://localhost:8081
+- **phpMyAdmin local**: http://127.0.0.1:8081
 
 ## 🗄️ Banco de Dados
 
 ### Acessar via phpMyAdmin
 
-1. Acesse http://localhost:8081
+Configuração atual do projeto:
+
+- O container `phpmyadmin` publica a porta `80` interna em `127.0.0.1:8081`
+- Isso significa que o acesso direto fica disponível apenas no próprio servidor
+- O container usa `PMA_HOST=mysql` e se conecta ao MySQL interno da stack Docker
+
+**Acesso local no servidor:**
+
+1. Acesse `http://127.0.0.1:8081`
 2. Usuário: `root`
 3. Senha: (valor de `MYSQL_ROOT_PASSWORD` no `.env`)
+
+**Opcional para acesso externo protegido:**
+
+Existe um proxy dedicado em [nginx-phpmyadmin-secure.conf](/home/DonAssistec/nginx-phpmyadmin-secure.conf:1) com:
+
+- `http://SEU_HOST:8083` redirecionando para `https://SEU_HOST:8443`
+- autenticação básica via arquivo `nginx-phpmyadmin.htpasswd`
+- proxy reverso para `http://127.0.0.1:8081`
+
+Importante:
+
+- a porta `8081` não deve ser exposta publicamente
+- a senha do Basic Auth não deve ser documentada no repositório
+- se for liberar acesso externo, prefira restringir por IP e usar HTTPS válido
 
 ### Acessar via linha de comando
 
@@ -154,6 +176,19 @@ sudo ln -sf /etc/nginx/sites-available/donassistec /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 ```
+
+**Recuperação rápida se o domínio retornar `ERR_CONNECTION_REFUSED`:**
+
+```bash
+sudo systemctl status nginx
+sudo nginx -t
+sudo systemctl start nginx
+sudo systemctl enable nginx
+curl -k -I https://127.0.0.1
+curl -k https://127.0.0.1/health
+```
+
+Se o `nginx` aparecer como `inactive (dead)`, o domínio pode recusar conexão mesmo com backend e frontend ainda rodando no PM2.
 
 **Página de download do APK:** a rota **https://donassistec.com.br/apk** exibe a página para baixar o app Android. Para o link funcionar, o build do frontend deve incluir a página `/apk` e, em produção, o nginx deve estar com o fallback SPA (acima). Para o botão de download servir o arquivo, coloque o APK em `public/DonAssistec.apk` no frontend antes do deploy (veja `docs/APK.md`).
 
@@ -227,6 +262,51 @@ docker-compose logs --tail=100
 ```
 
 ## 🚨 Troubleshooting
+
+### Domínio com `ERR_CONNECTION_REFUSED`
+
+Se `https://donassistec.com.br` não abrir e o navegador mostrar `ERR_CONNECTION_REFUSED`, verifique nesta ordem:
+
+```bash
+sudo systemctl status nginx
+curl -s http://127.0.0.1:3001/health
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8200/
+curl -k -I https://127.0.0.1
+```
+
+Interpretação rápida:
+
+- Backend `200` e frontend `200`, mas domínio recusando conexão: o suspeito principal é o `nginx` parado ou porta 80/443 bloqueada.
+- `nginx` inativo: execute `sudo nginx -t && sudo systemctl start nginx`.
+- HTTPS local funcionando em `https://127.0.0.1`, mas domínio ainda falhando: revisar DNS, firewall e balanceador/proxy externo.
+
+### phpMyAdmin
+
+Estado atual do acesso:
+
+- acesso direto apenas por `http://127.0.0.1:8081`
+- não exposto diretamente no domínio principal
+- opção de proxy protegido em `8083/8443` com `nginx-phpmyadmin-secure.conf`
+
+Validação rápida:
+
+```bash
+docker-compose ps
+curl -I http://127.0.0.1:8081
+```
+
+Se quiser publicar externamente com proteção:
+
+```bash
+docker run --name phpmyadmin-proxy \
+  -p 8083:8083 -p 8443:8443 \
+  -v /home/DonAssistec/nginx-phpmyadmin-secure.conf:/etc/nginx/nginx.conf:ro \
+  -v /home/DonAssistec/nginx-phpmyadmin.htpasswd:/home/DonAssistec/nginx-phpmyadmin.htpasswd:ro \
+  -v /home/DonAssistec/nginx-ssl.crt:/home/DonAssistec/nginx-ssl.crt:ro \
+  -v /home/DonAssistec/nginx-ssl.key:/home/DonAssistec/nginx-ssl.key:ro \
+  --network host \
+  nginx:alpine
+```
 
 ### Backend não conecta ao MySQL
 

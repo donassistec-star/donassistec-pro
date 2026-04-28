@@ -15,6 +15,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### 📚 Documentação
 
 - **BACKEND_API.md**: observação sobre compatibilidade do `PUT /api/retailer-price-tables/admin/:slug` com bancos ainda sem migrations 35/36 aplicadas
+- **docs/VERIFICAR-SERVIDOR.md** e **DEPLOY.md**: troubleshooting para `ERR_CONNECTION_REFUSED` quando o `nginx` estiver `inactive (dead)`, com sequência de validação e recuperação
+- **DEPLOY.md**, **DATABASE_CONFIG.md**, **database/README.md** e **README_DEPLOY.md**: documentação do acesso atual ao phpMyAdmin via `127.0.0.1:8081` e da opção de proxy protegido com `nginx-phpmyadmin-secure.conf`
 
 ## [1.5.0] - 2026-03-27
 

@@ -2,6 +2,37 @@
 
 Quando o navegador mostra **"A conexão com donassistec.com.br foi recusada"** (ERR_CONNECTION_REFUSED), algo na **VPS/servidor** ou na **rede** está impedindo o acesso.
 
+## Caso real registrado
+
+Em **2026-04-28**, o domínio `https://donassistec.com.br` ficou indisponível com `ERR_CONNECTION_REFUSED` porque o serviço **nginx** estava **`inactive (dead)`** no servidor.
+
+Diagnóstico confirmado:
+
+```bash
+sudo systemctl status nginx
+```
+
+Saída observada:
+
+- `Active: inactive (dead)`
+
+Correção aplicada:
+
+```bash
+sudo nginx -t
+sudo systemctl start nginx
+sudo systemctl status nginx --no-pager
+curl -k -I https://127.0.0.1
+curl -k https://127.0.0.1/health
+```
+
+Resultado esperado após a correção:
+
+- `nginx -t` sem erros
+- `systemctl status nginx` com `active (running)`
+- `https://127.0.0.1` respondendo `200`
+- `https://127.0.0.1/health` respondendo `200`
+
 ## Checklist no servidor (SSH)
 
 Conecte por SSH no servidor (ex.: `177.67.32.204` ou o IP onde donassistec.com.br aponta) e confira:
@@ -16,8 +47,14 @@ sudo systemctl status nginx
 
 - Se estiver **inativo (inactive)**:
   ```bash
+  sudo nginx -t
   sudo systemctl start nginx
   sudo systemctl enable nginx
+  ```
+- Se o site usa HTTPS, valide também com:
+  ```bash
+  curl -k -I https://127.0.0.1
+  curl -k https://127.0.0.1/health
   ```
 
 ---
@@ -147,5 +184,9 @@ E no `nginx-vps.conf` o `proxy_pass` deve apontar para os IPs/portas que o Docke
 3. `curl -s http://127.0.0.1:8200/` e `curl -s http://127.0.0.1:3001/health` → ambos respondendo  
 4. `ufw` → portas 80 e 443 liberadas  
 5. DNS de donassistec.com.br apontando para o IP da VPS  
+
+Se o domínio usa SSL, acrescente antes do teste no navegador:
+
+6. `curl -k -I https://127.0.0.1` e `curl -k https://127.0.0.1/health` → HTTPS local respondendo
 
 Quando isso estiver certo, **http://donassistec.com.br/admin/login** deve abrir (a menos que haja bloqueio de rede no seu provedor ou empresa).

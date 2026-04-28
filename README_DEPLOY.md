@@ -13,13 +13,13 @@ docker-compose up -d
 # 3. Acesse a aplicação
 # Frontend: http://localhost:8200
 # Backend: http://localhost:3001
-# phpMyAdmin: http://localhost:8081
+# phpMyAdmin local: http://127.0.0.1:8081
 ```
 
 ## 📦 Serviços
 
 - **MySQL** (porta 3307) - Banco de dados
-- **phpMyAdmin** (porta 8081) - Interface web do MySQL
+- **phpMyAdmin** (`127.0.0.1:8081`) - Interface web do MySQL restrita ao host local
 - **Backend API** (porta 3001) - API Node.js/Express
 - **Frontend** (porta 8200) - Aplicação React/Vite
 

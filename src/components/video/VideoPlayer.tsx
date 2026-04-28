@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
+import { ExternalLink, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { resolveMediaEmbed } from "@/utils/mediaEmbed";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -21,43 +22,7 @@ const VideoPlayer = ({ videoUrl, title, thumbnail, trigger, className }: VideoPl
     videoUrl.includes("instagram.com/tv/");
 
   const isVerticalYoutube = videoUrl.includes("youtube.com/shorts/");
-
-  // Converte URL do YouTube para formato embed se necessário
-  const getEmbedUrl = (url: string) => {
-    if (url.includes("youtube.com/watch?v=")) {
-      const videoId = url.split("v=")[1].split("&")[0];
-      return `https://www.youtube.com/embed/${videoId}`;
-    }
-    if (url.includes("youtu.be/")) {
-      const videoId = url.split("youtu.be/")[1].split("?")[0];
-      return `https://www.youtube.com/embed/${videoId}`;
-    }
-    if (url.includes("youtube.com/shorts/")) {
-      const videoId = url.split("youtube.com/shorts/")[1].split("?")[0];
-      return `https://www.youtube.com/embed/${videoId}`;
-    }
-    if (url.includes("embed/")) {
-      return url;
-    }
-
-    if (
-      url.includes("instagram.com/reel/") ||
-      url.includes("instagram.com/p/") ||
-      url.includes("instagram.com/tv/")
-    ) {
-      try {
-        const parsed = new URL(url);
-        const cleanPath = parsed.pathname.replace(/\/$/, "");
-        return `https://www.instagram.com${cleanPath}/embed`;
-      } catch {
-        return url;
-      }
-    }
-
-    return url;
-  };
-
-  const embedUrl = getEmbedUrl(videoUrl);
+  const media = resolveMediaEmbed(videoUrl);
   const isVerticalVideo = isInstagramEmbed || isVerticalYoutube;
 
   const defaultTrigger = (
@@ -103,14 +68,39 @@ const VideoPlayer = ({ videoUrl, title, thumbnail, trigger, className }: VideoPl
               isVerticalVideo ? "aspect-[9/16] max-h-[80vh]" : "aspect-video"
             )}
           >
-            <iframe
-              src={embedUrl}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              title={title || "Vídeo tutorial"}
-              scrolling="no"
-            />
+            {media.kind === "iframe" ? (
+              <iframe
+                src={media.src}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title={title || "Vídeo tutorial"}
+                scrolling="no"
+              />
+            ) : media.kind === "video" ? (
+              <video
+                className="w-full h-full"
+                controls
+                playsInline
+                preload="metadata"
+              >
+                <source src={media.src} type="video/mp4" />
+                <source src={media.src} type="video/webm" />
+                Seu navegador não suporta a reprodução de vídeo.
+              </video>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center text-white">
+                <p className="max-w-md text-sm text-white/80">
+                  Este link nao pode ser incorporado com seguranca. Abra o video em uma nova aba.
+                </p>
+                <Button asChild variant="secondary">
+                  <a href={videoUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Abrir video
+                  </a>
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

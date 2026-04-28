@@ -18,13 +18,13 @@ docker-compose up -d
 
 Isso irá iniciar:
 - **MySQL** na porta `3307` (externa) → `3306` (interna do container)
-- **phpMyAdmin** na porta `8081` (externa) → `80` (interna do container)
+- **phpMyAdmin** na porta `127.0.0.1:8081` → `80` (interna do container)
 
 ⚠️ **Importante:** As portas foram configuradas para evitar conflitos com outros projetos MySQL em Docker.
 
 ### 2. Acessar o phpMyAdmin
 
-Abra seu navegador e acesse: `http://localhost:8081`
+Abra seu navegador no próprio servidor e acesse: `http://127.0.0.1:8081`
 
 **Credenciais:**
 - Usuário: `root`
@@ -34,6 +34,17 @@ Ou use:
 - Usuário: `donassistec_user`
 - Senha: `donassistec_password`
 - Banco: `donassistec_db`
+
+### Acesso externo opcional
+
+Se precisar expor o phpMyAdmin para acesso externo com proteção extra, use a configuração [nginx-phpmyadmin-secure.conf](/home/DonAssistec/nginx-phpmyadmin-secure.conf:1), que adiciona:
+
+- redirecionamento `8083 -> 8443`
+- SSL
+- autenticação básica
+- proxy para `127.0.0.1:8081`
+
+Mantenha a porta `8081` restrita ao host local.
 
 ### 3. Estrutura do Banco de Dados
 

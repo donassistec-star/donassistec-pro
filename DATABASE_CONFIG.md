@@ -8,8 +8,8 @@ Este projeto foi configurado para **não conflitar** com outros projetos MySQL e
 
 | Serviço | Porta Externa | Porta Interna | Status |
 |---------|---------------|---------------|--------|
-| **MySQL** | `3307` | `3306` | ✅ Disponível |
-| **phpMyAdmin** | `8081` | `80` | ✅ Disponível |
+| **MySQL** | `127.0.0.1:3307` | `3306` | ✅ Disponível |
+| **phpMyAdmin** | `127.0.0.1:8081` | `80` | ✅ Disponível |
 
 ### 🔍 Verificação de Conflitos
 
@@ -47,7 +47,7 @@ Você deve ver:
 
 ### 3. Acessar o phpMyAdmin
 
-**URL:** http://localhost:8081
+**URL local no servidor:** `http://127.0.0.1:8081`
 
 **Credenciais:**
 - Usuário: `root`
@@ -57,6 +57,21 @@ Você deve ver:
 - Usuário: `donassistec_user`
 - Senha: `donassistec_password`
 - Banco: `donassistec_db`
+
+### 4. Acesso externo protegido
+
+O repositório também contém uma configuração opcional em [nginx-phpmyadmin-secure.conf](/home/DonAssistec/nginx-phpmyadmin-secure.conf:1):
+
+- `8083` redireciona para `8443`
+- `8443` usa SSL
+- há autenticação básica via `nginx-phpmyadmin.htpasswd`
+- o proxy encaminha para `http://127.0.0.1:8081`
+
+Observações:
+
+- a porta `8081` continua sendo apenas local
+- a senha do Basic Auth não deve ser salva em documentação pública
+- para produção, restrinja por IP sempre que possível
 
 ## 🔌 Conexão do Banco de Dados
 

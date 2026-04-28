@@ -5,6 +5,7 @@ import { Smartphone, Monitor, Shield, MessageCircle } from "lucide-react";
 import { useHomeContent } from "@/contexts/HomeContentContext";
 import HeroImageCarousel from "@/components/HeroImageCarousel";
 import { cn } from "@/lib/utils";
+import { resolveMediaEmbed } from "@/utils/mediaEmbed";
 
 const HeroSection = () => {
   const { content } = useHomeContent();
@@ -13,36 +14,9 @@ const HeroSection = () => {
   const isMobileMediaOnlyHero = hasImageHero && !showHeroPanel;
   const heroSubtitle = content.heroSubtitle?.trim();
 
-  // Converter URL do vídeo para formato embed com autoplay
-  const getEmbedUrl = (url: string, autoplay: boolean = true) => {
-    const params = new URLSearchParams();
-    if (autoplay) params.append('autoplay', '1');
-    params.append('mute', '1');
-    params.append('loop', '1');
-
-    if (url.includes("youtube.com/watch?v=")) {
-      const videoId = url.split("v=")[1].split("&")[0];
-      return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
-    }
-    if (url.includes("youtu.be/")) {
-      const videoId = url.split("youtu.be/")[1].split("?")[0];
-      return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
-    }
-    if (url.includes("youtube.com/shorts/")) {
-      const videoId = url.split("youtube.com/shorts/")[1].split("?")[0];
-      return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
-    }
-    if (url.includes("instagram.com/reel/") || url.includes("instagram.com/p/") || url.includes("instagram.com/tv/")) {
-      try {
-        const parsed = new URL(url);
-        const cleanPath = parsed.pathname.replace(/\/$/, "");
-        return `https://www.instagram.com${cleanPath}/embed`;
-      } catch {
-        return url;
-      }
-    }
-    return url;
-  };
+  const heroMedia = content.heroVideoUrl
+    ? resolveMediaEmbed(content.heroVideoUrl, { autoplay: true })
+    : null;
 
   return (
     <section
@@ -70,18 +44,28 @@ const HeroSection = () => {
             <>
               {/* Vídeo Background Fullscreen */}
               <div className="absolute inset-0 w-full h-full bg-black overflow-hidden">
-                {content.heroVideoUrl.startsWith('http') && (content.heroVideoUrl.includes('youtube') || content.heroVideoUrl.includes('instagram') || content.heroVideoUrl.includes('vimeo')) ? (
-                  // URLs externas (YouTube, Instagram, Vimeo) - usar iframe
+                {heroMedia?.kind === "iframe" ? (
                   <iframe
-                    src={getEmbedUrl(content.heroVideoUrl, true)}
+                    src={heroMedia.src}
                     className="absolute inset-0 w-full h-full object-cover object-center"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     title="Hero Video"
                     frameBorder="0"
                   />
+                ) : heroMedia?.kind === "video" ? (
+                  <video
+                    className="absolute inset-0 w-full h-full object-cover object-center"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                  >
+                    <source src={heroMedia.src} type="video/mp4" />
+                    <source src={heroMedia.src} type="video/webm" />
+                    Seu navegador não suporta a tag de vídeo.
+                  </video>
                 ) : (
-                  // Vídeos locais - usar tag video
                   <video
                     className="absolute inset-0 w-full h-full object-cover object-center"
                     autoPlay
