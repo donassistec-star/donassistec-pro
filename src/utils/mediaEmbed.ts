@@ -8,7 +8,7 @@ const DIRECT_VIDEO_EXTENSIONS = [
 ];
 
 export type MediaEmbedResult =
-  | { kind: "iframe"; src: string; provider: "youtube" | "instagram" | "vimeo" }
+  | { kind: "iframe"; src: string; provider: "youtube" | "instagram" | "vimeo" | "facebook" | "tiktok" | "kwai" }
   | { kind: "video"; src: string }
   | { kind: "unsupported"; src: string };
 
@@ -86,6 +86,83 @@ const getVimeoEmbedUrl = (url: string, autoplay = false) => {
   }
 };
 
+const getFacebookEmbedUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+
+    // facebook.com/watch/?v= or facebook.com/watch?v=
+    if (url.includes("facebook.com/watch/")) {
+      const videoId = url.split("v=")[1]?.split("&")[0] || url.split("watch/")[1]?.split("?")[0];
+      if (videoId) {
+        return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0&width=auto`;
+      }
+    }
+
+    // facebook.com/reel/ or facebook.com/p/
+    if (url.includes("facebook.com/reel/") || url.includes("facebook.com/p/")) {
+      const videoId = parsed.pathname.split("/").filter(Boolean).pop();
+      if (videoId) {
+        return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0&width=auto`;
+      }
+    }
+
+    // fb.watch short URL
+    if (url.includes("fb.watch/")) {
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0&width=auto`;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const getTikTokEmbedUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+
+    if (!parsed.hostname.includes("tiktok.com")) {
+      return null;
+    }
+
+    // Remove trailing slash and get clean path
+    const cleanPath = parsed.pathname.replace(/\/$/, "");
+
+    // Must be a video path (not profile)
+    if (!/\/video\/\d+/.test(cleanPath) && !cleanPath.includes("@")) {
+      return null;
+    }
+
+    // Use the embed endpoint
+    return `https://www.tiktok.com/embed/v2/${cleanPath.split("/video/")[1]?.split("/")[0] || ""}`;
+  } catch {
+    return null;
+  }
+};
+
+const getKwaiEmbedUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+
+    if (!parsed.hostname.includes("kwai.com") && !parsed.hostname.includes("kuaishou.com")) {
+      return null;
+    }
+
+    // Extract video ID from various Kwai URL formats
+    const videoIdMatch = url.match(/\/short-video\/(\d+)|\/v\?.*videoId=(\d+)|\/short\/(\d+)/);
+    if (videoIdMatch) {
+      const videoId = videoIdMatch[1] || videoIdMatch[2] || videoIdMatch[3];
+      if (videoId) {
+        return `https://www.kwai.com/embed/${videoId}`;
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 export const resolveMediaEmbed = (
   rawUrl: string,
   options?: { autoplay?: boolean },
@@ -110,6 +187,21 @@ export const resolveMediaEmbed = (
   const vimeo = getVimeoEmbedUrl(url, autoplay);
   if (vimeo) {
     return { kind: "iframe", src: vimeo, provider: "vimeo" };
+  }
+
+  const facebook = getFacebookEmbedUrl(url);
+  if (facebook) {
+    return { kind: "iframe", src: facebook, provider: "facebook" };
+  }
+
+  const tiktok = getTikTokEmbedUrl(url);
+  if (tiktok) {
+    return { kind: "iframe", src: tiktok, provider: "tiktok" };
+  }
+
+  const kwai = getKwaiEmbedUrl(url);
+  if (kwai) {
+    return { kind: "iframe", src: kwai, provider: "kwai" };
   }
 
   if (isDirectVideoUrl(url)) {

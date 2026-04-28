@@ -389,7 +389,7 @@ const ModelVideosAdmin = () => {
                       url: e.target.value,
                     }))
                   }
-                  placeholder="https://www.youtube.com/embed/..."
+                  placeholder="https://www.youtube.com/embed/... ou https://instagram.com/reel/... ou https://tiktok.com/..."
                   required
                 />
               </div>

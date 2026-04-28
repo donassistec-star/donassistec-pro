@@ -63,6 +63,49 @@ const getYoutubeThumbnail = (url: string) => {
   return "";
 };
 
+// Gera thumbnail para Facebook
+const getFacebookThumbnail = (url: string) => {
+  const trimmedUrl = url.trim();
+  if (trimmedUrl.includes("facebook.com/watch/")) {
+    const videoId = trimmedUrl.split("v=")[1]?.split("&")[0];
+    if (videoId) {
+      return `https://graph.facebook.com/v18.0/${videoId}/picture`;
+    }
+  }
+  return "";
+};
+
+// Gera thumbnail para TikTok
+const getTikTokThumbnail = (url: string) => {
+  const trimmedUrl = url.trim();
+  if (trimmedUrl.includes("tiktok.com/")) {
+    // TikTok não fornece thumbnail pública via URL, retorna placeholder
+    return "";
+  }
+  return "";
+};
+
+// Gera thumbnail para Kwai
+const getKwaiThumbnail = (url: string) => {
+  const trimmedUrl = url.trim();
+  if (trimmedUrl.includes("kwai.com/") || trimmedUrl.includes("kuaishou.com/")) {
+    // Kwai não fornece thumbnail pública via URL simples
+    return "";
+  }
+  return "";
+};
+
+// Função genérica para obter thumbnail
+const getVideoThumbnail = (url: string) => {
+  const ytThumb = getYoutubeThumbnail(url);
+  if (ytThumb) return ytThumb;
+  
+  const fbThumb = getFacebookThumbnail(url);
+  if (fbThumb) return fbThumb;
+  
+  return "";
+};
+
 const AdminRetailerTrainingVideos = () => {
   const [videos, setVideos] = useState<RetailerTrainingVideo[]>([]);
   const [saving, setSaving] = useState(false);
@@ -182,7 +225,7 @@ const AdminRetailerTrainingVideos = () => {
           <CardHeader>
             <CardTitle>Como funciona</CardTitle>
             <CardDescription>
-              Cada item pode ter título, descrição, categoria, miniatura e link de vídeo. Links do YouTube funcionam normalmente.
+              Cada item pode ter título, descrição, categoria, miniatura e link de vídeo. Aceita YouTube, Instagram, Facebook, TikTok, Vimeo e URLs diretas de vídeo.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -293,7 +336,7 @@ const AdminRetailerTrainingVideos = () => {
                         onChange={(event) =>
                           updateVideo(video.id, "url", event.target.value)
                         }
-                        placeholder="https://www.youtube.com/watch?v=..."
+                        placeholder="https://www.youtube.com/watch?v=... ou https://instagram.com/reel/... ou https://facebook.com/watch/..."
                       />
                       <Button
                         type="button"

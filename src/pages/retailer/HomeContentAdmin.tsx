@@ -550,7 +550,7 @@ const HomeContentAdmin = () => {
                       placeholder="https://youtube.com/watch?v=... ou https://youtu.be/..."
                     />
                     <p className="text-xs text-muted-foreground">
-                      Aceita URLs do YouTube, Instagram Reels, Vimeo e URLs diretas de vídeo.
+                      Aceita URLs do YouTube, Instagram, Facebook, TikTok, Vimeo, Kwai e URLs diretas de vídeo.
                     </p>
                   </div>
 

@@ -18,8 +18,13 @@ const sanitizePhoneDisplay = (value?: string | number | null): string => {
 
 const sanitizePhoneRaw = (value?: string | number | null): string => {
   const next = toCleanString(value);
-  if (!next || PHONE_RAW_PLACEHOLDERS.has(next) || PHONE_DISPLAY_PLACEHOLDERS.has(next)) {
+  // Retorna vazio apenas se for um placeholder de telefone de display
+  if (!next || PHONE_DISPLAY_PLACEHOLDERS.has(next)) {
     return "";
+  }
+  // Permite números brutos de placeholder como fallback válido
+  if (PHONE_RAW_PLACEHOLDERS.has(next)) {
+    return next;
   }
 
   return validation.cleanWhatsAppNumber(next) || "";

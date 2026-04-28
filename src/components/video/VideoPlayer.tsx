@@ -22,8 +22,16 @@ const VideoPlayer = ({ videoUrl, title, thumbnail, trigger, className }: VideoPl
     videoUrl.includes("instagram.com/tv/");
 
   const isVerticalYoutube = videoUrl.includes("youtube.com/shorts/");
+  const isFacebookEmbed = 
+    videoUrl.includes("facebook.com/watch/") ||
+    videoUrl.includes("facebook.com/reel/") ||
+    videoUrl.includes("facebook.com/p/") ||
+    videoUrl.includes("fb.watch/");
+  const isTikTokEmbed = videoUrl.includes("tiktok.com/");
+  const isKwaiEmbed = videoUrl.includes("kwai.com") || videoUrl.includes("kuaishou.com");
+
   const media = resolveMediaEmbed(videoUrl);
-  const isVerticalVideo = isInstagramEmbed || isVerticalYoutube;
+  const isVerticalVideo = isInstagramEmbed || isVerticalYoutube || isFacebookEmbed || isTikTokEmbed || isKwaiEmbed;
 
   const defaultTrigger = (
     <Button
