@@ -149,8 +149,9 @@ const Header = () => {
               </Button>
             )}
             {showRetailerAreaButton && (
-              <Button 
+              <Button
                 variant="secondary"
+                className="!bg-[#0ea5e9] !text-white hover:!bg-[#38bdf8] border-none"
                 onClick={() => navigate("/lojista/dashboard")}
               >
                 Área do Lojista
