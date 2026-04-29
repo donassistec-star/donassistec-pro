@@ -71,7 +71,7 @@ const Help = () => {
       questions: [
         {
           question: "Quais marcas vocês trabalham?",
-          answer: "Trabalhamos com as principais marcas do mercado: Apple, Samsung, Xiaomi, Motorola, LG e Huawei.",
+          answer: "Trabalhamos com as principais marcas do mercado: Apple, Samsung, Xiaomi, Motorola, LG .",
         },
         {
           question: "O que é reconstrução de tela?",
