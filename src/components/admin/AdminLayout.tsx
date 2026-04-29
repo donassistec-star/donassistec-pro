@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/ui/theme-toggle";
 import {
   LayoutDashboard,
   Package,
@@ -261,6 +262,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             </div>
 
             <div className="ml-auto flex items-center gap-4">
+              <ThemeToggle />
               <NotificationsComponent
                 notifications={notifications.notifications}
                 onMarkAsRead={notifications.markAsRead}

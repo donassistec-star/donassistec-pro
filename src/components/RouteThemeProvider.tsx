@@ -17,7 +17,7 @@ const RouteThemeProvider = ({ children }: RouteThemeProviderProps) => {
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
-      forcedTheme={isWorkspaceRoute ? undefined : "light"}
+      forcedTheme={isWorkspaceRoute ? undefined : "dark"}
     >
       {children}
     </ThemeProvider>
