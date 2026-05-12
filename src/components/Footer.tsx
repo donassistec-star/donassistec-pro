@@ -87,27 +87,62 @@ const Footer = () => {
             )}
             <div className="flex flex-wrap gap-3">
               {settings?.socialInstagram && (
-                <a href={settings.socialInstagram} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-primary hover:text-primary-foreground">
+                <a
+                  href={settings.socialInstagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  title="Instagram"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-200 shadow-sm ring-1 ring-white/10 transition-colors hover:bg-primary hover:text-primary-foreground dark:text-slate-100"
+                >
                   <Instagram className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialFacebook && (
-                <a href={settings.socialFacebook} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-primary hover:text-primary-foreground">
+                <a
+                  href={settings.socialFacebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  title="Facebook"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-200 shadow-sm ring-1 ring-white/10 transition-colors hover:bg-primary hover:text-primary-foreground dark:text-slate-100"
+                >
                   <Facebook className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialYoutube && (
-                <a href={settings.socialYoutube} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-primary hover:text-primary-foreground">
+                <a
+                  href={settings.socialYoutube}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="YouTube"
+                  title="YouTube"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-200 shadow-sm ring-1 ring-white/10 transition-colors hover:bg-primary hover:text-primary-foreground dark:text-slate-100"
+                >
                   <Youtube className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialLinkedin && (
-                <a href={settings.socialLinkedin} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-primary hover:text-primary-foreground">
+                <a
+                  href={settings.socialLinkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                  title="LinkedIn"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-200 shadow-sm ring-1 ring-white/10 transition-colors hover:bg-primary hover:text-primary-foreground dark:text-slate-100"
+                >
                   <Linkedin className="w-5 h-5" />
                 </a>
               )}
               {settings?.socialTwitter && (
-                <a href={settings.socialTwitter} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-primary hover:text-primary-foreground">
+                <a
+                  href={settings.socialTwitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Twitter"
+                  title="Twitter"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-200 shadow-sm ring-1 ring-white/10 transition-colors hover:bg-primary hover:text-primary-foreground dark:text-slate-100"
+                >
                   <Twitter className="w-5 h-5" />
                 </a>
               )}

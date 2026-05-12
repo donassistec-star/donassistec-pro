@@ -146,6 +146,8 @@ export interface SystemSettings {
   helpHeroTitle?: string;
   helpHeroDescription?: string;
   helpSearchPlaceholder?: string;
+  helpHighlightsTitle?: string;
+  helpHighlightsItems?: string;
   helpFaqItems?: string;
   helpBackLabel?: string;
   helpNoResultsTitle?: string;

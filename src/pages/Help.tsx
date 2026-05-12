@@ -9,7 +9,10 @@ import {
   ArrowLeft,
   Phone,
   Mail,
-  FileText
+  FileText,
+  Sparkles,
+  Layers3,
+  LifeBuoy
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -18,7 +21,7 @@ import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { useSettings } from "@/hooks/useSettings";
 import { validation } from "@/utils/validation";
-import { parseHelpFaqs } from "@/utils/helpFaqs";
+import { parseHelpFaqs, parseHelpHighlights } from "@/utils/helpFaqs";
 import { getPublicContactInfo } from "@/utils/publicContact";
 
 const Help = () => {
@@ -27,6 +30,7 @@ const Help = () => {
   const { settings } = useSettings();
 
   const faqs = parseHelpFaqs(settings?.helpFaqItems);
+  const highlights = parseHelpHighlights(settings?.helpHighlightsItems);
 
   const categories = ["Todas", ...faqs.map((category) => category.category)];
 
@@ -57,6 +61,33 @@ const Help = () => {
     hasWhatsApp,
   } = getPublicContactInfo(settings);
 
+  const quickActions = [
+    {
+      key: "whatsapp",
+      title: settings?.helpWhatsappTitle || "WhatsApp",
+      label: settings?.helpWhatsappLabel || "Abrir Chat",
+      available: hasWhatsApp,
+      icon: MessageCircle,
+      onClick: handleWhatsApp,
+    },
+    {
+      key: "phone",
+      title: settings?.helpPhoneTitle || "Telefone",
+      label: settings?.helpPhoneLabel || "Ligar Agora",
+      available: hasPhone,
+      icon: Phone,
+      href: contactPhoneRaw ? `tel:${contactPhoneRaw}` : undefined,
+    },
+    {
+      key: "email",
+      title: settings?.helpEmailTitle || "E-mail",
+      label: settings?.helpEmailLabel || "Enviar E-mail",
+      available: Boolean(contactEmail),
+      icon: Mail,
+      href: contactEmail ? `mailto:${contactEmail}` : undefined,
+    },
+  ].filter((item) => item.available);
+
   const handleWhatsApp = () => {
     if (!hasWhatsApp) return;
     const url = validation.generateWhatsAppUrl(
@@ -84,6 +115,42 @@ const Help = () => {
             <p className="mx-auto mb-8 max-w-2xl text-base text-primary-foreground/90 sm:text-lg">
               {settings?.helpHeroDescription || "Encontre respostas para suas dúvidas ou entre em contato com nosso suporte"}
             </p>
+
+            <div className="mx-auto mb-8 grid max-w-4xl gap-3 sm:grid-cols-3">
+              <Card className="border-primary-foreground/20 bg-primary-foreground/10 text-left shadow-none backdrop-blur">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="rounded-full bg-primary-foreground/15 p-2">
+                    <FileText className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-primary-foreground/70">Perguntas</p>
+                    <p className="text-2xl font-bold text-primary-foreground">{totalQuestions}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-primary-foreground/20 bg-primary-foreground/10 text-left shadow-none backdrop-blur">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="rounded-full bg-primary-foreground/15 p-2">
+                    <Layers3 className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-primary-foreground/70">Categorias</p>
+                    <p className="text-2xl font-bold text-primary-foreground">{faqs.length}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-primary-foreground/20 bg-primary-foreground/10 text-left shadow-none backdrop-blur">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="rounded-full bg-primary-foreground/15 p-2">
+                    <LifeBuoy className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-primary-foreground/70">Canais</p>
+                    <p className="text-2xl font-bold text-primary-foreground">{quickActions.length}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Search */}
             <div className="max-w-2xl mx-auto relative">
@@ -122,6 +189,43 @@ const Help = () => {
               })}
               </div>
             </div>
+
+            {quickActions.length > 0 ? (
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                {quickActions.map((action) => {
+                  const Icon = action.icon;
+
+                  if (action.href) {
+                    return (
+                      <Button
+                        key={action.key}
+                        asChild
+                        variant="secondary"
+                        className="border border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
+                      >
+                        <a href={action.href}>
+                          <Icon className="mr-2 h-4 w-4" />
+                          {action.title}
+                        </a>
+                      </Button>
+                    );
+                  }
+
+                  return (
+                    <Button
+                      key={action.key}
+                      type="button"
+                      variant="secondary"
+                      className="border border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
+                      onClick={action.onClick}
+                    >
+                      <Icon className="mr-2 h-4 w-4" />
+                      {action.title}
+                    </Button>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -154,6 +258,74 @@ const Help = () => {
                 <CardContent className="p-5">
                   <p className="text-sm text-muted-foreground">Resultados filtrados</p>
                   <p className="text-3xl font-bold text-foreground mt-2">{filteredQuestions}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="mb-10 grid gap-4 lg:grid-cols-[1.35fr_0.95fr]">
+              <Card className="border-primary/10 bg-gradient-to-br from-primary/5 via-background to-background">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    {settings?.helpHighlightsTitle || "Por que usar nossa central de ajuda"}
+                  </CardTitle>
+                  <CardDescription>
+                    Respostas organizadas para acelerar o atendimento e a tomada de decisão.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-3">
+                  {highlights.map((item, index) => (
+                    <div key={`${item.title}-${index}`} className="rounded-xl border border-border/60 bg-background/80 p-4">
+                      <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        {item.description}
+                      </p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-muted/30">
+                <CardHeader>
+                  <CardTitle>Atendimento rápido</CardTitle>
+                  <CardDescription>
+                    Escolha o canal que faz mais sentido para a sua necessidade.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {quickActions.length > 0 ? (
+                    quickActions.map((action) => {
+                      const Icon = action.icon;
+
+                      if (action.href) {
+                        return (
+                          <Button key={action.key} asChild variant="outline" className="w-full justify-start">
+                            <a href={action.href}>
+                              <Icon className="mr-2 h-4 w-4" />
+                              {action.label}
+                            </a>
+                          </Button>
+                        );
+                      }
+
+                      return (
+                        <Button
+                          key={action.key}
+                          type="button"
+                          variant="outline"
+                          className="w-full justify-start"
+                          onClick={action.onClick}
+                        >
+                          <Icon className="mr-2 h-4 w-4" />
+                          {action.label}
+                        </Button>
+                      );
+                    })
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Configure canais de contato nas configurações gerais para exibir atalhos aqui.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>

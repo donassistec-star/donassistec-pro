@@ -8,6 +8,17 @@ export interface HelpFaqGroup {
   questions: HelpFaqItem[];
 }
 
+export interface HelpFaqDraft {
+  category: string;
+  question: string;
+  answer: string;
+}
+
+export interface HelpHighlightItem {
+  title: string;
+  description: string;
+}
+
 export const defaultHelpFaqs: HelpFaqGroup[] = [
   {
     category: "Geral",
@@ -66,15 +77,72 @@ export const defaultHelpFaqs: HelpFaqGroup[] = [
   },
 ];
 
-export const parseHelpFaqs = (rawFaqItems?: string | null): HelpFaqGroup[] => {
-  const parsedFaqs = (rawFaqItems || "")
+export const defaultHelpHighlights: HelpHighlightItem[] = [
+  {
+    title: "Busca instantanea",
+    description: "Encontre respostas por palavra-chave e filtre por categoria em poucos cliques.",
+  },
+  {
+    title: "Suporte rapido",
+    description: "Acesse WhatsApp, telefone ou e-mail direto da central de ajuda.",
+  },
+  {
+    title: "Conteudo organizado",
+    description: "Agrupe perguntas frequentes por tema para orientar clientes e lojistas.",
+  },
+];
+
+export const parseHelpFaqItems = (value?: string): HelpFaqDraft[] =>
+  (value || "")
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [category, question, answer] = line.split("|").map((item) => item.trim());
+      const [category = "", question = "", answer = ""] = line
+        .split("|")
+        .map((item) => item.trim());
+
       return { category, question, answer };
     })
+    .filter((item) => item.category || item.question || item.answer);
+
+export const serializeHelpFaqItems = (items: HelpFaqDraft[]) =>
+  items
+    .map((item) => ({
+      category: item.category.trim(),
+      question: item.question.trim(),
+      answer: item.answer.trim(),
+    }))
+    .filter((item) => item.category && item.question && item.answer)
+    .map((item) => `${item.category}|${item.question}|${item.answer}`)
+    .join("\n");
+
+export const parseHelpHighlights = (value?: string | null): HelpHighlightItem[] => {
+  const parsedItems = (value || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [title = "", description = ""] = line.split("|").map((item) => item.trim());
+      return { title, description };
+    })
+    .filter((item) => item.title && item.description);
+
+  return parsedItems.length > 0 ? parsedItems : defaultHelpHighlights;
+};
+
+export const serializeHelpHighlights = (items: HelpHighlightItem[]) =>
+  items
+    .map((item) => ({
+      title: item.title.trim(),
+      description: item.description.trim(),
+    }))
+    .filter((item) => item.title && item.description)
+    .map((item) => `${item.title}|${item.description}`)
+    .join("\n");
+
+export const parseHelpFaqs = (rawFaqItems?: string | null): HelpFaqGroup[] => {
+  const parsedFaqs = parseHelpFaqItems(rawFaqItems)
     .filter((item) => item.category && item.question && item.answer);
 
   if (parsedFaqs.length === 0) {

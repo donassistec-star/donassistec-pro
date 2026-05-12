@@ -836,7 +836,7 @@ const HomeContentAdmin = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Nossos Serviços</CardTitle>
+            <CardTitle>Nossos Serviços </CardTitle>
             <CardDescription>
               Edite os textos, cards, destaques e a imagem principal do módulo de serviços.
             </CardDescription>
