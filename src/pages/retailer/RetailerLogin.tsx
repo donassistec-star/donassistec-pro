@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Smartphone, Mail, Lock, Building2, User, Phone, FileText } from "lucide-react";
+import { Smartphone, Mail, Lock, Building2, User, Phone, FileText, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { validation } from "@/utils/validation";
@@ -16,6 +16,9 @@ const RetailerLogin = () => {
   const navigate = useNavigate();
   const { login, register, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
 
   const [loginData, setLoginData] = useState({
     email: "",
@@ -229,15 +232,25 @@ const RetailerLogin = () => {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="login-password"
-                        type="password"
+                        type={showLoginPassword ? "text" : "password"}
                         placeholder="••••••••"
                         value={loginData.password}
                         onChange={(e) =>
                           setLoginData({ ...loginData, password: e.target.value })
                         }
-                        className="pl-10"
+                        className="pl-10 pr-10"
                         required
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowLoginPassword((current) => !current)}
+                        aria-label={showLoginPassword ? "Ocultar senha" : "Mostrar senha"}
+                      >
+                        {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
                     </div>
                   </div>
 
@@ -292,31 +305,54 @@ const RetailerLogin = () => {
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="register-password"
-                          type="password"
+                          type={showRegisterPassword ? "text" : "password"}
                           placeholder="••••••••"
                           value={registerData.password}
                           onChange={(e) =>
                             setRegisterData({ ...registerData, password: e.target.value })
                           }
-                          className="pl-10"
+                          className="pl-10 pr-10"
                           required
                           minLength={6}
                         />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => setShowRegisterPassword((current) => !current)}
+                          aria-label={showRegisterPassword ? "Ocultar senha" : "Mostrar senha"}
+                        >
+                          {showRegisterPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="register-confirm">Confirmar *</Label>
-                      <Input
-                        id="register-confirm"
-                        type="password"
-                        placeholder="••••••••"
-                        value={registerData.confirmPassword}
-                        onChange={(e) =>
-                          setRegisterData({ ...registerData, confirmPassword: e.target.value })
-                        }
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          id="register-confirm"
+                          type={showRegisterConfirmPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={registerData.confirmPassword}
+                          onChange={(e) =>
+                            setRegisterData({ ...registerData, confirmPassword: e.target.value })
+                          }
+                          className="pr-10"
+                          required
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => setShowRegisterConfirmPassword((current) => !current)}
+                          aria-label={showRegisterConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
+                        >
+                          {showRegisterConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </div>
                   </div>
 

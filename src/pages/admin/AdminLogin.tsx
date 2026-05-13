@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Shield, Mail, Lock, HelpCircle, UserPlus } from "lucide-react";
+import { Shield, Mail, Lock, HelpCircle, UserPlus, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import { toast } from "sonner";
@@ -31,6 +31,8 @@ const AdminLogin = () => {
   const [showBootstrapModal, setShowBootstrapModal] = useState(false);
   const [bootstrapSubmitting, setBootstrapSubmitting] = useState(false);
   const [bootstrapForm, setBootstrapForm] = useState({ email: "", password: "", name: "Admin" });
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showBootstrapPassword, setShowBootstrapPassword] = useState(false);
 
   const [loginData, setLoginData] = useState({
     email: "",
@@ -180,15 +182,25 @@ const AdminLogin = () => {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="admin-password"
-                    type="password"
+                    type={showLoginPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={loginData.password}
                     onChange={(e) =>
                       setLoginData({ ...loginData, password: e.target.value })
                     }
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     required
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowLoginPassword((current) => !current)}
+                    aria-label={showLoginPassword ? "Ocultar senha" : "Mostrar senha"}
+                  >
+                    {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
               </div>
 
@@ -287,13 +299,26 @@ const AdminLogin = () => {
               </div>
               <div>
                 <Label htmlFor="boot-password">Senha (mín. 6 caracteres)</Label>
-                <Input
-                  id="boot-password"
-                  type="password"
-                  value={bootstrapForm.password}
-                  onChange={(e) => setBootstrapForm((p) => ({ ...p, password: e.target.value }))}
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <Input
+                    id="boot-password"
+                    type={showBootstrapPassword ? "text" : "password"}
+                    value={bootstrapForm.password}
+                    onChange={(e) => setBootstrapForm((p) => ({ ...p, password: e.target.value }))}
+                    placeholder="••••••••"
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowBootstrapPassword((current) => !current)}
+                    aria-label={showBootstrapPassword ? "Ocultar senha" : "Mostrar senha"}
+                  >
+                    {showBootstrapPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setShowBootstrapModal(false)}>

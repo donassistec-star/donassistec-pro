@@ -22,6 +22,7 @@ import { ordersService } from "@/services/ordersService";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -37,6 +38,15 @@ const AdminRetailers = () => {
   const [selectedRetailer, setSelectedRetailer] = useState<Retailer | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPermanentDeleteDialog, setShowPermanentDeleteDialog] = useState(false);
+  const [approvalWhatsAppDialog, setApprovalWhatsAppDialog] = useState<{
+    open: boolean;
+    retailerName: string;
+    whatsappUrl?: string;
+  }>({
+    open: false,
+    retailerName: "",
+    whatsappUrl: undefined,
+  });
   const [processing, setProcessing] = useState(false);
   const [ordersCount, setOrdersCount] = useState<Record<string, number>>({});
   const pendingApprovalCount = retailers.filter((retailer) => retailer.approval_status === "pending").length;
@@ -83,12 +93,6 @@ const AdminRetailers = () => {
     retailer: Retailer,
     approvalStatus: "pending" | "approved" | "rejected"
   ) => {
-    const shouldNotifyOnWhatsApp = approvalStatus === "approved";
-    const popupRef =
-      shouldNotifyOnWhatsApp && retailer.phone && typeof window !== "undefined"
-        ? window.open("", "_blank", "noopener,noreferrer")
-        : null;
-
     try {
       setProcessing(true);
       const result = await retailersService.updateApprovalStatus(retailer.id, approvalStatus);
@@ -99,25 +103,20 @@ const AdminRetailers = () => {
       } as const;
       toast.success(messageMap[approvalStatus]);
 
-      if (shouldNotifyOnWhatsApp) {
+      if (approvalStatus === "approved") {
         if (result?.whatsapp_url) {
-          if (popupRef) {
-            popupRef.location.href = result.whatsapp_url;
-          } else if (typeof window !== "undefined") {
-            window.open(result.whatsapp_url, "_blank", "noopener,noreferrer");
-          }
-          toast.success("Mensagem de aprovação preparada no WhatsApp do lojista.");
+          setApprovalWhatsAppDialog({
+            open: true,
+            retailerName: retailer.company_name || retailer.contact_name || retailer.email,
+            whatsappUrl: result.whatsapp_url,
+          });
         } else {
-          popupRef?.close();
           toast.warning("Lojista aprovado, mas sem WhatsApp válido para envio da mensagem.");
         }
-      } else {
-        popupRef?.close();
       }
 
       await loadRetailers();
     } catch (error: any) {
-      popupRef?.close();
       toast.error(error.message || "Erro ao atualizar aprovação do lojista");
     } finally {
       setProcessing(false);
@@ -156,6 +155,16 @@ const AdminRetailers = () => {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleOpenApprovalWhatsApp = () => {
+    if (!approvalWhatsAppDialog.whatsappUrl || typeof window === "undefined") {
+      return;
+    }
+
+    window.open(approvalWhatsAppDialog.whatsappUrl, "_blank", "noopener,noreferrer");
+    setApprovalWhatsAppDialog((current) => ({ ...current, open: false }));
+    toast.success("Conversa de aprovacao aberta no WhatsApp Web.");
   };
 
   const filteredRetailers = retailers.filter((retailer) => {
@@ -517,6 +526,39 @@ const AdminRetailers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={approvalWhatsAppDialog.open}
+        onOpenChange={(open) =>
+          setApprovalWhatsAppDialog((current) => ({ ...current, open }))
+        }
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Lojista aprovado</DialogTitle>
+            <DialogDescription>
+              O cadastro de <strong>{approvalWhatsAppDialog.retailerName}</strong> foi aprovado.
+              Se quiser, abra agora a mensagem pronta no WhatsApp para avisar o lojista.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setApprovalWhatsAppDialog((current) => ({ ...current, open: false }))
+              }
+            >
+              Fechar
+            </Button>
+            <Button
+              onClick={handleOpenApprovalWhatsApp}
+              disabled={!approvalWhatsAppDialog.whatsappUrl}
+            >
+              Abrir WhatsApp
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
